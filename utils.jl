@@ -4,12 +4,14 @@ const GITHUB = "https://github.com/$ORG"
 """
     hfun_pkg_card(params)
 
-Generate a package card. Usage: {{pkg_card name description r_pkg}}
+Generate a package card. Usage: {{pkg_card PkgName "Description" "r_pkg"}}
+(the third parameter is optional; pass the R package this ports).
 """
-function hfun_pkg_card()
-    name = locvar("pkg_name")
-    desc = locvar("pkg_desc")
-    r_pkg = locvar("pkg_r")
+function hfun_pkg_card(params)
+    length(params) >= 2 || return ""
+    name = params[1]
+    desc = params[2]
+    r_pkg = length(params) >= 3 ? params[3] : ""
 
     repo_url = "$GITHUB/$(name)"
     doc_url = "https://$ORG.github.io/$(name)/stable/"

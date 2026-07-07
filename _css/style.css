@@ -156,11 +156,6 @@ a:hover {
   color: #222;
 }
 
-/* Responsive navbar brand */
-.navbar-brand {
-  font-size: 1.3rem;
-}
-
 /* Dropdown on hover for desktop */
 @media (min-width: 992px) {
   .dropdown:hover .dropdown-menu {
@@ -181,8 +176,7 @@ a:hover {
 }
 
 /* R lineage note */
-.r-port,
-.r-lineage {
+.r-port {
   font-size: 0.8rem;
   color: #888;
   font-style: italic;

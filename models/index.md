@@ -13,7 +13,7 @@
   <div class="sidebar-content">
 
     <h1>Families of Models</h1>
-    <p>This page provides theoretical and methodological background for the families of models implemented in this ecosystem.</p>
+    <p>This page provides theoretical and methodological background for the families of models implemented in this ecosystem. For hands-on, runnable code with output and interpretation, see the <a href="/examples/">Examples</a>.</p>
 
     <details open>
       <summary id="saoms"><h2>Stochastic Actor-Oriented Models (SAOMs)</h2></summary>
@@ -37,7 +37,7 @@
       <p style="text-align: center;"><em>P(Y = y) = (1/&kappa;(&theta;)) exp(&theta;&prime; g(y))</em></p>
       <p>where <em>g(y)</em> is a vector of sufficient statistics (e.g., number of edges, triangles, degree distributions), <em>&theta;</em> is the parameter vector, and <em>&kappa;(&theta;)</em> is a normalizing constant that is typically intractable for all but the smallest networks.</p>
       <p>Estimation relies on either <strong>Maximum Pseudolikelihood Estimation (MPLE)</strong> <a href="#ref-strauss1990">[5]</a>, which approximates the likelihood by treating dyads as conditionally independent, or <strong>Monte Carlo Maximum Likelihood Estimation (MCMLE)</strong> <a href="#ref-hunter2006">[6]</a>, which uses MCMC sampling to approximate the ratio of normalizing constants. Goodness of fit is assessed by simulating networks from the fitted model and comparing their properties to the observed network <a href="#ref-hunter2008">[7]</a>.</p>
-      <p>The ERGM framework has been extended in several directions: temporal ERGMs (TERGMs) for longitudinal network data <a href="#ref-hanneke2010">[8]</a>, valued ERGMs for count or rank data <a href="#ref-krivitsky2012">[9]</a>, ego-centric ERGMs for inference from sampled ego-network data <a href="#ref-krivitsky2023">[10]</a>, and multilayer ERGMs for networks with multiple relation types.</p>
+      <p>The ERGM framework has been extended in several directions: temporal ERGMs (TERGMs) for longitudinal network data <a href="#ref-hanneke2010">[8]</a>, valued ERGMs for count or rank data <a href="#ref-krivitsky2012">[9]</a>, ego-centric ERGMs for inference from sampled ego-network data <a href="#ref-krivitsky2023">[10]</a>, and multilayer ERGMs for networks with multiple relation types <a href="#ref-krivitsky2020">[11]</a>.</p>
       <p><strong>Implemented in:</strong> <a href="https://statistical-network-analysis-with-Julia.github.io/ERGM.jl/stable/">ERGM.jl</a> and extensions (<a href="https://statistical-network-analysis-with-Julia.github.io/TERGM.jl/stable/">TERGM.jl</a>, <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMCount.jl/stable/">ERGMCount.jl</a>, <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMEgo.jl/stable/">ERGMEgo.jl</a>, <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMMulti.jl/stable/">ERGMMulti.jl</a>, <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMRank.jl/stable/">ERGMRank.jl</a>, <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMUserterms.jl/stable/">ERGMUserterms.jl</a>)</p>
     </details>
 
@@ -54,6 +54,7 @@
         <li id="ref-hanneke2010">Hanneke, S., Fu, W., &amp; Xing, E. P. (2010). Discrete temporal models of social networks. <em>Electronic Journal of Statistics</em>, 4, 585&ndash;605.</li>
         <li id="ref-krivitsky2012">Krivitsky, P. N. (2012). Exponential-family random graph models for valued networks. <em>Electronic Journal of Statistics</em>, 6, 1100&ndash;1128.</li>
         <li id="ref-krivitsky2023">Krivitsky, P. N., Morris, M., &amp; Handcock, M. S. (2023). Inference for social network models from egocentrically sampled data, with application to understanding persistent racial disparities in HIV prevalence in the US. <em>The Annals of Applied Statistics</em>, 17(4), 2991&ndash;3014.</li>
+        <li id="ref-krivitsky2020">Krivitsky, P. N., Koehly, L. M., &amp; Marcum, C. S. (2020). Exponential-family random graph models for multi-layer networks. <em>Psychometrika</em>, 85(3), 630&ndash;659.</li>
       </ol>
     </details>
 

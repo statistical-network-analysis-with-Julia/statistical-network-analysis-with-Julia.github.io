@@ -2,6 +2,11 @@
 
 # Examples
 
+Worked, runnable analyses using the ecosystem's packages — each with real
+data or a simulated ground truth, printed output, and interpretation. For
+the statistical background behind each method, see
+[Families of Models](/models/).
+
 ~~~
 <div class="example-grid">
   <a class="example-card" href="/examples/describing-network-structure/">
@@ -18,7 +23,7 @@
   </a>
   <a class="example-card" href="/examples/modelling-network-change/">
     <h4>Modelling Network Change</h4>
-    <p>Fit a temporal ERGM to network panels observed over time.</p>
+    <p>Fit a separable temporal ERGM (STERGM) to network panels observed over time.</p>
   </a>
 </div>
 ~~~
