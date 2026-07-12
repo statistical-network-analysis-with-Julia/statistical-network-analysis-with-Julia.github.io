@@ -73,3 +73,27 @@ today. Options for later:
 
 Until one of those lands, run the script locally before publishing doc
 changes.
+
+
+# Registry preparation
+
+`setup_registry.jl` stands up a [LocalRegistry](https://github.com/GunnarFarneback/LocalRegistry.jl)
+for the ecosystem and registers every package in dependency order
+(Network first, then its dependents), so released versions can drop the
+`[sources]` path-dependency sections from their Project.toml files.
+It registers the *committed* git state — commit (and ideally tag) every
+package first. Run without arguments for a safe dry run, and with
+`--register` to actually create and populate the registry; see the
+header comment in the script for all options.
+
+# Benchmark harness
+
+`run_benchmarks.jl` runs every package's BenchmarkTools suite
+(`benchmark/benchmarks.jl`, plus `benchmark/regression_tests.jl`
+allocation-regression tests where present) and prints one consolidated
+table with a per-package pass/fail summary. Positional arguments filter
+by package name:
+
+```bash
+SNWJ_ROOT=/path/to/monorepo/root julia tools/run_benchmarks.jl ERGM Siena
+```

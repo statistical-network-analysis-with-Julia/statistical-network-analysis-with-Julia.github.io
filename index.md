@@ -13,6 +13,8 @@ This project provides Julia implementations of established families of models fo
 
 All packages require **Julia 1.12+** and are MIT-licensed. If you know the R statnet stack or RSiena, start with the [migration guide](/migration/).
 
+**Installing**: the packages are not yet in the General registry. Add them by URL in dependency order (each README has the ordered `Pkg.add(url=...)` block), or clone all repositories side by side and start Julia with the root workspace project (`julia --project=.` in the clone root) — the `[sources]` path dependencies wire everything together. A LocalRegistry is being prepared (this site repository's `tools/setup_registry.jl`, run after the packages are committed/tagged) so plain `Pkg.add("ERGM")` will eventually work.
+
 ~~~
 <h3 class="section-title">Stochastic Actor-Oriented Models (SAOMs)</h3>
 <div class="pkg-grid">

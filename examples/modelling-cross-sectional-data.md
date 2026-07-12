@@ -38,11 +38,11 @@ AIC: 109.07, BIC: 117.43
 Converged: true
 
 Coefficients:
-------------------------------------------------------------
-edges                   -2.6148      0.547        0.0 ***
-nodecov.wealth           0.0104     0.0048     0.0294 *
-gwesp.fixed.0.5          0.0333     0.1725     0.8468
-------------------------------------------------------------
+                 Estimate  Std.Error  z value  Pr(>|z|)
+edges             -2.6148     0.5470  -4.7802   1.8e-06 ***
+nodecov.wealth     0.0104     0.0048   2.1777    0.0294 *
+gwesp.fixed.0.5    0.0333     0.1725   0.1931    0.8468
+---
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Warning: this model contains dyad-dependent terms and was fit by

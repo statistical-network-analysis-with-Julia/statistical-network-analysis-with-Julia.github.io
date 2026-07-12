@@ -41,16 +41,22 @@ Three conventions carry most of the translation:
 | `ergm.rank` | [ERGMRank.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl) | `ergm_rank`, `as_rank_network` |
 | `ergm.userterms` | [ERGMUserterms.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl) | `@ergm_term`, `validate_term`, `test_term` |
 | `tergm` | [TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl) | `stergm`, `stergm_gof`, `simulate_network_sequence` |
-| `RSiena` | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl) | `siena_data`, `get_effects`, `siena07`, `siena_gof` |
-| `relevent` | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl) + [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl) | `fit_rem`; `fit_obpm`, `fit_timing` |
+| `RSiena` | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl) | `siena_data`, `get_effects`, `fit_siena` / `siena07`, `siena_gof` |
+| `relevent` | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl) + [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl) | `fit_rem`; `fit_relevent` / `rem_dyad` |
 | `networkDynamic` | [NetworkDynamic.jl](https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl) | `DynamicNetwork`, `activate!`, `network_extract` |
-| `tsna` | [TSNA.jl](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl) | `tSnaStats`, `earliestArrival`, `forwardReachableSet` |
+| `tsna` | [TSNA.jl](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl) | `t_sna_stats`, `earliest_arrival`, `forward_reachable_set` |
 | `ndtv` | [NDTV.jl](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl) | `render_animation`, `filmstrip`, `timeline_plot` |
 
-The packages are not yet in the General registry: clone the repositories
-side by side and `Pkg.develop` them (Network.jl first, then SNA/ERGM/
-NetworkDynamic, then their dependents — each README has the ordered
-one-liner). All packages require Julia 1.12+.
+The packages are not yet in the General registry: either add them by URL
+in dependency order (Network.jl first, then SNA/ERGM/NetworkDynamic, then
+their dependents — each README has the ordered `Pkg.add(url=...)` block),
+or clone all repositories side by side and start Julia with the root
+workspace project (`julia --project=.` in the clone root), which wires
+every package together via `[sources]` path dependencies. A LocalRegistry
+is being prepared (this site repository's `tools/setup_registry.jl`, run
+after the packages are committed/tagged) so that plain `Pkg.add("ERGM")`
+will eventually work.
+All packages require Julia 1.12+.
 
 A convenience worth knowing from day one: `using ERGM` (and the ERGM
 variants) re-exports the whole Network.jl API, so a single `using ERGM`
@@ -100,7 +106,11 @@ so Graphs.jl generics dispatch correctly on it.
 | `gtrans(net)` | `gtrans(net)` (alias: `transitivity`) |
 | `mutuality(net)` | `mutuality(net)` |
 | `dyad.census(net)` | `dyad_census(net)` |
-| `triad.census(net)` | `triad_census(net)` |
+| `triad.census(net)` | `triad_census(net)` (edge-driven Batagelj–Mrvar algorithm) |
+| `centralization(net, degree)` | `centralization(net, :degree)` (also `:betweenness`, `:closeness`, `:eigenvector`) |
+| `qaptest(list(g1, g2), gcor, g1=1, g2=2)` | `qaptest(gcor, g1, g2; reps=1000)` |
+| `netlm(y, x)` | `netlm(y, x)` (Dekker DSP default, `nullhyp=:qapy/:qapx/:classical`) |
+| `netlogit(y, x)` | `netlogit(y, x)` |
 | `geodist(net)` | `geodesic_distance(net)` |
 | `component.dist(net)` | `component_dist(net)` — but see [differences](#what_still_differs_from_r) |
 | `kcores(net)` | `kcores(net)` |
@@ -146,15 +156,20 @@ AIC: 274.9, BIC: 293.52
 Converged: true
 
 Coefficients:
-------------------------------------------------------------
-edges                   -2.2411     0.2342        0.0 ***
-mutual                    1.364     0.4972     0.0061 **
-nodematch.group.Loyal     1.6726     0.3532        0.0 ***
-nodematch.group.Outcasts      2.834     0.7633     0.0002 ***
-nodematch.group.Turks     2.1938     0.4022        0.0 ***
-------------------------------------------------------------
+                          Estimate  Std.Error  z value  Pr(>|z|)
+edges                      -2.2411     0.2342  -9.5678    <1e-16 ***
+mutual                      1.3640     0.4972   2.7431    0.0061 **
+nodematch.group.Loyal       1.6726     0.3532   4.7357   2.2e-06 ***
+nodematch.group.Outcasts    2.8340     0.7633   3.7130    0.0002 ***
+nodematch.group.Turks       2.1938     0.4022   5.4542   4.9e-08 ***
+---
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
+
+That coefficient table (Estimate / Std.Error / z value / Pr(>|z|) with
+significance codes, p-values floored at `<1e-16` instead of printing
+`0.0`) is the shared presentation layer from Network.jl — every fitted
+model in the ecosystem prints through it.
 
 Note the one real semantic difference in that translation: the term
 system is one-statistic-per-term, so R's `nodematch(diff=TRUE)` — which
@@ -172,15 +187,20 @@ without a `level` throws an error explaining exactly this.
 | `kstar(2)` | `Kstar(2)` |
 | `twopath` | `TwoPath()` |
 | `nodecov("wealth")` | `NodeCov(:wealth)` |
-| `nodefactor("g")` | `NodeFactor(:g; level="a")` — one term per (non-base) level |
+| `nodefactor("g")` | `NodeFactor(:g)` — expands to one statistic per level at model construction, first (sorted) level dropped, like R; `base=0` keeps all levels |
 | `nodematch("x")` | `NodeMatch(:x)` |
 | `nodematch("x", diff=TRUE)` | `[NodeMatch(:x; diff=true, level=l) for l in levels]` |
 | *(count of mismatched edges)* | `NodeMismatch(:x)` |
 | `absdiff("age")` | `AbsDiff(:age)` |
+| `nodemix("g")` | `NodeMix(:g)` — expands to one statistic per mixing cell, first cell dropped, like R; `levels2` selects cells |
 | `edgecov(m)` | `EdgeCov(m)` |
+| `degree(0:2)` | `Degree(0:2)` — expands to one term per degree (undirected) |
+| `idegree(d)` / `odegree(d)` | `IDegree(d)` / `ODegree(d)` (directed) |
 | `gwesp(0.5, fixed=TRUE)` | `GWESP(0.5)` |
 | `dgwesp(0.5, type="OSP", fixed=TRUE)` | `GWESP(0.5; type=:OSP)` (`:OTP`, `:ITP`, `:OSP`, `:ISP`) |
+| `gwdsp(0.5, fixed=TRUE)` / `dgwdsp(...)` | `GWDSP(0.5)` / `GWDSP(0.5; type=:OSP)` |
 | `gwdegree(0.5, fixed=TRUE)` | `GWDegree(0.5)` |
+| `gwidegree(0.5, fixed=TRUE)` / `gwodegree(...)` | `GWIDegree(0.5)` / `GWODegree(0.5)` |
 
 Model construction *validates terms against the network*: a typo'd
 attribute (`NodeCov(:welth)`) throws an `ArgumentError` listing the
@@ -252,16 +272,20 @@ The workflow is a deliberate mirror of RSiena's:
 | `getEffects(data)` | `effects = get_effects(data)` |
 | `includeEffects(eff, transTrip, recip)` | `include_effects!(effects, :friendship, [:transTrip, :recip])` |
 | `sienaAlgorithmCreate(seed=42)` | `siena_algorithm(seed=42)` |
-| `siena07(alg, data=dat, effects=eff)` | `siena07(data, effects; algorithm=alg)` |
+| `siena07(alg, data=dat, effects=eff)` | `fit_siena(data, effects; algorithm=alg)` (`siena07` is an alias) |
+| `sienaAlgorithmCreate(cond=TRUE)` | `siena_algorithm(conditional=true)` (rates from phase-3 stopping times, in `result.rate_estimates`) |
+| `sienaCompositionChange(...)` | `CompositionChange()` + `add_change!` + `add_composition_change!(data, cc)` |
 | `sienaGOF(res, IndegreeDistribution, ...)` | `siena_gof_indegree(result, data, :friendship)` |
 
 Effect shortnames are RSiena's (`:outdegree`, `:recip`, `:transTrip`,
 `:cycle3`, `:inPop`, `:egoX`, `:simX`, `:avAlt`, ... — 150+ effects), and
 the target statistics are validated against RSiena's `getTargets` to six
-decimals on the `s50` data. Estimation is unconditional Method of
-Moments with the RSiena publication standards for convergence (every
-|t-ratio| < 0.1 and `tconv.max` < 0.25), score-function derivative
-estimation, and standard errors from all phase-3 simulations.
+decimals on the `s50` data. Estimation is Method of Moments —
+unconditional by default, conditional (RSiena's `cond=TRUE`) via
+`siena_algorithm(conditional=true)` — with the RSiena publication
+standards for convergence (every |t-ratio| < 0.1 and `tconv.max` < 0.25),
+score-function derivative estimation, and standard errors from all
+phase-3 simulations.
 
 Since a `Vector` of `Network` objects converts directly (a package
 extension activates when Network.jl is loaded), you can describe
@@ -314,13 +338,18 @@ Rate friendship (period 2)     1.3998 (0.2546)
 
 Objective Function Parameters:
 ------------------------------
-outdegree                      0.1369 (0.2845)
-recip                          0.1494 (0.4151)
+           Estimate  Std.Error  z value  Pr(>|z|)
+outdegree    0.1369     0.2845   0.4812    0.6304
+recip        0.1494     0.4151   0.3598    0.7190
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 RSiena's structural zeros/ones (10/11 coding) are supported in the wave
-matrices; conditional estimation, maximum likelihood, and Bayesian
-estimation are not (see [differences](#what_still_differs_from_r)).
+matrices, and composition change (actors joining/leaving) is handled with
+the Method-of-Moments semantics; maximum likelihood and Bayesian
+estimation are not implemented (see
+[differences](#what_still_differs_from_r)).
 
 ## Relational events: `relevent` → REM.jl / Relevent.jl
 
@@ -333,12 +362,14 @@ statistics.
 | R (`relevent`) | Julia |
 |:---|:---|
 | event list `(time, sender, receiver)` | `Event(sender, receiver, time)`; `EventSequence(events)` |
-| `rem.dyad(el, n, effects=..., ordinal=TRUE)` | `fit_obpm(events, stats, n)` — exact ordinal likelihood |
-| `rem.dyad(el, n, effects=..., ordinal=FALSE)` | `fit_timing(events, stats, n)` — exponential-baseline interval timing |
+| `rem.dyad(el, n, effects=..., ordinal=TRUE)` | `fit_relevent(events, stats, n)` (= `fit_obpm`) — exact ordinal likelihood; `rem_dyad` is an alias |
+| `rem.dyad(el, n, effects=..., ordinal=FALSE)` | `fit_relevent(events, stats, n; ordinal=false)` (= `fit_timing`) — exponential-baseline interval timing, `t0` sets the observation onset |
 | large-stream approximate fit (eventnet-style) | `fit_rem(seq, stats; n_controls=100)` — case-control conditional logit |
 | `"FESnd"` / inertia effects | `Repetition()`, `InertiaStatistic`, `PriorInteraction(halflife)` |
 | `"RRecSnd"`, `"RSndSnd"` (recency) | `RecencyStatistic`, `LocalInertia(halflife)` |
 | reciprocity effects | `Reciprocity()`, `PriorInteraction(halflife; direction=:incoming)` |
+| `"PSAB-BA"` p-shifts | `PShift(:AB_BA)` or `PShift("PSAB-BA")` — all 13 Gibson shifts (`pshift_types()`) |
+| `covar=list(CovSnd=z, ...)` | `CovSnd(z)`, `CovRec(z)`, `CovInt(z)` |
 | triadic effects | `TransitiveClosure()`, `CyclicClosure()`, `SharedSender()`, `SharedReceiver()` |
 | degree effects | `SenderActivity()`, `ReceiverPopularity()`, `SendingCapacity(halflife)`, ... |
 | `coef(fit)`, `summary(fit)` | `coef(fit)`, `stderror(fit)`, `println(fit)` |
@@ -366,17 +397,20 @@ N events: 103
 Log-likelihood: -349.5015
 Converged: true
 
-Coefficients:
-  prior_interaction_outgoing      -0.0308 (SE: 0.1759)
-  prior_interaction_incoming       0.2147 (SE: 0.1655)
+                            Estimate  Std.Error  z value  Pr(>|z|)
+prior_interaction_outgoing   -0.0308     0.1759  -0.1753    0.8609
+prior_interaction_incoming    0.2147     0.1655   1.2970    0.1946
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 For a substantive REM analysis (simulate with known effects, recover
 them), see the [worked REM example](/examples/modelling-interaction-events/).
-Gibson's participation-shift (p-shift) effects and the `CovSnd`/`CovRec`/
-`CovInt` covariate blocks are not implemented yet; nodal covariate
-effects go through `SenderAttribute`/`ReceiverAttribute`/`AttributeMatch`
-instead.
+Gibson's 13 participation-shift effects are available as
+`PShift(:AB_BA)` (R names like `"PSAB-BA"` accepted), and the
+`CovSnd`/`CovRec`/`CovInt` covariate blocks work as in R; nodal covariate
+effects can also go through REM.jl's
+`SenderAttribute`/`ReceiverAttribute`/`AttributeMatch`.
 
 ## Dynamic networks: `networkDynamic` / `tsna` / `ndtv`
 
@@ -390,18 +424,20 @@ instead.
 | `network.collapse(nd, onset, terminus)` | `network_collapse(dnet, onset, terminus)` |
 | `as.networkDynamic(net)` | `as_dynamic_network(net)` |
 | `get.edge.activity(nd)` | `get_edge_activity(dnet)` |
-| `tSnaStats(nd, "gden")` | `tSnaStats(dnet, times; measures=[:density])` |
-| `tPath(nd, v=1, start=0)` | `earliestArrival(dnet, 1, 0.0)` / `shortestTemporalPath(dnet, 1, 5, 0.0)` |
-| `tReach(nd, v=1)` | `forwardReachableSet(dnet, 1, 0.0)` |
-| `tEdgeFormation(nd)` | `tEdgeFormation(dnet)` |
+| `tSnaStats(nd, "gden")` | `t_sna_stats(dnet, times; measures=[:density])` |
+| `tPath(nd, v=1, start=0)` | `earliest_arrival(dnet, 1, 0.0)` / `shortest_temporal_path(dnet, 1, 5, 0.0)` |
+| `tReach(nd, v=1)` | `forward_reachable_set(dnet, 1, 0.0)` |
+| `tEdgeFormationAt(nd, ...)` | `t_edge_formation(dnet, onset, terminus)` (also `t_edge_dissolution`, `t_edge_persistence`) |
 | `render.animation(nd)` | `render_animation(dnet; n_frames=50)` then `export_movie` / `export_gif` |
 | `render.d3movie(nd)` | `export_html(layout, "movie.html")` (self-contained HTML) |
 | `filmstrip(nd)` | `filmstrip(dnet, times)` |
 | `timeline(nd)` | `timeline_plot(dnet)` |
 
-TSNA.jl and NDTV.jl deliberately keep R tsna/ndtv's camelCase names
-(`tSnaStats`, `earliestArrival`) since those APIs *are* the migration
-target; everything else in the ecosystem is snake_case.
+TSNA.jl and NDTV.jl now follow the rest of the ecosystem: snake_case
+primary names (`t_sna_stats`, `earliest_arrival`, ...), with the R
+tsna/ndtv camelCase spellings (`tSnaStats`, `earliestArrival`,
+`transmissionTimeline`, ...) kept as exported aliases — your R muscle
+memory keeps working, but new code can be idiomatic Julia.
 
 ## What still differs from R
 
@@ -420,20 +456,16 @@ each item is also documented at the API it concerns.)
   ground. MCMLE standard errors come from the inverse Fisher information
   of the final MCMC sample and do not add statnet's separate
   MCMC-error component.
-- **`nodematch(diff=TRUE)` and `nodefactor` expand manually.** One term
-  object per attribute level (see the comprehension idiom above); R
-  expands levels automatically inside one formula term.
-- **ERGM term coverage is narrower than statnet's.** Notably missing:
-  `degree(k)`/`idegree`/`odegree` spectrum terms, `gwidegree`/
-  `gwodegree`, `gwdsp`, `nodemix`, curved-ERGM estimation
-  (`gwesp(fixed=FALSE)` — only fixed-decay geometrically weighted terms
-  exist), offsets, and `constraints=`.
-- **Directed GOF is coarser than statnet's.** `gof` reports a single
-  `:degree` distribution based on out-neighbors (no idegree/odegree
-  split), and its `:esp` distribution counts either-direction shared
-  partners even if the model used a typed (OTP/ITP/OSP/ISP) `GWESP` —
-  whereas statnet's directed GOF ESP is OTP-based. The fitted GWESP
-  *statistics* themselves match statnet's definitions.
+- **`nodematch(diff=TRUE)` expands manually.** One term object per
+  attribute level (see the comprehension idiom above); R expands levels
+  automatically inside one formula term. `NodeFactor`, `NodeMix`, and the
+  degree-count terms (`Degree(0:2)`, ...) do expand automatically at
+  model construction, as in R.
+- **ERGM term coverage is narrower than statnet's.** Still missing:
+  curved-ERGM estimation (`gwesp(fixed=FALSE)` — only fixed-decay
+  geometrically weighted terms exist), offsets, and `constraints=`.
+  (`degree`/`idegree`/`odegree`, `gwidegree`/`gwodegree`, `gwdsp`, and
+  `nodemix` landed in 0.2.)
 - **`component_dist` uses weak components** on directed networks, where
   R `sna::component.dist` defaults to `connected="strong"`.
 - **Missing data is narrower than in R.** `Network` supports missing
@@ -441,21 +473,23 @@ each item is also documented at the API it concerns.)
   pseudo-likelihood, and MCMLE *conditions on their face values* with a
   one-time warning — an approximation, not statnet's full missing-data
   MLE. Siena.jl supports RSiena's structural zeros/ones (10/11 coding)
-  in data, simulation, and moment statistics, but `NA` ties and
-  composition change are not handled in estimation. REM.jl assumes
-  fully observed event streams.
-- **Siena.jl estimates by unconditional Method of Moments only.**
-  Conditional estimation, Maximum Likelihood, and Bayesian estimation
-  are not implemented; endowment/creation effects simulate but do not
-  estimate; `include_interaction!` does not exist yet. Convergence
-  criteria and derivative estimation follow RSiena's published
-  standards (t-ratios < 0.1, `tconv.max` < 0.25, score-function
-  derivatives).
+  in data, simulation, and moment statistics, and composition change
+  (actors joining/leaving) in estimation, but `NA` ties are not handled
+  in estimation. REM.jl assumes fully observed event streams.
+- **Siena.jl estimates by Method of Moments only.** Unconditional (the
+  default) and conditional (`siena_algorithm(conditional=true)`,
+  RSiena's `cond=TRUE`) estimation are implemented; Maximum Likelihood
+  and Bayesian estimation are not. Endowment/creation effects simulate
+  but do not estimate; `include_interaction!` does not exist yet.
+  Convergence criteria and derivative estimation follow RSiena's
+  published standards (t-ratios < 0.1, `tconv.max` < 0.25,
+  score-function derivatives; conditional estimation uses
+  finite-difference derivatives).
 - **TERGM is CMPLE-only** (exact CMLE for dyad-independent formulas);
   no MCMC CMLE or EGMME.
-- **relevent gaps**: no p-shift effects, no `CovSnd`/`CovRec`/`CovInt`
-  blocks, no tie-correction for simultaneous events in the ordinal
-  likelihood (ties are ranked arbitrarily, with a warning).
+- **relevent gaps**: no tie-correction for simultaneous events in the
+  ordinal likelihood (ties are ranked arbitrarily, with a warning).
+  The 13 Gibson p-shifts and `CovSnd`/`CovRec`/`CovInt` landed in 0.2.
 
 Where R semantics and an earlier version of these packages disagreed
 (the `nodematch` `diff` keyword, directed GWESP's shared-partner
@@ -464,6 +498,13 @@ the packages now follow R; statistics that intentionally deviate carry
 different names (e.g. the legacy either-direction directed GWESP is
 `GWESP(0.5; type=:union)`, printed as `gwesp.union.fixed.0.5`, so it can
 never be confused with statnet's `gwesp.fixed.0.5`).
+
+These realignments are version-0.2 behavior changes: if you have code
+written against the 0.1 packages (rather than against R), see the
+[consolidated 0.2.0 release notes](/post/2026-07-12-changelogs-0.2.0/) —
+every package repository now carries a `CHANGELOG.md` listing its breaking
+changes with one-line migration hints (e.g.
+[ERGM.jl's](https://github.com/statistical-network-analysis-with-Julia/ERGM.jl/blob/main/CHANGELOG.md)).
 
 ## A complete worked example
 
@@ -527,11 +568,11 @@ AIC: 109.12, BIC: 117.48
 Converged: true
 
 Coefficients:
-------------------------------------------------------------
-edges                   -2.5532       0.54        0.0 ***
-nodecov.wealth           0.0105      0.005     0.0361 *
-gwesp.fixed.0.5         -0.0229     0.2741     0.9333
-------------------------------------------------------------
+                 Estimate  Std.Error  z value  Pr(>|z|)
+edges             -2.5532     0.5400  -4.7284   2.3e-06 ***
+nodecov.wealth     0.0105     0.0050   2.0962    0.0361 *
+gwesp.fixed.0.5   -0.0229     0.2741  -0.0837    0.9333
+---
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
@@ -545,8 +586,9 @@ println("coef = ", round.(coef(result), digits=4))
 println("se   = ", round.(stderror(result), digits=4))
 
 g = gof(result; n_sim=100, rng=Xoshiro(1))
+deg_panel = only(s for s in g.statistics if s.name == "degree")
 println("degree GOF p-values (degree 0-6): ",
-        round.(g.results[:degree].p_values[1:7], digits=2))
+        round.(deg_panel.p_values[1:7], digits=2))
 
 sims = simulate_ergm(result; n_sim=3, rng=Xoshiro(2))
 println("simulated densities: ", round.(gden.(sims), digits=3))
@@ -557,7 +599,7 @@ Output:
 ```
 coef = [-2.5532, 0.0105, -0.0229]
 se   = [0.54, 0.005, 0.2741]
-degree GOF p-values (degree 0-6): [1.0, 1.0, 0.54, 0.24, 1.0, 0.5, 0.62]
+degree GOF p-values (degree 0-6): [1.0, 1.0, 0.55, 0.26, 1.0, 0.51, 0.63]
 simulated densities: [0.158, 0.142, 0.142]
 ```
 

@@ -44,15 +44,15 @@ Events: 400, Observations: 22400
 Log-likelihood: -314.0359
 Converged: true
 
-Coefficients:
-------------------------------------------------------------
-Statistic                  Coef    Std.Err          z      P>|z|
-------------------------------------------------------------
-repetition               0.5949     0.1452     4.0960     0.0000 ***
-reciprocity              0.9666     0.1421     6.8035     0.0000 ***
-------------------------------------------------------------
+             Estimate  Std.Error  z value  Pr(>|z|)
+repetition     0.5949     0.1452   4.0960   4.2e-05 ***
+reciprocity    0.9666     0.1421   6.8035   1.0e-11 ***
+---
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
+
+(Note the p-values print as `4.2e-05`, not a rounded `0.0000` — the
+shared presentation layer floors underflowing p-values at `<1e-16`.)
 
 **Interpretation.** Both estimates land close to the truth
 (repetition 0.59 vs 0.6; reciprocity 0.97 vs 0.9), well within one

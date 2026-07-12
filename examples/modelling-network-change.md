@@ -41,9 +41,14 @@ Panels: 5; converged: true
 Pseudo-log-likelihood: formation -822.059, dissolution -290.224
 
 Formation:
-  edges                      -2.472 (SE: 0.0681)
+       Estimate  Std.Error   z value  Pr(>|z|)
+edges   -2.4720     0.0681  -36.3127    <1e-16 ***
+
 Dissolution (persistence):
-  edges                      0.8393 (SE: 0.1001)
+       Estimate  Std.Error  z value  Pr(>|z|)
+edges    0.8393     0.1001   8.3868    <1e-16 ***
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 **Interpretation.** Estimation recovers the generating process: the
