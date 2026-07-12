@@ -44,7 +44,19 @@ nodecov.wealth           0.0104     0.0048     0.0294 *
 gwesp.fixed.0.5          0.0333     0.1725     0.8468
 ------------------------------------------------------------
 Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Warning: this model contains dyad-dependent terms and was fit by
+maximum pseudolikelihood (MPLE). The standard errors are based on the
+naive pseudolikelihood and are suspect (typically anticonservative);
+the p-values should not be trusted. Refit with method=:mcmle, or use
+se=:bootstrap for parametric-bootstrap standard errors.
 ```
+
+Because `GWESP` is a dyad-*dependent* term, the default MPLE fit prints
+the warning above: its standard errors are naive and typically too small.
+For publishable inference refit with `method=:mcmle` (see the
+[migration guide](/migration/) for a worked MCMC-MLE fit of exactly this
+model) — here the MCMLE coefficients are nearly identical.
 
 **Interpretation.** The negative `edges` term is the baseline sparsity
 (an intercept). `nodecov.wealth` is positive and significant: each

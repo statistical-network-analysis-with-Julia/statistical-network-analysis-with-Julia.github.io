@@ -17,7 +17,7 @@ n = 8
 β = [0.6, 0.9]                      # true [repetition, reciprocity]
 stats = [Repetition(), Reciprocity()]
 dyads = [(s, r) for s in 1:n for r in 1:n if s != r]
-state = NetworkState{Float64}(n_actors=n)
+state = EventNetworkState{Float64}(n_actors=n)
 state.actors = Set(1:n)
 
 events = Event{Float64}[]

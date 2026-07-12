@@ -11,7 +11,7 @@
 
 This project provides Julia implementations of established families of models for the statistical analysis of networks. The ecosystem covers network construction, descriptive analysis, Exponential Random Graph Models (ERGMs) and their extensions, Relational Event Models (REMs), and Stochastic Actor-Oriented Models (SAOMs).
 
-All packages require **Julia 1.9+** and are MIT-licensed.
+All packages require **Julia 1.12+** and are MIT-licensed. If you know the R statnet stack or RSiena, start with the [migration guide](/migration/).
 
 ~~~
 <h3 class="section-title">Stochastic Actor-Oriented Models (SAOMs)</h3>

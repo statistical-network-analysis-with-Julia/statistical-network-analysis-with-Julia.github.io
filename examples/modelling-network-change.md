@@ -12,7 +12,7 @@ A STERGM is a specific temporal ERGM that factors each transition into a
 and recover the coefficients.
 
 ```julia
-using Network, TERGM, Random
+using Network, ERGM, TERGM, Random
 
 rng = Random.Xoshiro(7)
 init = network(30)                  # 30 actors, directed

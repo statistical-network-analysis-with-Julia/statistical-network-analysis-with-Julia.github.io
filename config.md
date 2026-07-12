@@ -1,6 +1,6 @@
 +++
 author = "Statistical Network Analysis with Julia"
-ignore = ["node_modules/", "README.md"]
+ignore = ["node_modules/", "README.md", "tools/"]
 
 generate_rss = true
 website_title = "StatNet for Julia"

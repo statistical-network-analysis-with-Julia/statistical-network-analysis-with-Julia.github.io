@@ -41,9 +41,9 @@ gden = 0.1667
 gtrans = 0.1915
 triad_census = [324, 195, 38, 3]
 
-Medici        degree/2 = 6   betweenness = 47.5
-Guadagni      degree/2 = 4   betweenness = 23.17
-Albizzi       degree/2 = 3   betweenness = 19.33
+Medici        degree = 6   betweenness = 47.5
+Guadagni      degree = 4   betweenness = 23.17
+Albizzi       degree = 3   betweenness = 19.33
 ```
 
 **Interpretation.** Only 16.7% of possible marriage ties exist, and just
