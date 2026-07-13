@@ -11,6 +11,10 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # The deploy step pushes the built site to gh-pages. Without this the job's
+    # GITHUB_TOKEN is read-only and the push is rejected with a 403.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
