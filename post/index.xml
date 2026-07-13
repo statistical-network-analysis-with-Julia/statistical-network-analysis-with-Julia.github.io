@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>StatNet for Julia</title>
+  <link>https://statistical-network-analysis-with-julia.github.io</link>
+  <description>A Julia ecosystem implementing a selection of families of models for the statistical analysis of networks.</description>
+  <generator>Franklin.jl</generator>
+  <atom:link href="https://statistical-network-analysis-with-julia.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+<item>
+  <title>0.2.0 across the ecosystem: consolidated release notes</title>
+  <link>https://statistical-network-analysis-with-julia.github.io/post/2026-07-12-changelogs-0.2.0/index.html</link>
+  <description>Every package now ships a Keep-a-Changelog CHANGELOG.md with its 0.2.0 &#40;unreleased&#41; section. One page collecting the links, the ecosystem-wide changes, and every breaking change with its migration hint.</description>
+  <pubDate>2026-07-12</pubDate>
+  <guid>https://statistical-network-analysis-with-julia.github.io/post/2026-07-12-changelogs-0.2.0/index.html</guid>
+</item>
+<item>
+  <title>Feature-surface completion, naming harmonization, and a polish sprint</title>
+  <link>https://statistical-network-analysis-with-julia.github.io/post/2026-07-12-p2-polish-sprint/index.html</link>
+  <description>The P2 sprint lands: the remaining statnet/relevent/RSiena feature gaps closed, standardized fit_&lt;model&gt; entry points with a shared result presentation, numerical and performance fixes across the stack, and cleaner installs.</description>
+  <pubDate>2026-07-12</pubDate>
+  <guid>https://statistical-network-analysis-with-julia.github.io/post/2026-07-12-p2-polish-sprint/index.html</guid>
+</item>
+<item>
+  <title>Ecosystem-wide correctness pass and R validation</title>
+  <link>https://statistical-network-analysis-with-julia.github.io/post/2026-07-07-ecosystem-correctness-pass/index.html</link>
+  <description>All packages received a coordinated correctness pass, with estimators rebuilt where needed and results validated against the R reference implementations &#40;ergm, sna, ergm.rank, RSiena&#41;.</description>
+  <pubDate>2026-07-07</pubDate>
+  <guid>https://statistical-network-analysis-with-julia.github.io/post/2026-07-07-ecosystem-correctness-pass/index.html</guid>
+</item>
+</channel></rss>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta content="index, follow" name="robots">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+  
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <title>0.2.0 across the ecosystem: consolidated release notes · StatNet for Julia</title>
+  
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+  <div class="container">
+    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/models/">Families of Models</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/examples/">Examples</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-red active" href="/post/">News</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="page-content">
+<p>The three review-driven sprints — the <a href="/post/2026-07-07-ecosystem-correctness-pass/">correctness pass</a> and the <a href="/post/2026-07-12-p2-polish-sprint/">polish sprint</a> — are now documented release-note-style: <strong>every package repository carries a <a href="https://keepachangelog.com/">Keep a Changelog</a>-format <code>CHANGELOG.md</code></strong> whose <code>&#91;0.2.0&#93; - Unreleased</code> section covers everything since the 0.1.0 baseline, with every breaking change carrying a one-line migration hint.</p>
+<h2 id="the_per-package_changelogs"><a href="#the_per-package_changelogs" class="header-anchor">The per-package changelogs</a></h2>
+<table><tr><th align="left">Package</th><th align="left">0.2.0 in one line</th></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl/blob/main/CHANGELOG.md">Networks.jl</a></td><td align="left">Compile-time directedness &#40;<code>Network&#123;T,D&#125;</code>&#41;, attribute-preserving <code>copy</code>, missing-dyad masks, bundled datasets, shared result presentation</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl/blob/main/CHANGELOG.md">SNA.jl</a></td><td align="left">cliques/clustering/degree bugs fixed, Graphs.jl generics extended &#40;not shadowed&#41;, QAP inference and <code>centralization</code>, R-<code>sna</code> semantics</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGM.jl/blob/main/CHANGELOG.md">ERGM.jl</a></td><td align="left">Attribute-preserving copies &#40;the critical fix&#41;, statnet-grade MCMLE, directed <code>GWESP</code> → <code>:OTP</code>, <code>NodeMatch&#40;diff&#61;true&#41;</code> → per-level homophily, new terms, O&#40;deg&#41; change stats</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/blob/main/CHANGELOG.md">ERGMCount.jl</a></td><td align="left">ergm.count-faithful references, real pseudo-likelihood, Gibbs sampler actually uses change statistics</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl/blob/main/CHANGELOG.md">ERGMEgo.jl</a></td><td align="left">Real Krivitsky–Morris moment matching &#40;placeholders gone&#41;, egodata-style two/three-table ingestion, public sampler API</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl/blob/main/CHANGELOG.md">ERGMMulti.jl</a></td><td align="left">ergm.multi-style block-diagonal model, integer-indexed layers, real within-layer MPLE</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/blob/main/CHANGELOG.md">ERGMRank.jl</a></td><td align="left">ergm.rank complete-ordering model, flipped rank orientation, swap-based pseudo-likelihood, new term set</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl/blob/main/CHANGELOG.md">ERGMUserterms.jl</a></td><td align="left">Add-direction <code>change_stat</code> contract for custom terms; validation harness enforces it</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl/blob/main/CHANGELOG.md">TERGM.jl</a></td><td align="left">CMPLE on attribute-preserving Y⁺/Y⁻ auxiliaries, block-bootstrap SEs, <code>GOFResult</code>-based GOF</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl/blob/main/CHANGELOG.md">Siena.jl</a></td><td align="left">RSiena-parity inference &#40;score derivatives, Polyak–Ruppert, t &lt; 0.1&#41;, conditional estimation, Networks.jl bridge, threaded phase 3</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl/blob/main/CHANGELOG.md">REM.jl</a></td><td align="left"><code>AttributeMatch</code>/<code>EventNetworkState</code> renames, lazy decay &#40;O&#40;1&#41; updates&#41;, corrected control sampling</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Relevent.jl/blob/main/CHANGELOG.md">Relevent.jl</a></td><td align="left">13 Gibson p-shifts, <code>CovSnd</code>/<code>CovRec</code>/<code>CovInt</code>, real MLE fitters, streaming statistics</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl/blob/main/CHANGELOG.md">NetworkDynamic.jl</a></td><td align="left">R-faithful point-spell semantics, <code>deactivate&#33;</code>, stable-ID extraction, mutation tracking</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/TSNA.jl/blob/main/CHANGELOG.md">TSNA.jl</a></td><td align="left">snake_case names &#40;camelCase aliases kept&#41;, heap-based earliest arrival, R-<code>tsna</code>-aligned return types</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl/blob/main/CHANGELOG.md">NDTV.jl</a></td><td align="left">Stable vertex identity across frames, real KK/MDS layout, working SVG/movie/HTML export</td></tr></table>
+<h2 id="changes_shared_by_every_package"><a href="#changes_shared_by_every_package" class="header-anchor">Changes shared by every package</a></h2>
+<ul>
+<li><p><strong>Julia 1.12 is the minimum</strong> &#40;the docs previously claimed 1.9&#43;&#41;.</p>
+</li>
+<li><p><strong>Package UUIDs were regenerated</strong> — the 0.1.0 placeholders are gone, so environments that recorded the old UUIDs need a fresh resolve.</p>
+</li>
+<li><p><strong>StatsAPI everywhere</strong>: <code>coef</code>, <code>stderror</code>, <code>vcov</code> &#40;and friends&#41; are methods of the shared generics on every fitted-model type, so loading any two model packages together — or <code>using ERGM, StatsBase</code> — no longer breaks the verb API.</p>
+</li>
+<li><p><strong>One <code>gof</code> generic, one coefficient table</strong>: every fit prints through Networks.jl&#39;s shared presentation layer, and goodness-of-fit returns <code>Networks.GOFResult</code> with <code>&#40;1&#43;k&#41;/&#40;N&#43;1&#41;</code> Monte-Carlo p-values.</p>
+</li>
+<li><p><strong>Reproducibility</strong>: <code>rng::AbstractRNG</code> keywords on sampling/fitting paths, with thread-count-independent seeding where work is parallelized.</p>
+</li>
+</ul>
+<h2 id="breaking_changes_at_a_glance"><a href="#breaking_changes_at_a_glance" class="header-anchor">Breaking changes at a glance</a></h2>
+<p>The full list, each with a migration hint, lives in the per-package changelogs; these are the ones most likely to touch existing scripts:</p>
+<ul>
+<li><p><strong>ERGM.jl</strong> — directed <code>GWESP</code> &#40;and <code>GWDSP</code>&#41; default to statnet&#39;s <code>:OTP</code> shared-partner type; the old either-direction statistic is <code>type&#61;:union</code>, relabeled <code>gwesp.union.fixed.&lt;decay&gt;</code>. <code>NodeMatch&#40;attr; diff&#61;true&#41;</code> now means per-level differential homophily &#40;as in R&#41;; the old mismatch count is the new <code>NodeMismatch</code> term. <code>NodeFactor</code> drops the first level by default &#40;<code>base&#61;0</code> keeps all&#41;. <code>gof</code> returns <code>Networks.GOFResult</code>; <code>mcmc_diagnostics</code> throws on MPLE fits; custom terms must use the add-direction <code>change_stat</code> convention.</p>
+</li>
+<li><p><strong>Networks.jl</strong> — <code>Network&#123;T&#125;</code> became <code>Network&#123;T,D&#125;</code> &#40;one-parameter annotations still work; <code>net.directed</code> is read-only&#41;; <code>Graphs.is_directed</code> is truthful; <code>Graphs.is_bipartite</code> is now graph-theoretic, with the two-mode metadata flag renamed <code>is_two_mode</code>; DataFrames methods moved behind a package extension.</p>
+</li>
+<li><p><strong>TERGM.jl</strong> — <code>stergm_gof</code> returns <code>Networks.GOFResult</code> instead of a NamedTuple; formula fields renamed to <code>formation</code>/<code>dissolution</code>; simulation takes coefficients positionally; the <code>FormationTerm</code>/<code>DissolutionTerm</code> wrappers and <code>EdgeAge</code>/<code>Memory</code>/ <code>TimeLag</code> terms are gone.</p>
+</li>
+<li><p><strong>REM.jl</strong> — <code>NodeMatch</code> → <code>AttributeMatch</code> and <code>NetworkState</code> → <code>EventNetworkState</code> &#40;no aliases&#41;; <code>has_edge</code> is no longer exported &#40;qualify as <code>REM.has_edge</code>&#41;; control sampling is now without replacement.</p>
+</li>
+<li><p><strong>SNA.jl</strong> — undirected <code>degree_centrality</code> single-counts &#40;values halve&#41;; <code>betweenness_centrality</code> defaults to raw scores; <code>reciprocity</code>, <code>mutuality</code>, <code>hierarchy</code>, and global <code>transitivity</code> follow R <code>sna</code> semantics.</p>
+</li>
+<li><p><strong>Siena.jl</strong> — convergence requires every |t| &lt; 0.1 plus <code>tconv.max</code> &lt; 0.25 &#40;fits that 0.1.0 called converged may honestly report unconverged&#41;; <code>GOFResult</code> renamed <code>SienaGOFResult</code>; divergence is flagged instead of silently clamped.</p>
+</li>
+<li><p><strong>ERGMMulti.jl / ERGMRank.jl / ERGMEgo.jl</strong> — data models rebuilt to match their R counterparts &#40;integer-indexed layers; complete-ordering rank matrices with flipped orientation; egodata-style tables&#41;, so 0.1 model scripts need the rewrites described in their changelogs.</p>
+</li>
+<li><p><strong>TSNA.jl / NDTV.jl</strong> — camelCase names survive as aliases, but several return types changed &#40;e.g. <code>temporal_distance</code> returns <code>nothing</code> when unreachable; layouts are keyed by stable vertex IDs&#41;.</p>
+</li>
+</ul>
+<p>If you are coming from R, the <a href="/migration/">Coming from statnet / RSiena</a> guide reflects all of the above and translates workflows verb by verb.</p>
+</div><!-- .page-content -->
+<footer class="mt-auto text-center text-muted py-4 border-top">
+  <div class="container">
+    <p class="mb-1">
+      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
+      &middot; MIT License
+    </p>
+    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+(function() {
+  var sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  var links = sidebar.querySelectorAll('a[href^="#"]');
+  if (!links.length) return;
+  var sections = [];
+  links.forEach(function(link) {
+    var id = link.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ el: el, link: link });
+  });
+  function update() {
+    var scrollY = window.scrollY + 80;
+    var current = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>

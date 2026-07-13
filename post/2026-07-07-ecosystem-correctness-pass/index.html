@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta content="index, follow" name="robots">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+  
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <title>Ecosystem-wide correctness pass and R validation · StatNet for Julia</title>
+  
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+  <div class="container">
+    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/models/">Families of Models</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/examples/">Examples</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-red active" href="/post/">News</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="page-content">
+<p>A coordinated correctness pass has landed across every package in the ecosystem. Highlights:</p>
+<ul>
+<li><p><strong>Validation against the R reference implementations.</strong> ERGM.jl now reproduces R <code>ergm</code> 4.12 MPLE coefficients to six decimals on the Florentine and Sampson benchmarks; SNA.jl matches <code>sna</code> 2.8 on the full battery of graph-level indices and centralities &#40;including the 16-class triad census&#41;; ERGMRank.jl matches <code>ergm.rank</code> 4.1.2 statistics exactly; and Siena.jl reproduces RSiena target statistics and <code>siena07</code> estimates on the classic <code>s50</code> data.</p>
+</li>
+<li><p><strong>Estimation engines rebuilt</strong> where reviews found gaps: count-data MPLE with the reference measure in the likelihood &#40;ERGMCount.jl&#41;, the Krivitsky–Handcock formation/dissolution construction &#40;TERGM.jl&#41;, the Krivitsky–Morris pseudo-population pipeline &#40;ERGMEgo.jl&#41;, block-diagonal multilayer models with offsets &#40;ERGMMulti.jl&#41;, full-risk-set ordinal and interval-timing estimators &#40;Relevent.jl&#41;, and interval-semantics time-respecting paths &#40;TSNA.jl&#41;.</p>
+</li>
+<li><p><strong>Test suites</strong> now cover estimator recovery on simulated ground truth in every modeling package, and golden-master values from the R packages are pinned in the tests.</p>
+</li>
+</ul>
+<p>The <a href="/examples/">Examples</a> have been rewritten to be fully runnable, with real data, printed output, and interpretation.</p>
+</div><!-- .page-content -->
+<footer class="mt-auto text-center text-muted py-4 border-top">
+  <div class="container">
+    <p class="mb-1">
+      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
+      &middot; MIT License
+    </p>
+    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+(function() {
+  var sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  var links = sidebar.querySelectorAll('a[href^="#"]');
+  if (!links.length) return;
+  var sections = [];
+  links.forEach(function(link) {
+    var id = link.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ el: el, link: link });
+  });
+  function update() {
+    var scrollY = window.scrollY + 80;
+    var current = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>

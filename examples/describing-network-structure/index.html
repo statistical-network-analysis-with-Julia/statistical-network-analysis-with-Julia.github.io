@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta content="index, follow" name="robots">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+ 
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <title>Describing Network Structure · StatNet for Julia</title>
+  
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+  <div class="container">
+    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/models/">Families of Models</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple active" href="/examples/">Examples</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/post/">News</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="page-content">
+<h1 id="describing_network_structure"><a href="#describing_network_structure" class="header-anchor">Describing Network Structure</a></h1>
+<p>Compute density, transitivity, the triad census, and centrality scores with <a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl">SNA.jl</a>, using a classic dataset: Padgett&#39;s network of marriage ties among 16 Renaissance Florentine families. Every measure below matches R <code>sna</code> on the same data &#40;the package&#39;s test suite pins these values&#41;.</p>
+<pre><code class="language-julia">using Networks, SNA
+
+# Padgett&#39;s Florentine marriage network: 16 families, 20 marriage ties
+families &#61; &#91;&quot;Acciaiuoli&quot;, &quot;Albizzi&quot;, &quot;Barbadori&quot;, &quot;Bischeri&quot;, &quot;Castellani&quot;,
+            &quot;Ginori&quot;, &quot;Guadagni&quot;, &quot;Lamberteschi&quot;, &quot;Medici&quot;, &quot;Pazzi&quot;,
+            &quot;Peruzzi&quot;, &quot;Pucci&quot;, &quot;Ridolfi&quot;, &quot;Salviati&quot;, &quot;Strozzi&quot;, &quot;Tornabuoni&quot;&#93;
+net &#61; network&#40;16; directed&#61;false&#41;
+ties &#61; &#91;&#40;1, 9&#41;, &#40;2, 6&#41;, &#40;2, 7&#41;, &#40;2, 9&#41;, &#40;3, 5&#41;, &#40;3, 9&#41;, &#40;4, 7&#41;, &#40;4, 11&#41;,
+        &#40;4, 15&#41;, &#40;5, 11&#41;, &#40;5, 15&#41;, &#40;7, 8&#41;, &#40;7, 16&#41;, &#40;9, 13&#41;, &#40;9, 14&#41;,
+        &#40;9, 16&#41;, &#40;10, 14&#41;, &#40;11, 15&#41;, &#40;13, 15&#41;, &#40;13, 16&#41;&#93;
+for &#40;i, j&#41; in ties
+    add_edge&#33;&#40;net, i, j&#41;
+end
+
+# Graph-level indices
+gden&#40;net&#41;          # density
+gtrans&#40;net&#41;        # transitivity
+triad_census&#40;net&#41;  # undirected triad census &#40;0, 1, 2, 3 edges&#41;
+
+# Vertex-level centrality
+deg &#61; degree_centrality&#40;net&#41;
+bet &#61; betweenness_centrality&#40;net&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">gden &#61; 0.1667
+gtrans &#61; 0.1915
+triad_census &#61; &#91;324, 195, 38, 3&#93;
+
+Medici        degree &#61; 6   betweenness &#61; 47.5
+Guadagni      degree &#61; 4   betweenness &#61; 23.17
+Albizzi       degree &#61; 3   betweenness &#61; 19.33</code></pre>
+<p><strong>Interpretation.</strong> Only 16.7&#37; of possible marriage ties exist, and just 19&#37; of open two-paths close into triangles — marriage alliances spread across families rather than clustering. The centrality ranking recovers the famous result: the <strong>Medici</strong> dominate both degree &#40;6 marriage ties&#41; and betweenness &#40;47.5, twice the runner-up Guadagni&#41;. They sit <em>between</em> the other families, brokering alliances that never form directly — the structural basis Padgett &amp; Ansell identified for the rise of the Medici.</p>
+<h2 id="centralization_and_comparing_two_relations"><a href="#centralization_and_comparing_two_relations" class="header-anchor">Centralization and comparing two relations</a></h2>
+<p>How concentrated is the network on its most central family, and is the marriage relation associated with the <em>business</em> relation among the same families? Freeman centralization and QAP inference &#40;both new in the 0.2 series, following R <code>sna</code>&#41; answer these:</p>
+<pre><code class="language-julia">using Statistics, Random
+
+flo &#61; load_dataset&#40;:florentine_marriage&#41;   # same network, bundled
+biz &#61; load_dataset&#40;:florentine_business&#41;   # business ties, same families
+
+# Freeman graph centralization of a vertex centrality measure
+centralization&#40;flo, :degree&#41;        # 0.2667
+centralization&#40;flo, :betweenness&#41;   # 0.3835
+
+# QAP test: is the graph correlation between the two relations larger
+# than expected under random relabelling of the families?
+gcor&#40;a, b&#41; &#61; cor&#40;vec&#40;a&#41;, vec&#40;b&#41;&#41;
+qt &#61; qaptest&#40;gcor, flo, biz; reps&#61;1000, rng&#61;Xoshiro&#40;1&#41;&#41;
+
+# Network regression: predict business ties from marriage ties
+fit &#61; netlogit&#40;biz, flo; reps&#61;1000, rng&#61;Xoshiro&#40;2&#41;&#41;
+println&#40;fit&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">Network Logit Model &#40;QAP&#41;
+&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;
+Null hypothesis: qapspp &#40;1000 replications&#41;
+Dyadic observations: 120 &#40;undirected dyads&#41;
+
+                  Estimate     z-value  Pr&#40;&gt;&#61;|stat|&#41;
+--------------------------------------------------------
+&#40;intercept&#41;      -2.586689     -6.5999           0.0 ***
+x1                2.181224      3.6256           0.0 ***
+--------------------------------------------------------
+Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Null deviance: 166.36, Residual deviance: 77.65
+AIC: 81.65, BIC: 87.22</code></pre>
+<p>The observed graph correlation &#40;0.38&#41; exceeds every one of the 1000 permutation draws &#40;<code>qt.pgreq &#61;&#61; 0.0</code>&#41;, and the logit coefficient on marriage says a marriage tie multiplies the odds of a business tie by about <code>exp&#40;2.18&#41; ≈ 9</code> — marriage and business alliances went together in Renaissance Florence. The permutation nulls &#40;<code>nullhyp&#61;:qapspp</code>, Dekker&#39;s double semi-partialing&#41; respect the dyadic dependence that would invalidate a classical logistic test.</p>
+<p><strong>Next steps:</strong> model <em>why</em> this structure arose with an <a href="/examples/modelling-cross-sectional-data/">ERGM</a>, or read about the model families on the <a href="/models/">theory page</a>.</p>
+</div><!-- .page-content -->
+<footer class="mt-auto text-center text-muted py-4 border-top">
+  <div class="container">
+    <p class="mb-1">
+      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
+      &middot; MIT License
+    </p>
+    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
+<script>hljs.highlightAll();</script>
+ 
+<script>
+(function() {
+  var sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  var links = sidebar.querySelectorAll('a[href^="#"]');
+  if (!links.length) return;
+  var sections = [];
+  links.forEach(function(link) {
+    var id = link.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ el: el, link: link });
+  });
+  function update() {
+    var scrollY = window.scrollY + 80;
+    var current = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>

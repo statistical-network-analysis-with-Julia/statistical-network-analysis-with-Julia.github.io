@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta content="index, follow" name="robots">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+ 
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <title>Coming from statnet / RSiena · StatNet for Julia</title>
+  
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+  <div class="container">
+    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/models/">Families of Models</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/examples/">Examples</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green active" href="/migration/">Coming from R</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/post/">News</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="page-content">
+<h1 id="coming_from_statnet_rsiena"><a href="#coming_from_statnet_rsiena" class="header-anchor">Coming from statnet / RSiena</a></h1>
+<p>This page maps the R workflows you already know — statnet&#39;s <code>network</code>/<code>sna</code>/<code>ergm</code> stack, <code>RSiena</code>, and <code>relevent</code> — onto their Julia equivalents, package by package and verb by verb. It ends with a <a href="#a_complete_worked_example">complete worked example</a> &#40;loading a classic dataset, describing it, fitting an ERGM by MCMC MLE, checking fit&#41; whose output was produced by running the code on this page, and an honest list of <a href="#what_still_differs_from_r">what still differs from R</a>.</p>
+<p>Three conventions carry most of the translation:</p>
+<ol>
+<li><p><strong>Terms are typed values, not formula symbols.</strong> Where R writes <code>net ~ edges &#43; mutual &#43; nodecov&#40;&quot;wealth&quot;&#41;</code>, Julia passes a vector of term objects: <code>&#91;Edges&#40;&#41;, Mutual&#40;&#41;, NodeCov&#40;:wealth&#41;&#93;</code>. Term options are keyword arguments to the constructor &#40;<code>GWESP&#40;0.5; type&#61;:OSP&#41;</code>&#41;.</p>
+</li>
+<li><p><strong>Attribute names are <code>Symbol</code>s</strong> &#40;<code>:wealth</code>&#41;, not strings, and R&#39;s dot-separated names become snake_case &#40;<code>network.extract</code> → <code>network_extract</code>, <code>component.dist</code> → <code>component_dist</code>&#41;.</p>
+</li>
+<li><p><strong>Model accessors are the shared StatsAPI generics.</strong> <code>coef</code>, <code>stderror</code>, <code>vcov</code>, <code>loglikelihood</code>, <code>aic</code>, <code>bic</code> work on every fitted model object in the ecosystem and compose with <code>StatsBase</code>, <code>GLM</code>, etc. — <code>using ERGM, Siena, REM</code> together is safe.</p>
+</li>
+</ol>
+<div class="franklin-toc"><ol><li><a href="#the_package_map">The package map</a></li><li><a href="#networks_network_networksjl">Networks: <code>network</code> → Networks.jl</a></li><li><a href="#describing_networks_sna_snajl">Describing networks: <code>sna</code> → SNA.jl</a></li><li><a href="#ergms_ergm_ergmjl">ERGMs: <code>ergm</code> → ERGM.jl</a><ol><li><a href="#term_translation">Term translation</a></li><li><a href="#estimation_and_post-estimation">Estimation and post-estimation</a></li><li><a href="#the_ergm_variants">The ERGM variants</a></li></ol></li><li><a href="#temporal_ergms_tergm_tergmjl">Temporal ERGMs: <code>tergm</code> → TERGM.jl</a></li><li><a href="#saoms_rsiena_sienajl">SAOMs: <code>RSiena</code> → Siena.jl</a></li><li><a href="#relational_events_relevent_remjl_releventjl">Relational events: <code>relevent</code> → REM.jl / Relevent.jl</a></li><li><a href="#dynamic_networks_networkdynamic_tsna_ndtv">Dynamic networks: <code>networkDynamic</code> / <code>tsna</code> / <code>ndtv</code></a></li><li><a href="#what_still_differs_from_r">What still differs from R</a></li><li><a href="#a_complete_worked_example">A complete worked example</a></li></ol></div>
+<h2 id="the_package_map"><a href="#the_package_map" class="header-anchor">The package map</a></h2>
+<table><tr><th align="left">R package</th><th align="left">Julia package</th><th align="left">Main entry points</th></tr><tr><td align="left"><code>network</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl">Networks.jl</a></td><td align="left"><code>network</code>, <code>network_from_matrix</code>, <code>load_dataset</code></td></tr><tr><td align="left"><code>sna</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl">SNA.jl</a></td><td align="left"><code>degree_centrality</code>, <code>gden</code>, <code>triad_census</code>, ...</td></tr><tr><td align="left"><code>ergm</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGM.jl">ERGM.jl</a></td><td align="left"><code>ergm</code> / <code>fit_ergm</code>, <code>gof</code>, <code>simulate_ergm</code></td></tr><tr><td align="left"><code>ergm.count</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl">ERGMCount.jl</a></td><td align="left"><code>ergm_count</code></td></tr><tr><td align="left"><code>ergm.ego</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl">ERGMEgo.jl</a></td><td align="left"><code>ergm_ego</code>, <code>as_egodata</code></td></tr><tr><td align="left"><code>ergm.multi</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl">ERGMMulti.jl</a></td><td align="left"><code>ergm_multi</code></td></tr><tr><td align="left"><code>ergm.rank</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl">ERGMRank.jl</a></td><td align="left"><code>ergm_rank</code>, <code>as_rank_network</code></td></tr><tr><td align="left"><code>ergm.userterms</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl">ERGMUserterms.jl</a></td><td align="left"><code>@ergm_term</code>, <code>validate_term</code>, <code>test_term</code></td></tr><tr><td align="left"><code>tergm</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl">TERGM.jl</a></td><td align="left"><code>stergm</code>, <code>stergm_gof</code>, <code>simulate_network_sequence</code></td></tr><tr><td align="left"><code>RSiena</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl">Siena.jl</a></td><td align="left"><code>siena_data</code>, <code>get_effects</code>, <code>fit_siena</code> / <code>siena07</code>, <code>siena_gof</code></td></tr><tr><td align="left"><code>relevent</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl">REM.jl</a> &#43; <a href="https://github.com/statistical-network-analysis-with-Julia/Relevent.jl">Relevent.jl</a></td><td align="left"><code>fit_rem</code>; <code>fit_relevent</code> / <code>rem_dyad</code></td></tr><tr><td align="left"><code>networkDynamic</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl">NetworkDynamic.jl</a></td><td align="left"><code>DynamicNetwork</code>, <code>activate&#33;</code>, <code>network_extract</code></td></tr><tr><td align="left"><code>tsna</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/TSNA.jl">TSNA.jl</a></td><td align="left"><code>t_sna_stats</code>, <code>earliest_arrival</code>, <code>forward_reachable_set</code></td></tr><tr><td align="left"><code>ndtv</code></td><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl">NDTV.jl</a></td><td align="left"><code>render_animation</code>, <code>filmstrip</code>, <code>timeline_plot</code></td></tr></table>
+<p>The packages are not yet in the General registry: either add them by URL in dependency order &#40;Networks.jl first, then SNA/ERGM/NetworkDynamic, then their dependents — each README has the ordered <code>Pkg.add&#40;url&#61;...&#41;</code> block&#41;, or clone all repositories side by side and start Julia with the root workspace project &#40;<code>julia --project&#61;.</code> in the clone root&#41;, which wires every package together via <code>&#91;sources&#93;</code> path dependencies. A LocalRegistry is being prepared &#40;this site repository&#39;s <code>tools/setup_registry.jl</code>, run after the packages are committed/tagged&#41; so that plain <code>Pkg.add&#40;&quot;ERGM&quot;&#41;</code> will eventually work. All packages require Julia 1.12&#43;.</p>
+<p>A convenience worth knowing from day one: <code>using ERGM</code> &#40;and the ERGM variants&#41; re-exports the whole Networks.jl API, so a single <code>using ERGM</code> gives you <code>network</code>, <code>add_edge&#33;</code>, attribute setters, and <code>load_dataset</code>.</p>
+<h2 id="networks_network_networksjl"><a href="#networks_network_networksjl" class="header-anchor">Networks: <code>network</code> → Networks.jl</a></h2>
+<table><tr><th align="left">R &#40;<code>network</code>&#41;</th><th align="left">Julia &#40;Networks.jl&#41;</th></tr><tr><td align="left"><code>network.initialize&#40;16&#41;</code></td><td align="left"><code>network&#40;16&#41;</code> &#40;directed by default, like R&#41;</td></tr><tr><td align="left"><code>network&#40;16, directed&#61;FALSE&#41;</code></td><td align="left"><code>network&#40;16; directed&#61;false&#41;</code></td></tr><tr><td align="left"><code>network&#40;A, directed&#61;FALSE&#41;</code></td><td align="left"><code>network_from_matrix&#40;A; directed&#61;false&#41;</code></td></tr><tr><td align="left"><code>as.network&#40;el, matrix.type&#61;&quot;edgelist&quot;&#41;</code></td><td align="left"><code>network_from_edgelist&#40;el&#41;</code></td></tr><tr><td align="left"><code>add.edges&#40;net, 1, 9&#41;</code></td><td align="left"><code>add_edge&#33;&#40;net, 1, 9&#41;</code></td></tr><tr><td align="left"><code>delete.edges&#40;...&#41;</code></td><td align="left"><code>rem_edge&#33;&#40;net, 1, 9&#41;</code></td></tr><tr><td align="left"><code>net &#37;v&#37; &quot;wealth&quot; &lt;- w</code></td><td align="left"><code>set_vertex_attribute&#33;&#40;net, :wealth, w&#41;</code></td></tr><tr><td align="left"><code>net &#37;v&#37; &quot;wealth&quot;</code></td><td align="left"><code>vertex_attribute_vector&#40;net, :wealth, Int&#41;</code></td></tr><tr><td align="left"><code>get.vertex.attribute&#40;net, &quot;wealth&quot;&#41;&#91;9&#93;</code></td><td align="left"><code>get_vertex_attribute&#40;net, :wealth, 9&#41;</code></td></tr><tr><td align="left"><code>set.edge.attribute&#40;net, &quot;w&quot;, 3, e&#41;</code></td><td align="left"><code>set_edge_attribute&#33;&#40;net, :w, i, j, 3&#41;</code></td></tr><tr><td align="left"><code>network.size / network.edgecount / network.density</code></td><td align="left"><code>network_size</code> / <code>network_edgecount</code> / <code>network_density</code> &#40;or <code>nv</code>, <code>ne</code>&#41;</td></tr><tr><td align="left"><code>as.matrix&#40;net&#41;</code></td><td align="left"><code>as_matrix&#40;net&#41;</code></td></tr><tr><td align="left"><code>as.edgelist&#40;net&#41;</code></td><td align="left"><code>as_edgelist&#40;net&#41;</code></td></tr><tr><td align="left"><code>read.paj&#40;&quot;flo.net&quot;&#41;</code></td><td align="left"><code>read_pajek&#40;&quot;flo.net&quot;&#41;</code></td></tr><tr><td align="left"><code>net&#91;1, 2&#93; &lt;- NA</code> &#40;missing dyad&#41;</td><td align="left"><code>set_missing_dyad&#33;&#40;net, 1, 2&#41;</code></td></tr><tr><td align="left"><code>data&#40;flomarriage&#41;</code></td><td align="left"><code>load_dataset&#40;:florentine_marriage&#41;</code></td></tr></table>
+<p><code>load_dataset</code> also bundles <code>:florentine_business</code> &#40;statnet <code>flobusiness</code>&#41; and <code>:sampson</code> &#40;statnet <code>samplike</code>&#41;, with the same vertex attributes as the R originals.</p>
+<p><code>Network</code> implements the Graphs.jl <code>AbstractGraph</code> interface with directedness as a <em>type parameter</em> &#40;<code>Network&#123;Int, false&#125;</code> is undirected&#41;, so Graphs.jl generics dispatch correctly on it.</p>
+<h2 id="describing_networks_sna_snajl"><a href="#describing_networks_sna_snajl" class="header-anchor">Describing networks: <code>sna</code> → SNA.jl</a></h2>
+<table><tr><th align="left">R &#40;<code>sna</code>&#41;</th><th align="left">Julia &#40;SNA.jl&#41;</th></tr><tr><td align="left"><code>degree&#40;net, gmode&#61;&quot;graph&quot;&#41;</code></td><td align="left"><code>degree_centrality&#40;net&#41;</code> &#40;single-counted on undirected networks, like R&#41;</td></tr><tr><td align="left"><code>degree&#40;net, cmode&#61;&quot;indegree&quot;&#41;</code></td><td align="left"><code>degree_centrality&#40;net; mode&#61;:in&#41;</code></td></tr><tr><td align="left"><code>betweenness&#40;net&#41;</code></td><td align="left"><code>betweenness_centrality&#40;net&#41;</code></td></tr><tr><td align="left"><code>closeness&#40;net&#41;</code></td><td align="left"><code>closeness_centrality&#40;net&#41;</code></td></tr><tr><td align="left"><code>evcent&#40;net&#41;</code></td><td align="left"><code>eigenvector_centrality&#40;net&#41;</code></td></tr><tr><td align="left"><code>bonpow&#40;net&#41;</code></td><td align="left"><code>bonacich_power&#40;net&#41;</code></td></tr><tr><td align="left"><code>gden&#40;net&#41;</code></td><td align="left"><code>gden&#40;net&#41;</code> &#40;alias: <code>density</code>&#41;</td></tr><tr><td align="left"><code>grecip&#40;net&#41;</code></td><td align="left"><code>grecip&#40;net&#41;</code></td></tr><tr><td align="left"><code>gtrans&#40;net&#41;</code></td><td align="left"><code>gtrans&#40;net&#41;</code> &#40;alias: <code>transitivity</code>&#41;</td></tr><tr><td align="left"><code>mutuality&#40;net&#41;</code></td><td align="left"><code>mutuality&#40;net&#41;</code></td></tr><tr><td align="left"><code>dyad.census&#40;net&#41;</code></td><td align="left"><code>dyad_census&#40;net&#41;</code></td></tr><tr><td align="left"><code>triad.census&#40;net&#41;</code></td><td align="left"><code>triad_census&#40;net&#41;</code> &#40;edge-driven Batagelj–Mrvar algorithm&#41;</td></tr><tr><td align="left"><code>centralization&#40;net, degree&#41;</code></td><td align="left"><code>centralization&#40;net, :degree&#41;</code> &#40;also <code>:betweenness</code>, <code>:closeness</code>, <code>:eigenvector</code>&#41;</td></tr><tr><td align="left"><code>qaptest&#40;list&#40;g1, g2&#41;, gcor, g1&#61;1, g2&#61;2&#41;</code></td><td align="left"><code>qaptest&#40;gcor, g1, g2; reps&#61;1000&#41;</code></td></tr><tr><td align="left"><code>netlm&#40;y, x&#41;</code></td><td align="left"><code>netlm&#40;y, x&#41;</code> &#40;Dekker DSP default, <code>nullhyp&#61;:qapy/:qapx/:classical</code>&#41;</td></tr><tr><td align="left"><code>netlogit&#40;y, x&#41;</code></td><td align="left"><code>netlogit&#40;y, x&#41;</code></td></tr><tr><td align="left"><code>geodist&#40;net&#41;</code></td><td align="left"><code>geodesic_distance&#40;net&#41;</code></td></tr><tr><td align="left"><code>component.dist&#40;net&#41;</code></td><td align="left"><code>component_dist&#40;net&#41;</code> — but see <a href="#what_still_differs_from_r">differences</a></td></tr><tr><td align="left"><code>kcores&#40;net&#41;</code></td><td align="left"><code>kcores&#40;net&#41;</code></td></tr><tr><td align="left"><code>cutpoints&#40;net&#41;</code></td><td align="left"><code>cutpoints&#40;net&#41;</code></td></tr><tr><td align="left"><code>clique.census&#40;net&#41;</code> &#40;maximal cliques&#41;</td><td align="left"><code>cliques&#40;net&#41;</code></td></tr><tr><td align="left"><code>sedist / equiv.clust / blockmodel</code></td><td align="left"><code>structural_equivalence</code> / <code>equiv_clust</code> / <code>blockmodel</code></td></tr><tr><td align="left"><code>rgraph&#40;20, tprob&#61;0.1&#41;</code></td><td align="left"><code>rgraph&#40;20; tprob&#61;0.1&#41;</code></td></tr></table>
+<p>The values agree with R: SNA.jl&#39;s test suite pins <code>gden</code>, <code>gtrans</code>, centrality scores, and the dyad/triad censuses to golden-master values computed with <code>sna</code> 2.8.</p>
+<h2 id="ergms_ergm_ergmjl"><a href="#ergms_ergm_ergmjl" class="header-anchor">ERGMs: <code>ergm</code> → ERGM.jl</a></h2>
+<p>The R formula becomes a vector of term objects:</p>
+<pre><code class="language-r"># R
+data&#40;sampson&#41;
+fit &lt;- ergm&#40;samplike ~ edges &#43; mutual &#43; nodematch&#40;&quot;group&quot;, diff&#61;TRUE&#41;&#41;</code></pre>
+<pre><code class="language-julia"># Julia
+using ERGM, Random               # ERGM re-exports the Networks.jl API
+
+net &#61; load_dataset&#40;:sampson&#41;     # statnet&#39;s samplike
+levels &#61; &#91;&quot;Loyal&quot;, &quot;Outcasts&quot;, &quot;Turks&quot;&#93;
+fit &#61; ergm&#40;net, &#91;Edges&#40;&#41;; Mutual&#40;&#41;;
+                 &#91;NodeMatch&#40;:group; diff&#61;true, level&#61;l&#41; for l in levels&#93;&#93;;
+           method&#61;:mcmle, rng&#61;Xoshiro&#40;7&#41;&#41;
+println&#40;fit&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">ERGM Results
+&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;
+Method: mcmle
+Log-likelihood: -132.4494
+AIC: 274.9, BIC: 293.52
+Converged: true
+
+Coefficients:
+                          Estimate  Std.Error  z value  Pr&#40;&gt;|z|&#41;
+edges                      -2.2411     0.2342  -9.5678    &lt;1e-16 ***
+mutual                      1.3640     0.4972   2.7431    0.0061 **
+nodematch.group.Loyal       1.6726     0.3532   4.7357   2.2e-06 ***
+nodematch.group.Outcasts    2.8340     0.7633   3.7130    0.0002 ***
+nodematch.group.Turks       2.1938     0.4022   5.4542   4.9e-08 ***
+---
+Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>That coefficient table &#40;Estimate / Std.Error / z value / Pr&#40;&gt;|z|&#41; with significance codes, p-values floored at <code>&lt;1e-16</code> instead of printing <code>0.0</code>&#41; is the shared presentation layer from Networks.jl — every fitted model in the ecosystem prints through it.</p>
+<p>Note the one real semantic difference in that translation: the term system is one-statistic-per-term, so R&#39;s <code>nodematch&#40;diff&#61;TRUE&#41;</code> — which silently expands into one statistic per attribute level — is written as an explicit comprehension over levels. <code>NodeMatch&#40;:group; diff&#61;true&#41;</code> without a <code>level</code> throws an error explaining exactly this.</p>
+<h3 id="term_translation"><a href="#term_translation" class="header-anchor">Term translation</a></h3>
+<table><tr><th align="left">R term</th><th align="left">Julia term</th></tr><tr><td align="left"><code>edges</code></td><td align="left"><code>Edges&#40;&#41;</code></td></tr><tr><td align="left"><code>mutual</code></td><td align="left"><code>Mutual&#40;&#41;</code> &#40;directed networks only — errors on undirected, like R&#41;</td></tr><tr><td align="left"><code>triangle</code></td><td align="left"><code>Triangle&#40;&#41;</code></td></tr><tr><td align="left"><code>kstar&#40;2&#41;</code></td><td align="left"><code>Kstar&#40;2&#41;</code></td></tr><tr><td align="left"><code>twopath</code></td><td align="left"><code>TwoPath&#40;&#41;</code></td></tr><tr><td align="left"><code>nodecov&#40;&quot;wealth&quot;&#41;</code></td><td align="left"><code>NodeCov&#40;:wealth&#41;</code></td></tr><tr><td align="left"><code>nodefactor&#40;&quot;g&quot;&#41;</code></td><td align="left"><code>NodeFactor&#40;:g&#41;</code> — expands to one statistic per level at model construction, first &#40;sorted&#41; level dropped, like R; <code>base&#61;0</code> keeps all levels</td></tr><tr><td align="left"><code>nodematch&#40;&quot;x&quot;&#41;</code></td><td align="left"><code>NodeMatch&#40;:x&#41;</code></td></tr><tr><td align="left"><code>nodematch&#40;&quot;x&quot;, diff&#61;TRUE&#41;</code></td><td align="left"><code>&#91;NodeMatch&#40;:x; diff&#61;true, level&#61;l&#41; for l in levels&#93;</code></td></tr><tr><td align="left"><em>&#40;count of mismatched edges&#41;</em></td><td align="left"><code>NodeMismatch&#40;:x&#41;</code></td></tr><tr><td align="left"><code>absdiff&#40;&quot;age&quot;&#41;</code></td><td align="left"><code>AbsDiff&#40;:age&#41;</code></td></tr><tr><td align="left"><code>nodemix&#40;&quot;g&quot;&#41;</code></td><td align="left"><code>NodeMix&#40;:g&#41;</code> — expands to one statistic per mixing cell, first cell dropped, like R; <code>levels2</code> selects cells</td></tr><tr><td align="left"><code>edgecov&#40;m&#41;</code></td><td align="left"><code>EdgeCov&#40;m&#41;</code></td></tr><tr><td align="left"><code>degree&#40;0:2&#41;</code></td><td align="left"><code>Degree&#40;0:2&#41;</code> — expands to one term per degree &#40;undirected&#41;</td></tr><tr><td align="left"><code>idegree&#40;d&#41;</code> / <code>odegree&#40;d&#41;</code></td><td align="left"><code>IDegree&#40;d&#41;</code> / <code>ODegree&#40;d&#41;</code> &#40;directed&#41;</td></tr><tr><td align="left"><code>gwesp&#40;0.5, fixed&#61;TRUE&#41;</code></td><td align="left"><code>GWESP&#40;0.5&#41;</code></td></tr><tr><td align="left"><code>dgwesp&#40;0.5, type&#61;&quot;OSP&quot;, fixed&#61;TRUE&#41;</code></td><td align="left"><code>GWESP&#40;0.5; type&#61;:OSP&#41;</code> &#40;<code>:OTP</code>, <code>:ITP</code>, <code>:OSP</code>, <code>:ISP</code>&#41;</td></tr><tr><td align="left"><code>gwdsp&#40;0.5, fixed&#61;TRUE&#41;</code> / <code>dgwdsp&#40;...&#41;</code></td><td align="left"><code>GWDSP&#40;0.5&#41;</code> / <code>GWDSP&#40;0.5; type&#61;:OSP&#41;</code></td></tr><tr><td align="left"><code>gwdegree&#40;0.5, fixed&#61;TRUE&#41;</code></td><td align="left"><code>GWDegree&#40;0.5&#41;</code></td></tr><tr><td align="left"><code>gwidegree&#40;0.5, fixed&#61;TRUE&#41;</code> / <code>gwodegree&#40;...&#41;</code></td><td align="left"><code>GWIDegree&#40;0.5&#41;</code> / <code>GWODegree&#40;0.5&#41;</code></td></tr></table>
+<p>Model construction <em>validates terms against the network</em>: a typo&#39;d attribute &#40;<code>NodeCov&#40;:welth&#41;</code>&#41; throws an <code>ArgumentError</code> listing the attributes that do exist, instead of silently fitting a zero column.</p>
+<h3 id="estimation_and_post-estimation"><a href="#estimation_and_post-estimation" class="header-anchor">Estimation and post-estimation</a></h3>
+<table><tr><th align="left">R &#40;<code>ergm</code>&#41;</th><th align="left">Julia &#40;ERGM.jl&#41;</th></tr><tr><td align="left"><code>summary&#40;net ~ edges &#43; triangle&#41;</code></td><td align="left"><code>summary_stats&#40;net, &#91;Edges&#40;&#41;, Triangle&#40;&#41;&#93;&#41;</code></td></tr><tr><td align="left"><code>fit &lt;- ergm&#40;net ~ ...&#41;</code></td><td align="left"><code>fit &#61; ergm&#40;net, terms; method&#61;:mcmle&#41;</code></td></tr><tr><td align="left">MPLE: <code>ergm&#40;..., estimate&#61;&quot;MPLE&quot;&#41;</code></td><td align="left"><code>ergm&#40;net, terms&#41;</code> &#40;<code>method&#61;:mple</code> is the default; see below&#41;</td></tr><tr><td align="left"><code>summary&#40;fit&#41;</code></td><td align="left"><code>println&#40;fit&#41;</code></td></tr><tr><td align="left"><code>coef&#40;fit&#41;</code> / <code>vcov&#40;fit&#41;</code></td><td align="left"><code>coef&#40;fit&#41;</code> / <code>vcov&#40;fit&#41;</code> &#40;StatsAPI, plus <code>stderror</code>&#41;</td></tr><tr><td align="left"><code>logLik&#40;fit&#41;</code>, <code>AIC&#40;fit&#41;</code>, <code>BIC&#40;fit&#41;</code></td><td align="left"><code>loglikelihood&#40;fit&#41;</code>, <code>aic&#40;fit&#41;</code>, <code>bic&#40;fit&#41;</code></td></tr><tr><td align="left"><code>gof&#40;fit&#41;</code></td><td align="left"><code>gof&#40;fit; n_sim&#61;100&#41;</code> &#40;degree, ESP, geodesic distance&#41;</td></tr><tr><td align="left"><code>simulate&#40;fit, nsim&#61;10&#41;</code></td><td align="left"><code>simulate_ergm&#40;fit; n_sim&#61;10&#41;</code></td></tr><tr><td align="left"><code>mcmc.diagnostics&#40;fit&#41;</code></td><td align="left"><code>mcmc_diagnostics&#40;fit&#41;</code></td></tr><tr><td align="left"><code>control.ergm&#40;MCMC.burnin&#61;...&#41;</code></td><td align="left">keywords: <code>mcmle&#40;model; burnin&#61;..., interval&#61;..., n_samples&#61;..., rng&#61;...&#41;</code></td></tr></table>
+<p>Unlike R <code>ergm&#40;&#41;</code>, which picks MCMC MLE automatically for dyad-dependent models, <code>ergm&#40;net, terms&#41;</code> defaults to MPLE for every model and <em>tells you</em> when that matters: a fit containing dyad-dependent terms prints a warning that the pseudolikelihood standard errors are suspect and points to <code>method&#61;:mcmle</code> and <code>se&#61;:bootstrap</code>. The MCMLE itself follows statnet&#39;s algorithmic standards: Hummel step-length control, Hotelling-T²-based convergence, dyad-count-scaled MCMC defaults, and a path-sampling &#40;bridge&#41; log-likelihood for AIC/BIC.</p>
+<h3 id="the_ergm_variants"><a href="#the_ergm_variants" class="header-anchor">The ERGM variants</a></h3>
+<table><tr><th align="left">R call</th><th align="left">Julia call</th></tr><tr><td align="left"><code>ergm&#40;net ~ sum, response&#61;&quot;w&quot;, reference&#61;~Poisson&#41;</code></td><td align="left"><code>ergm_count&#40;net, &#91;SumTerm&#40;&#41;&#93;; reference&#61;PoissonReference&#40;&#41;&#41;</code></td></tr><tr><td align="left"><code>ergm.ego&#40;egodata ~ edges &#43; nodematch&#40;&quot;x&quot;&#41;&#41;</code></td><td align="left"><code>ergm_ego&#40;egodata, &#91;EgoEdges&#40;&#41;, EgoNodeMatch&#40;:x&#41;&#93;&#41;</code></td></tr><tr><td align="left"><code>ergm.multi</code> multilayer models</td><td align="left"><code>ergm_multi&#40;mnet, &#91;LayerEdges&#40;1&#41;, MultiplexMutual&#40;1, 2&#41;, ...&#93;&#41;</code></td></tr><tr><td align="left"><code>ergm.rank</code></td><td align="left"><code>ergm_rank&#40;rnet, &#91;RankDeference&#40;&#41;, ...&#93;&#41;</code></td></tr><tr><td align="left"><code>ergm.userterms</code> &#40;C skeleton &#43; rebuild&#41;</td><td align="left"><code>@ergm_term</code> macro, then <code>validate_term</code> / <code>test_term</code> — plain Julia, no recompilation</td></tr></table>
+<p>Every variant&#39;s result type supports the same StatsAPI accessors.</p>
+<h2 id="temporal_ergms_tergm_tergmjl"><a href="#temporal_ergms_tergm_tergmjl" class="header-anchor">Temporal ERGMs: <code>tergm</code> → TERGM.jl</a></h2>
+<table><tr><th align="left">R &#40;<code>tergm</code>&#41;</th><th align="left">Julia &#40;TERGM.jl&#41;</th></tr><tr><td align="left"><code>stergm&#40;nw_list, formation&#61;~edges&#43;mutual, dissolution&#61;~edges, estimate&#61;&quot;CMLE&quot;&#41;</code></td><td align="left"><code>stergm&#40;networks, &#91;Edges&#40;&#41;, Mutual&#40;&#41;&#93;, &#91;Edges&#40;&#41;&#93;&#41;</code></td></tr><tr><td align="left"><code>tergm&#40;nw_list ~ Form&#40;~edges&#41; &#43; Persist&#40;~edges&#41;, estimate&#61;&quot;CMLE&quot;&#41;</code></td><td align="left">same — the dissolution model is parameterized as <em>persistence</em>, like <code>Persist&#40;&#41;</code></td></tr><tr><td align="left">bootstrap SEs &#40;<code>btergm</code>-style&#41;</td><td align="left"><code>stergm&#40;...; se&#61;:bootstrap, n_boot&#61;200&#41;</code></td></tr><tr><td align="left"><code>gof&#40;fit&#41;</code></td><td align="left"><code>stergm_gof&#40;fit&#41;</code></td></tr><tr><td align="left"><code>simulate&#40;fit&#41;</code></td><td align="left"><code>simulate_network_sequence&#40;model, init, n_steps, θ_form, θ_diss&#41;</code></td></tr></table>
+<p>Estimation is conditional maximum pseudo-likelihood &#40;CMPLE&#41; on the Krivitsky–Handcock formation &#40;union&#41; and dissolution &#40;intersection&#41; networks — exact CMLE for dyad-independent models; MCMC-based CMLE and EGMME are not implemented &#40;<code>method&#61;:cmle</code> falls back to CMPLE with a warning&#41;. See the <a href="/examples/modelling-network-change/">worked STERGM example</a>.</p>
+<h2 id="saoms_rsiena_sienajl"><a href="#saoms_rsiena_sienajl" class="header-anchor">SAOMs: <code>RSiena</code> → Siena.jl</a></h2>
+<p>The workflow is a deliberate mirror of RSiena&#39;s:</p>
+<table><tr><th align="left">RSiena</th><th align="left">Siena.jl</th></tr><tr><td align="left"><code>sienaDataCreate&#40;...&#41;</code></td><td align="left"><code>data &#61; siena_data&#40;&#41;</code> &#43; <code>add_nodeset&#33;</code> / <code>add_dependent&#33;</code> / <code>add_covariate&#33;</code></td></tr><tr><td align="left"><code>sienaDependent&#40;array&#41;</code></td><td align="left"><code>DependentNetwork&#40;:name, waves&#41;</code> — waves are matrices <strong>or <code>Network</code> objects</strong></td></tr><tr><td align="left"><code>sienaDependent&#40;mat, type&#61;&quot;behavior&quot;&#41;</code></td><td align="left"><code>DependentBehavior&#40;:name, waves&#41;</code></td></tr><tr><td align="left"><code>coCovar&#40;v&#41;</code> / <code>varCovar&#40;m&#41;</code></td><td align="left"><code>ConstantCovariate&#40;:name, v&#41;</code> / <code>VaryingCovariate&#40;:name, m&#41;</code></td></tr><tr><td align="left"><code>coDyadCovar&#40;m&#41;</code></td><td align="left"><code>ConstantDyadCovariate&#40;:name, m&#41;</code> &#40;also accepts a <code>Network</code>&#41;</td></tr><tr><td align="left"><code>getEffects&#40;data&#41;</code></td><td align="left"><code>effects &#61; get_effects&#40;data&#41;</code></td></tr><tr><td align="left"><code>includeEffects&#40;eff, transTrip, recip&#41;</code></td><td align="left"><code>include_effects&#33;&#40;effects, :friendship, &#91;:transTrip, :recip&#93;&#41;</code></td></tr><tr><td align="left"><code>sienaAlgorithmCreate&#40;seed&#61;42&#41;</code></td><td align="left"><code>siena_algorithm&#40;seed&#61;42&#41;</code></td></tr><tr><td align="left"><code>siena07&#40;alg, data&#61;dat, effects&#61;eff&#41;</code></td><td align="left"><code>fit_siena&#40;data, effects; algorithm&#61;alg&#41;</code> &#40;<code>siena07</code> is an alias&#41;</td></tr><tr><td align="left"><code>sienaAlgorithmCreate&#40;cond&#61;TRUE&#41;</code></td><td align="left"><code>siena_algorithm&#40;conditional&#61;true&#41;</code> &#40;rates from phase-3 stopping times, in <code>result.rate_estimates</code>&#41;</td></tr><tr><td align="left"><code>sienaCompositionChange&#40;...&#41;</code></td><td align="left"><code>CompositionChange&#40;&#41;</code> &#43; <code>add_change&#33;</code> &#43; <code>add_composition_change&#33;&#40;data, cc&#41;</code></td></tr><tr><td align="left"><code>sienaGOF&#40;res, IndegreeDistribution, ...&#41;</code></td><td align="left"><code>siena_gof_indegree&#40;result, data, :friendship&#41;</code></td></tr></table>
+<p>Effect shortnames are RSiena&#39;s &#40;<code>:outdegree</code>, <code>:recip</code>, <code>:transTrip</code>, <code>:cycle3</code>, <code>:inPop</code>, <code>:egoX</code>, <code>:simX</code>, <code>:avAlt</code>, ... — 150&#43; effects&#41;, and the target statistics are validated against RSiena&#39;s <code>getTargets</code> to six decimals on the <code>s50</code> data. Estimation is Method of Moments — unconditional by default, conditional &#40;RSiena&#39;s <code>cond&#61;TRUE</code>&#41; via <code>siena_algorithm&#40;conditional&#61;true&#41;</code> — with the RSiena publication standards for convergence &#40;every |t-ratio| &lt; 0.1 and <code>tconv.max</code> &lt; 0.25&#41;, score-function derivative estimation, and standard errors from all phase-3 simulations.</p>
+<p>Since a <code>Vector</code> of <code>Network</code> objects converts directly &#40;a package extension activates when Networks.jl is loaded&#41;, you can describe cross-sections with SNA.jl and model their dynamics with Siena.jl without touching a matrix. A minimal round trip — three synthetic waves, two effects &#40;this is a mechanics demo on random data, so the estimates themselves are uninteresting&#41;:</p>
+<pre><code class="language-julia">using Networks, Siena, Random
+
+rng &#61; Xoshiro&#40;11&#41;
+wave1 &#61; network&#40;25; directed&#61;true&#41;
+for i in 1:25, j in 1:25
+    i &#33;&#61; j &amp;&amp; rand&#40;rng&#41; &lt; 0.06 &amp;&amp; add_edge&#33;&#40;wave1, i, j&#41;
+end
+waves &#61; &#91;wave1&#93;
+for _ in 2:3                       # each later wave toggles 40 random dyads
+    w &#61; copy&#40;waves&#91;end&#93;&#41;
+    for _ in 1:40
+        i, j &#61; rand&#40;rng, 1:25&#41;, rand&#40;rng, 1:25&#41;
+        i &#61;&#61; j &amp;&amp; continue
+        has_edge&#40;w, i, j&#41; ? rem_edge&#33;&#40;w, i, j&#41; : add_edge&#33;&#40;w, i, j&#41;
+    end
+    push&#33;&#40;waves, w&#41;
+end
+
+data &#61; siena_data&#40;&#41;
+add_nodeset&#33;&#40;data, NodeSet&#40;25&#41;&#41;
+add_dependent&#33;&#40;data, DependentNetwork&#40;:friendship, waves&#41;&#41;  # Network panel — no matrices
+effects &#61; get_effects&#40;data&#41;
+include_effects&#33;&#40;effects, :friendship, &#91;:outdegree, :recip&#93;&#41;
+alg &#61; siena_algorithm&#40;seed&#61;42, phase3_iterations&#61;200, verbose&#61;false&#41;
+result &#61; siena07&#40;data, effects; algorithm&#61;alg&#41;
+println&#40;result&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">SAOM Estimation Results
+&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;
+Converged: true &#40;max |t-ratio| &#61; 0.086, overall max convergence ratio &#61; 0.169&#41;
+Iterations: 450
+
+Rate Parameters:
+----------------
+Rate friendship &#40;period 1&#41;     1.3505 &#40;0.2655&#41;
+Rate friendship &#40;period 2&#41;     1.3998 &#40;0.2546&#41;
+
+Objective Function Parameters:
+------------------------------
+           Estimate  Std.Error  z value  Pr&#40;&gt;|z|&#41;
+outdegree    0.1369     0.2845   0.4812    0.6304
+recip        0.1494     0.4151   0.3598    0.7190
+---
+Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>RSiena&#39;s structural zeros/ones &#40;10/11 coding&#41; are supported in the wave matrices, and composition change &#40;actors joining/leaving&#41; is handled with the Method-of-Moments semantics; maximum likelihood and Bayesian estimation are not implemented &#40;see <a href="#what_still_differs_from_r">differences</a>&#41;.</p>
+<h2 id="relational_events_relevent_remjl_releventjl"><a href="#relational_events_relevent_remjl_releventjl" class="header-anchor">Relational events: <code>relevent</code> → REM.jl / Relevent.jl</a></h2>
+<p>Two packages split R <code>relevent</code>&#39;s territory. REM.jl holds the event types, 25&#43; statistics, and a case-control-sampled estimator for long event streams; Relevent.jl adds <code>rem.dyad</code>&#39;s two exact full-risk-set likelihoods &#40;ordinal and interval timing&#41; plus decay-weighted history statistics.</p>
+<table><tr><th align="left">R &#40;<code>relevent</code>&#41;</th><th align="left">Julia</th></tr><tr><td align="left">event list <code>&#40;time, sender, receiver&#41;</code></td><td align="left"><code>Event&#40;sender, receiver, time&#41;</code>; <code>EventSequence&#40;events&#41;</code></td></tr><tr><td align="left"><code>rem.dyad&#40;el, n, effects&#61;..., ordinal&#61;TRUE&#41;</code></td><td align="left"><code>fit_relevent&#40;events, stats, n&#41;</code> &#40;&#61; <code>fit_obpm</code>&#41; — exact ordinal likelihood; <code>rem_dyad</code> is an alias</td></tr><tr><td align="left"><code>rem.dyad&#40;el, n, effects&#61;..., ordinal&#61;FALSE&#41;</code></td><td align="left"><code>fit_relevent&#40;events, stats, n; ordinal&#61;false&#41;</code> &#40;&#61; <code>fit_timing</code>&#41; — exponential-baseline interval timing, <code>t0</code> sets the observation onset</td></tr><tr><td align="left">large-stream approximate fit &#40;eventnet-style&#41;</td><td align="left"><code>fit_rem&#40;seq, stats; n_controls&#61;100&#41;</code> — case-control conditional logit</td></tr><tr><td align="left"><code>&quot;FESnd&quot;</code> / inertia effects</td><td align="left"><code>Repetition&#40;&#41;</code>, <code>InertiaStatistic</code>, <code>PriorInteraction&#40;halflife&#41;</code></td></tr><tr><td align="left"><code>&quot;RRecSnd&quot;</code>, <code>&quot;RSndSnd&quot;</code> &#40;recency&#41;</td><td align="left"><code>RecencyStatistic</code>, <code>LocalInertia&#40;halflife&#41;</code></td></tr><tr><td align="left">reciprocity effects</td><td align="left"><code>Reciprocity&#40;&#41;</code>, <code>PriorInteraction&#40;halflife; direction&#61;:incoming&#41;</code></td></tr><tr><td align="left"><code>&quot;PSAB-BA&quot;</code> p-shifts</td><td align="left"><code>PShift&#40;:AB_BA&#41;</code> or <code>PShift&#40;&quot;PSAB-BA&quot;&#41;</code> — all 13 Gibson shifts &#40;<code>pshift_types&#40;&#41;</code>&#41;</td></tr><tr><td align="left"><code>covar&#61;list&#40;CovSnd&#61;z, ...&#41;</code></td><td align="left"><code>CovSnd&#40;z&#41;</code>, <code>CovRec&#40;z&#41;</code>, <code>CovInt&#40;z&#41;</code></td></tr><tr><td align="left">triadic effects</td><td align="left"><code>TransitiveClosure&#40;&#41;</code>, <code>CyclicClosure&#40;&#41;</code>, <code>SharedSender&#40;&#41;</code>, <code>SharedReceiver&#40;&#41;</code></td></tr><tr><td align="left">degree effects</td><td align="left"><code>SenderActivity&#40;&#41;</code>, <code>ReceiverPopularity&#40;&#41;</code>, <code>SendingCapacity&#40;halflife&#41;</code>, ...</td></tr><tr><td align="left"><code>coef&#40;fit&#41;</code>, <code>summary&#40;fit&#41;</code></td><td align="left"><code>coef&#40;fit&#41;</code>, <code>stderror&#40;fit&#41;</code>, <code>println&#40;fit&#41;</code></td></tr></table>
+<pre><code class="language-julia">using REM, Relevent, Random
+
+rng &#61; Xoshiro&#40;3&#41;
+events &#61; &#91;Event&#40;rand&#40;rng, 1:6&#41;, rand&#40;rng, 1:6&#41;, Float64&#40;t&#41;&#41; for t in 1:120&#93;
+events &#61; filter&#40;e -&gt; e.sender &#33;&#61; e.receiver, events&#41;
+
+# rem.dyad&#40;..., ordinal&#61;TRUE&#41; equivalent: exact ordinal likelihood, full risk set
+stats &#61; &#91;PriorInteraction&#40;20.0&#41;, PriorInteraction&#40;20.0; direction&#61;:incoming&#41;&#93;
+fit &#61; fit_obpm&#40;events, stats, 6&#41;
+println&#40;fit&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">Ordinal Butts-Park Model Results
+&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;
+N actors: 6
+N events: 103
+Log-likelihood: -349.5015
+Converged: true
+
+                            Estimate  Std.Error  z value  Pr&#40;&gt;|z|&#41;
+prior_interaction_outgoing   -0.0308     0.1759  -0.1753    0.8609
+prior_interaction_incoming    0.2147     0.1655   1.2970    0.1946
+---
+Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>For a substantive REM analysis &#40;simulate with known effects, recover them&#41;, see the <a href="/examples/modelling-interaction-events/">worked REM example</a>. Gibson&#39;s 13 participation-shift effects are available as <code>PShift&#40;:AB_BA&#41;</code> &#40;R names like <code>&quot;PSAB-BA&quot;</code> accepted&#41;, and the <code>CovSnd</code>/<code>CovRec</code>/<code>CovInt</code> covariate blocks work as in R; nodal covariate effects can also go through REM.jl&#39;s <code>SenderAttribute</code>/<code>ReceiverAttribute</code>/<code>AttributeMatch</code>.</p>
+<h2 id="dynamic_networks_networkdynamic_tsna_ndtv"><a href="#dynamic_networks_networkdynamic_tsna_ndtv" class="header-anchor">Dynamic networks: <code>networkDynamic</code> / <code>tsna</code> / <code>ndtv</code></a></h2>
+<table><tr><th align="left">R</th><th align="left">Julia</th></tr><tr><td align="left"><code>networkDynamic&#40;&#41;</code></td><td align="left"><code>DynamicNetwork&#40;10; observation_start&#61;0.0, observation_end&#61;100.0&#41;</code></td></tr><tr><td align="left"><code>activate.vertices&#40;nd, onset, terminus, v&#61;1&#41;</code></td><td align="left"><code>activate&#33;&#40;dnet, onset, terminus; vertex&#61;1&#41;</code></td></tr><tr><td align="left"><code>activate.edges&#40;nd, onset, terminus, ...&#41;</code></td><td align="left"><code>activate&#33;&#40;dnet, onset, terminus; edge&#61;&#40;1, 2&#41;&#41;</code></td></tr><tr><td align="left"><code>is.active&#40;nd, at&#61;2, e&#61;...&#41;</code></td><td align="left"><code>is_active&#40;dnet, 2.0; edge&#61;&#40;1, 2&#41;&#41;</code></td></tr><tr><td align="left"><code>network.extract&#40;nd, at&#61;2&#41;</code></td><td align="left"><code>network_extract&#40;dnet, 2.0&#41;</code> &#40;returns a <code>Network</code>&#41;</td></tr><tr><td align="left"><code>network.collapse&#40;nd, onset, terminus&#41;</code></td><td align="left"><code>network_collapse&#40;dnet, onset, terminus&#41;</code></td></tr><tr><td align="left"><code>as.networkDynamic&#40;net&#41;</code></td><td align="left"><code>as_dynamic_network&#40;net&#41;</code></td></tr><tr><td align="left"><code>get.edge.activity&#40;nd&#41;</code></td><td align="left"><code>get_edge_activity&#40;dnet&#41;</code></td></tr><tr><td align="left"><code>tSnaStats&#40;nd, &quot;gden&quot;&#41;</code></td><td align="left"><code>t_sna_stats&#40;dnet, times; measures&#61;&#91;:density&#93;&#41;</code></td></tr><tr><td align="left"><code>tPath&#40;nd, v&#61;1, start&#61;0&#41;</code></td><td align="left"><code>earliest_arrival&#40;dnet, 1, 0.0&#41;</code> / <code>shortest_temporal_path&#40;dnet, 1, 5, 0.0&#41;</code></td></tr><tr><td align="left"><code>tReach&#40;nd, v&#61;1&#41;</code></td><td align="left"><code>forward_reachable_set&#40;dnet, 1, 0.0&#41;</code></td></tr><tr><td align="left"><code>tEdgeFormationAt&#40;nd, ...&#41;</code></td><td align="left"><code>t_edge_formation&#40;dnet, onset, terminus&#41;</code> &#40;also <code>t_edge_dissolution</code>, <code>t_edge_persistence</code>&#41;</td></tr><tr><td align="left"><code>render.animation&#40;nd&#41;</code></td><td align="left"><code>render_animation&#40;dnet; n_frames&#61;50&#41;</code> then <code>export_movie</code> / <code>export_gif</code></td></tr><tr><td align="left"><code>render.d3movie&#40;nd&#41;</code></td><td align="left"><code>export_html&#40;layout, &quot;movie.html&quot;&#41;</code> &#40;self-contained HTML&#41;</td></tr><tr><td align="left"><code>filmstrip&#40;nd&#41;</code></td><td align="left"><code>filmstrip&#40;dnet, times&#41;</code></td></tr><tr><td align="left"><code>timeline&#40;nd&#41;</code></td><td align="left"><code>timeline_plot&#40;dnet&#41;</code></td></tr></table>
+<p>TSNA.jl and NDTV.jl now follow the rest of the ecosystem: snake_case primary names &#40;<code>t_sna_stats</code>, <code>earliest_arrival</code>, ...&#41;, with the R tsna/ndtv camelCase spellings &#40;<code>tSnaStats</code>, <code>earliestArrival</code>, <code>transmissionTimeline</code>, ...&#41; kept as exported aliases — your R muscle memory keeps working, but new code can be idiomatic Julia.</p>
+<h2 id="what_still_differs_from_r"><a href="#what_still_differs_from_r" class="header-anchor">What still differs from R</a></h2>
+<p>Honest divergences to keep in mind — the things most likely to bite a statnet/RSiena user. &#40;This list reflects the packages as of July 2026; each item is also documented at the API it concerns.&#41;</p>
+<ul>
+<li><p><strong>No formula interface.</strong> Models are specified as vectors of term objects, never <code>net ~ edges &#43; ...</code>. This is a deliberate design choice &#40;terms are ordinary values you can build programmatically&#41;, not a missing feature.</p>
+</li>
+<li><p><strong><code>fit_ergm</code> defaults to MPLE</strong>, where R <code>ergm&#40;&#41;</code> chooses MCMC MLE automatically for dyad-dependent models. You must ask for <code>method&#61;:mcmle</code> yourself; dyad-dependent MPLE fits print a warning about their standard errors and offer <code>se&#61;:bootstrap</code> as a middle ground. MCMLE standard errors come from the inverse Fisher information of the final MCMC sample and do not add statnet&#39;s separate MCMC-error component.</p>
+</li>
+<li><p><strong><code>nodematch&#40;diff&#61;TRUE&#41;</code> expands manually.</strong> One term object per attribute level &#40;see the comprehension idiom above&#41;; R expands levels automatically inside one formula term. <code>NodeFactor</code>, <code>NodeMix</code>, and the degree-count terms &#40;<code>Degree&#40;0:2&#41;</code>, ...&#41; do expand automatically at model construction, as in R.</p>
+</li>
+<li><p><strong>ERGM term coverage is narrower than statnet&#39;s.</strong> Still missing: curved-ERGM estimation &#40;<code>gwesp&#40;fixed&#61;FALSE&#41;</code> — only fixed-decay geometrically weighted terms exist&#41;, offsets, and <code>constraints&#61;</code>. &#40;<code>degree</code>/<code>idegree</code>/<code>odegree</code>, <code>gwidegree</code>/<code>gwodegree</code>, <code>gwdsp</code>, and <code>nodemix</code> landed in 0.2.&#41;</p>
+</li>
+<li><p><strong><code>component_dist</code> uses weak components</strong> on directed networks, where R <code>sna::component.dist</code> defaults to <code>connected&#61;&quot;strong&quot;</code>.</p>
+</li>
+<li><p><strong>Missing data is narrower than in R.</strong> <code>Network</code> supports missing &#40;unobserved&#41; dyad masks: MPLE excludes masked dyads from the pseudo-likelihood, and MCMLE <em>conditions on their face values</em> with a one-time warning — an approximation, not statnet&#39;s full missing-data MLE. Siena.jl supports RSiena&#39;s structural zeros/ones &#40;10/11 coding&#41; in data, simulation, and moment statistics, and composition change &#40;actors joining/leaving&#41; in estimation, but <code>NA</code> ties are not handled in estimation. REM.jl assumes fully observed event streams.</p>
+</li>
+<li><p><strong>Siena.jl estimates by Method of Moments only.</strong> Unconditional &#40;the default&#41; and conditional &#40;<code>siena_algorithm&#40;conditional&#61;true&#41;</code>, RSiena&#39;s <code>cond&#61;TRUE</code>&#41; estimation are implemented; Maximum Likelihood and Bayesian estimation are not. Endowment/creation effects simulate but do not estimate; <code>include_interaction&#33;</code> does not exist yet. Convergence criteria and derivative estimation follow RSiena&#39;s published standards &#40;t-ratios &lt; 0.1, <code>tconv.max</code> &lt; 0.25, score-function derivatives; conditional estimation uses finite-difference derivatives&#41;.</p>
+</li>
+<li><p><strong>TERGM is CMPLE-only</strong> &#40;exact CMLE for dyad-independent formulas&#41;; no MCMC CMLE or EGMME.</p>
+</li>
+<li><p><strong>relevent gaps</strong>: no tie-correction for simultaneous events in the ordinal likelihood &#40;ties are ranked arbitrarily, with a warning&#41;. The 13 Gibson p-shifts and <code>CovSnd</code>/<code>CovRec</code>/<code>CovInt</code> landed in 0.2.</p>
+</li>
+</ul>
+<p>Where R semantics and an earlier version of these packages disagreed &#40;the <code>nodematch</code> <code>diff</code> keyword, directed GWESP&#39;s shared-partner definition, doubled undirected degree, <code>sna</code>-style graph-level indices&#41;, the packages now follow R; statistics that intentionally deviate carry different names &#40;e.g. the legacy either-direction directed GWESP is <code>GWESP&#40;0.5; type&#61;:union&#41;</code>, printed as <code>gwesp.union.fixed.0.5</code>, so it can never be confused with statnet&#39;s <code>gwesp.fixed.0.5</code>&#41;.</p>
+<p>These realignments are version-0.2 behavior changes: if you have code written against the 0.1 packages &#40;rather than against R&#41;, see the <a href="/post/2026-07-12-changelogs-0.2.0/">consolidated 0.2.0 release notes</a> — every package repository now carries a <code>CHANGELOG.md</code> listing its breaking changes with one-line migration hints &#40;e.g. <a href="https://github.com/statistical-network-analysis-with-Julia/ERGM.jl/blob/main/CHANGELOG.md">ERGM.jl&#39;s</a>&#41;.</p>
+<h2 id="a_complete_worked_example"><a href="#a_complete_worked_example" class="header-anchor">A complete worked example</a></h2>
+<p>The classic first statnet session — load Florentine marriage data, describe it, fit an ERGM, check fit — translated end to end. In R:</p>
+<pre><code class="language-r">library&#40;ergm&#41;
+data&#40;florentine&#41;
+summary&#40;flomarriage&#41;
+sna::degree&#40;flomarriage, gmode&#61;&quot;graph&quot;&#41;
+fit &lt;- ergm&#40;flomarriage ~ edges &#43; nodecov&#40;&quot;wealth&quot;&#41; &#43; gwesp&#40;0.5, fixed&#61;TRUE&#41;&#41;
+summary&#40;fit&#41;
+gof&#40;fit&#41;
+simulate&#40;fit, nsim&#61;3&#41;</code></pre>
+<p>In Julia &#40;the output below is what this code actually prints&#41;:</p>
+<pre><code class="language-julia">using ERGM, SNA, Random          # ERGM re-exports the Networks.jl API
+
+flo &#61; load_dataset&#40;:florentine_marriage&#41;
+println&#40;&#40;nv&#40;flo&#41;, ne&#40;flo&#41;&#41;&#41;
+println&#40;&quot;density &#61; &quot;, round&#40;gden&#40;flo&#41;, digits&#61;4&#41;&#41;
+
+deg &#61; degree_centrality&#40;flo&#41;
+fam &#61; vertex_attribute_vector&#40;flo, :name, String&#41;
+for v in sortperm&#40;deg, rev&#61;true&#41;&#91;1:3&#93;
+    println&#40;fam&#91;v&#93;, &quot;  degree &#61; &quot;, Int&#40;deg&#91;v&#93;&#41;&#41;
+end</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">&#40;16, 20&#41;
+density &#61; 0.1667
+Medici  degree &#61; 6
+Guadagni  degree &#61; 4
+Strozzi  degree &#61; 4</code></pre>
+<p>Fit the ERGM by MCMC maximum likelihood &#40;<code>GWESP</code> makes the model dyad-dependent, so we skip MPLE&#41;:</p>
+<pre><code class="language-julia">result &#61; ergm&#40;flo, &#91;Edges&#40;&#41;, NodeCov&#40;:wealth&#41;, GWESP&#40;0.5&#41;&#93;;
+              method&#61;:mcmle, rng&#61;Xoshiro&#40;42&#41;&#41;
+println&#40;result&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">ERGM Results
+&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;
+Method: mcmle
+Log-likelihood: -51.5584
+AIC: 109.12, BIC: 117.48
+Converged: true
+
+Coefficients:
+                 Estimate  Std.Error  z value  Pr&#40;&gt;|z|&#41;
+edges             -2.5532     0.5400  -4.7284   2.3e-06 ***
+nodecov.wealth     0.0105     0.0050   2.0962    0.0361 *
+gwesp.fixed.0.5   -0.0229     0.2741  -0.0837    0.9333
+---
+Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>Wealth attracts marriage ties &#40;as in every statnet tutorial&#41;; there is no extra triadic closure beyond it. Post-estimation works exactly as the R muscle memory expects, through the StatsAPI verbs and <code>gof</code>/ <code>simulate_ergm</code>:</p>
+<pre><code class="language-julia">println&#40;&quot;coef &#61; &quot;, round.&#40;coef&#40;result&#41;, digits&#61;4&#41;&#41;
+println&#40;&quot;se   &#61; &quot;, round.&#40;stderror&#40;result&#41;, digits&#61;4&#41;&#41;
+
+g &#61; gof&#40;result; n_sim&#61;100, rng&#61;Xoshiro&#40;1&#41;&#41;
+deg_panel &#61; only&#40;s for s in g.statistics if s.name &#61;&#61; &quot;degree&quot;&#41;
+println&#40;&quot;degree GOF p-values &#40;degree 0-6&#41;: &quot;,
+        round.&#40;deg_panel.p_values&#91;1:7&#93;, digits&#61;2&#41;&#41;
+
+sims &#61; simulate_ergm&#40;result; n_sim&#61;3, rng&#61;Xoshiro&#40;2&#41;&#41;
+println&#40;&quot;simulated densities: &quot;, round.&#40;gden.&#40;sims&#41;, digits&#61;3&#41;&#41;</code></pre>
+<p>Output:</p>
+<pre><code class="language-julia">coef &#61; &#91;-2.5532, 0.0105, -0.0229&#93;
+se   &#61; &#91;0.54, 0.005, 0.2741&#93;
+degree GOF p-values &#40;degree 0-6&#41;: &#91;1.0, 1.0, 0.55, 0.26, 1.0, 0.51, 0.63&#93;
+simulated densities: &#91;0.158, 0.142, 0.142&#93;</code></pre>
+<p>No GOF p-value flags a misfit, and simulated networks reproduce the observed density &#40;0.167&#41;. From here, the corresponding R-to-Julia moves are: panels over time → <a href="/examples/modelling-network-change/">TERGM.jl</a>, actor-oriented dynamics → Siena.jl &#40;above&#41;, event streams → <a href="/examples/modelling-interaction-events/">REM.jl</a>.</p>
+</div><!-- .page-content -->
+<footer class="mt-auto text-center text-muted py-4 border-top">
+  <div class="container">
+    <p class="mb-1">
+      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
+      &middot; MIT License
+    </p>
+    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
+<script>hljs.highlightAll();</script>
+ 
+<script>
+(function() {
+  var sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  var links = sidebar.querySelectorAll('a[href^="#"]');
+  if (!links.length) return;
+  var sections = [];
+  links.forEach(function(link) {
+    var id = link.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ el: el, link: link });
+  });
+  function update() {
+    var scrollY = window.scrollY + 80;
+    var current = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>

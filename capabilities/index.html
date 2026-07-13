@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta content="index, follow" name="robots">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+ 
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <title>Capability and parity matrix · StatNet for Julia</title>
+  
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+  <div class="container">
+    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/models/">Families of Models</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple " href="/examples/">Examples</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-purple active" href="/capabilities/">Capabilities</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-red " href="/post/">News</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="page-content">
+
+<h1 id="capability_and_parity_matrix"><a href="#capability_and_parity_matrix" class="header-anchor">Capability and parity matrix</a></h1>
+
+<p class="lead">What every estimator in the ecosystem actually does — the objective it
+maximises, whether that objective is exact for the model at hand, where its standard
+errors come from, what it does with unobserved dyads and tied events, and whether any
+of it has been checked against R.</p>
+
+<blockquote>
+<p><strong>This page is generated, not written.</strong> <code>tools/generate_capability_matrix.jl</code> fits a small model of every family and asks the fitted result what it did, through the shared result-metadata protocol &#40;<code>Networks.fit_metadata</code>&#41;; it reads the &quot;validated against R&quot; rows out of the <code>&#91;provenance&#93;</code> block of the golden fixtures committed in the package repositories; and it reads missing-data support out of the <code>Networks.supports_missing</code> trait. A hand-maintained capability table drifts from the code within one release. This one cannot, because it <em>is</em> the code — and a CI check regenerates it and fails if the committed page has gone stale.</p>
+</blockquote>
+<h2 id="how_to_read_the_columns"><a href="#how_to_read_the_columns" class="header-anchor">How to read the columns</a></h2>
+<ul>
+<li><p><strong>objective</strong> — what was actually maximised, <em>not</em> what the model is named after: <code>likelihood</code>, <code>pseudolikelihood</code>, <code>conditional_pseudolikelihood</code>, <code>mc_likelihood</code>, <code>moment</code> &#40;method of moments / Robbins–Monro&#41;, <code>partial_likelihood</code>, <code>least_squares</code>.</p>
+</li>
+<li><p><strong>exact?</strong> — whether that objective coincides with the exact likelihood <strong>for this particular model</strong>. This is deliberately a property of the <em>fit</em>, not of the estimator: maximum pseudo-likelihood of a dyad-independent formula <strong>is</strong> maximum likelihood; of a dyad-dependent one it is a different estimator with anticonservative standard errors. That contrast is the most important thing on this page, so the ERGM-family rows below come in pairs.</p>
+</li>
+<li><p><strong>standard errors</strong> — <code>hessian</code> &#40;inverse observed information; for a pseudo-likelihood under dependence this is generally <strong>anticonservative</strong>, i.e. too small&#41;, <code>fisher</code>, <code>sandwich</code>, <code>bootstrap</code>, or <code>none</code>.</p>
+</li>
+<li><p><strong>missing / ties</strong> — how unobserved dyads and tied event times were treated by <em>this</em> fit. <code>rejected</code> means the routine refuses masked data rather than reading it at face value.</p>
+</li>
+</ul>
+<h2 id="fitted-estimator_status"><a href="#fitted-estimator_status" class="header-anchor">Fitted-estimator status</a></h2>
+<table><tr><th align="left">package</th><th align="left">fit</th><th align="left">estimand</th><th align="left">objective</th><th align="center">exact?</th><th align="left">standard errors</th><th align="left">missing dyads</th><th align="left">tied events</th></tr><tr><td align="left">SNA</td><td align="left"><code>netlm</code>, dyadic OLS &#43; QAP</td><td align="left"><code>network_regression</code></td><td align="left"><code>least_squares</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>none</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">SNA</td><td align="left"><code>netlogit</code>, dyadic logit &#43; QAP</td><td align="left"><code>network_logit_regression</code></td><td align="left"><code>likelihood</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>fisher</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGM</td><td align="left"><code>mple</code>, <strong>dyad-independent</strong> formula &#40;<code>edges</code>&#41;</td><td align="left"><code>ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>hessian</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGM</td><td align="left"><code>mple</code>, <strong>dyad-dependent</strong> formula &#40;<code>edges &#43; gwesp</code>&#41;</td><td align="left"><code>ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGM</td><td align="left"><code>mcmle</code>, dyad-dependent formula</td><td align="left"><code>ergm</code></td><td align="left"><code>mc_likelihood</code></td><td align="center">no</td><td align="left"><code>fisher</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">TERGM</td><td align="left"><code>stergm</code>/CMPLE, <strong>dyad-independent</strong> formula</td><td align="left"><code>stergm</code></td><td align="left"><code>conditional_pseudolikelihood</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>hessian</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr><tr><td align="left">TERGM</td><td align="left"><code>stergm</code>/CMPLE, <strong>dyad-dependent</strong> formula</td><td align="left"><code>stergm</code></td><td align="left"><code>conditional_pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMCount</td><td align="left"><code>fit_ergm_count</code>, <strong>dyad-independent</strong> &#40;<code>sum &#43; nonzero</code>&#41;</td><td align="left"><code>count_ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMCount</td><td align="left"><code>fit_ergm_count</code>, <strong>dyad-dependent</strong> &#40;<code>sum &#43; mutual</code>&#41;</td><td align="left"><code>count_ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMMulti</td><td align="left"><code>ergm_multi</code>, <strong>dyad-independent</strong> &#40;per-layer edges&#41;</td><td align="left"><code>multilayer_ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>hessian</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMMulti</td><td align="left"><code>ergm_multi</code>, <strong>dyad-dependent</strong> &#40;interlayer dependence&#41;</td><td align="left"><code>multilayer_ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMEgo</td><td align="left"><code>fit_ergm_ego</code>, MCMC method of moments</td><td align="left"><code>ergm_ego</code></td><td align="left"><code>moment</code></td><td align="center">no</td><td align="left"><code>sandwich</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMRank</td><td align="left"><code>fit_ergm_rank</code>, swap-MPLE, default SEs</td><td align="left"><code>rank_ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">ERGMRank</td><td align="left"><code>fit_ergm_rank</code>, swap-MPLE, <code>se&#61;:bootstrap</code></td><td align="left"><code>rank_ergm</code></td><td align="left"><code>pseudolikelihood</code></td><td align="center">no</td><td align="left"><code>bootstrap</code></td><td align="left"><code>none</code></td><td align="left">n/a</td></tr><tr><td align="left">REM</td><td align="left"><code>fit_rem</code>, case-control conditional logit</td><td align="left"><code>relational_event</code></td><td align="left"><code>partial_likelihood</code></td><td align="center">no</td><td align="left"><code>hessian</code></td><td align="left"><code>none</code></td><td align="left"><code>none</code></td></tr><tr><td align="left">Relevent</td><td align="left"><code>fit_obpm</code>, ordinal B-P model</td><td align="left"><code>relational_event</code></td><td align="left"><code>likelihood</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>hessian</code></td><td align="left"><code>none</code></td><td align="left"><code>none</code></td></tr><tr><td align="left">Relevent</td><td align="left"><code>fit_timing</code>, exact-time hazard model</td><td align="left"><code>relational_event_timing</code></td><td align="left"><code>likelihood</code></td><td align="center"><strong>yes</strong></td><td align="left"><code>hessian</code></td><td align="left"><code>none</code></td><td align="left"><code>none</code></td></tr><tr><td align="left">Siena</td><td align="left"><code>siena07</code>, SAOM by method of moments</td><td align="left"><code>saom</code></td><td align="left"><code>moment</code></td><td align="center">no</td><td align="left"><code>sandwich</code></td><td align="left"><code>rejected</code></td><td align="left">n/a</td></tr></table>
+<p>Two rows are worth a second look, because they are exactly what a hand-written table would have got wrong:</p>
+<ul>
+<li><p><strong><code>ERGMCount</code>&#39;s dyad-independent fit is still not exact.</strong> Dyad independence is not enough here: the Poisson reference has unbounded support and the fit enumerates a truncated one, so it reports <code>exact? &#61; no</code> and tells you the boundary mass it is leaning on &#40;<a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/issues/1">ERGMCount#1</a>&#41;.</p>
+</li>
+<li><p><strong><code>ERGMRank</code> is never exact, at any formula.</strong> Its swap comparisons overlap by construction, so there is no dyad-independent special case to fall back on &#40;<a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/issues/1">ERGMRank#1</a>&#41;.</p>
+</li>
+</ul>
+<p>Every one of the twelve fitted-result types in the ecosystem declares this protocol, so you can ask the same question of your own fit:</p>
+<pre><code class="language-julia">md &#61; fit_metadata&#40;fit&#41;
+md.objective      # :pseudolikelihood
+md.is_exact       # false — the formula is dyad-dependent
+md.se_method      # :hessian, therefore anticonservative here
+md.approximations # the caveats below, attached to the object</code></pre>
+<h2 id="the_caveats_the_fits_declare_about_themselves"><a href="#the_caveats_the_fits_declare_about_themselves" class="header-anchor">The caveats the fits declare about themselves</a></h2>
+<p>These are not editorial. Each line is an entry of <code>approximations&#40;fit&#41;</code> on the corresponding row above — attached to the fitted object, printed by its <code>show</code> method, and reproduced here verbatim.</p>
+<h4 id="sna_netlm_dyadic_ols_qap"><a href="#sna_netlm_dyadic_ols_qap" class="header-anchor">SNA — <code>netlm</code>, dyadic OLS &#43; QAP</a></h4>
+<ul>
+<li><p>the dyads are treated as independent observations by the estimator; the dyadic dependence is addressed only by the null distribution the p-values are read off</p>
+</li>
+<li><p>no standard errors are reported; the t-statistics use homoskedastic iid-dyad OLS standard errors and serve only as the test statistic compared against the null distribution</p>
+</li>
+<li><p>nullhyp &#61; :classical: the p-values are parametric t/z tests that assume independent dyads — for reference only, since dyadic dependence typically invalidates them. No permutation was performed</p>
+</li>
+<li><p>the missing-dyad policy applied to the inputs is not recorded on the result: masked dyads are rejected by default &#40;missing &#61; :error&#41;, and with missing &#61; :face they enter the design matrix at their stored face value</p>
+</li>
+</ul>
+<h4 id="sna_netlogit_dyadic_logit_qap"><a href="#sna_netlogit_dyadic_logit_qap" class="header-anchor">SNA — <code>netlogit</code>, dyadic logit &#43; QAP</a></h4>
+<ul>
+<li><p>the dyads are treated as independent observations by the estimator; the dyadic dependence is addressed only by the null distribution the p-values are read off</p>
+</li>
+<li><p>the standard errors are the inverse Fisher information of a binomial GLM that treats the dyads as independent: they are expected anticonservative under dyadic dependence, and the reported p-values are not derived from them</p>
+</li>
+<li><p>nullhyp &#61; :classical: the p-values are parametric t/z tests that assume independent dyads — for reference only, since dyadic dependence typically invalidates them. No permutation was performed</p>
+</li>
+<li><p>the missing-dyad policy applied to the inputs is not recorded on the result: masked dyads are rejected by default &#40;missing &#61; :error&#41;, and with missing &#61; :face they enter the design matrix at their stored face value</p>
+</li>
+</ul>
+<h4 id="ergm_mple_dyad-dependent_formula_edges_gwesp"><a href="#ergm_mple_dyad-dependent_formula_edges_gwesp" class="header-anchor">ERGM — <code>mple</code>, <strong>dyad-dependent</strong> formula &#40;<code>edges &#43; gwesp</code>&#41;</a></h4>
+<ul>
+<li><p>maximum pseudo-likelihood of a dyad-dependent formula: the dyad conditionals are multiplied as if independent, so the point estimates are biased in finite samples</p>
+</li>
+<li><p>inverse-Hessian standard errors of the naive pseudo-likelihood: expected anticonservative under dyadic dependence</p>
+</li>
+</ul>
+<h4 id="ergm_mcmle_dyad-dependent_formula"><a href="#ergm_mcmle_dyad-dependent_formula" class="header-anchor">ERGM — <code>mcmle</code>, dyad-dependent formula</a></h4>
+<ul>
+<li><p>MCMLE: the likelihood is approximated by an MCMC sample, so the estimates carry Monte-Carlo error</p>
+</li>
+<li><p>the reported log-likelihood &#40;and AIC/BIC&#41; is a path-sampling bridge estimate from a dyad-independent reference model</p>
+</li>
+</ul>
+<h4 id="tergm_stergmcmple_dyad-dependent_formula"><a href="#tergm_stergmcmple_dyad-dependent_formula" class="header-anchor">TERGM — <code>stergm</code>/CMPLE, <strong>dyad-dependent</strong> formula</a></h4>
+<ul>
+<li><p>conditional maximum pseudo-likelihood of a dyad-dependent formula: the dyad conditionals of each transition are multiplied as if independent, so the point estimates are biased in finite samples</p>
+</li>
+<li><p>inverse-Hessian standard errors of the naive conditional pseudo-likelihood: expected anticonservative under dyadic dependence</p>
+</li>
+</ul>
+<h4 id="ergmcount_fit_ergm_count_dyad-independent_sum_nonzero"><a href="#ergmcount_fit_ergm_count_dyad-independent_sum_nonzero" class="header-anchor">ERGMCount — <code>fit_ergm_count</code>, <strong>dyad-independent</strong> &#40;<code>sum &#43; nonzero</code>&#41;</a></h4>
+<ul>
+<li><p>count support truncated at 0:10; max boundary mass 4.41e-5 &#40;the reference measure is unbounded, so the enumerated support is an approximation to the model&#39;s&#41;</p>
+</li>
+</ul>
+<h4 id="ergmcount_fit_ergm_count_dyad-dependent_sum_mutual"><a href="#ergmcount_fit_ergm_count_dyad-dependent_sum_mutual" class="header-anchor">ERGMCount — <code>fit_ergm_count</code>, <strong>dyad-dependent</strong> &#40;<code>sum &#43; mutual</code>&#41;</a></h4>
+<ul>
+<li><p>count support truncated at 0:10; max boundary mass 2.83e-9 &#40;the reference measure is unbounded, so the enumerated support is an approximation to the model&#39;s&#41;</p>
+</li>
+<li><p>maximum pseudo-likelihood of a dyad-dependent model: the dyad conditionals are multiplied as if independent, so the point estimates are biased in finite samples</p>
+</li>
+<li><p>inverse-Hessian standard errors of the naive pseudo-likelihood: expected anticonservative under dyadic dependence &#40;refit with <code>se&#61;:bootstrap</code> for a parametric-bootstrap covariance&#41;</p>
+</li>
+</ul>
+<h4 id="ergmmulti_ergm_multi_dyad-dependent_interlayer_dependence"><a href="#ergmmulti_ergm_multi_dyad-dependent_interlayer_dependence" class="header-anchor">ERGMMulti — <code>ergm_multi</code>, <strong>dyad-dependent</strong> &#40;interlayer dependence&#41;</a></h4>
+<ul>
+<li><p>maximum pseudo-likelihood of a dyad-dependent multilayer model: the &#40;layer, i, j&#41; conditionals are multiplied as if independent, so the point estimates are biased in finite samples</p>
+</li>
+<li><p>inverse-Hessian standard errors of the naive pseudo-likelihood: expected anticonservative under dependence &#40;refit with <code>se&#61;:bootstrap</code> for a parametric-bootstrap covariance&#41;</p>
+</li>
+</ul>
+<h4 id="ergmego_fit_ergm_ego_mcmc_method_of_moments"><a href="#ergmego_fit_ergm_ego_mcmc_method_of_moments" class="header-anchor">ERGMEgo — <code>fit_ergm_ego</code>, MCMC method of moments</a></h4>
+<ul>
+<li><p>method-of-moments fit by MCMC: the targets are matched against simulated means, so the estimates carry Monte-Carlo error</p>
+</li>
+<li><p>the model is simulated on a pseudo-population network of size 20, not the population of size 20; the edges coefficient is put on the population scale by the size adjustment -0.0</p>
+</li>
+<li><p>the survey-design variance component is the weighted-mean variance of the target statistics under INDEPENDENT egos with the given case weights: it encodes no strata, clusters, finite-population correction, replicate weights, without-replacement inclusion probabilities, or alter dependence, so the standard errors are narrower than &quot;survey-design variance&quot; implies for any richer sampling design</p>
+</li>
+<li><p>the Monte-Carlo variance of the pseudo-population construction itself is not included in the reported standard errors</p>
+</li>
+</ul>
+<h4 id="ergmrank_fit_ergm_rank_swap-mple_default_ses"><a href="#ergmrank_fit_ergm_rank_swap-mple_default_ses" class="header-anchor">ERGMRank — <code>fit_ergm_rank</code>, swap-MPLE, default SEs</a></h4>
+<ul>
+<li><p>swap pseudo-likelihood: the &#40;ego, alter-pair&#41; swap conditionals are multiplied as if independent, but they overlap &#40;each ranking enters n − 2 comparisons&#41;, so this is not the likelihood and no consistency result is claimed for the estimator</p>
+</li>
+<li><p>inverse-Hessian standard errors of the naive swap pseudo-likelihood: they ignore the dependence between the overlapping comparisons and are expected anticonservative &#40;too small&#41;. Treat them as a rough guide, not calibrated inference — or refit with <code>se&#61;:bootstrap</code></p>
+</li>
+</ul>
+<h4 id="ergmrank_fit_ergm_rank_swap-mple_sebootstrap"><a href="#ergmrank_fit_ergm_rank_swap-mple_sebootstrap" class="header-anchor">ERGMRank — <code>fit_ergm_rank</code>, swap-MPLE, <code>se&#61;:bootstrap</code></a></h4>
+<ul>
+<li><p>swap pseudo-likelihood: the &#40;ego, alter-pair&#41; swap conditionals are multiplied as if independent, but they overlap &#40;each ranking enters n − 2 comparisons&#41;, so this is not the likelihood and no consistency result is claimed for the estimator</p>
+</li>
+<li><p>standard errors are a parametric bootstrap of the swap MPLE &#40;simulate rank networks at θ̂ with the AlterSwap sampler, refit, empirical covariance&#41;: they do NOT treat the overlapping swap comparisons as independent, but they are Monte-Carlo estimates and assume the fitted model generated the data</p>
+</li>
+</ul>
+<h4 id="rem_fit_rem_case-control_conditional_logit"><a href="#rem_fit_rem_case-control_conditional_logit" class="header-anchor">REM — <code>fit_rem</code>, case-control conditional logit</a></h4>
+<ul>
+<li><p>case-control sampling of the risk set &#40;each non-case dyad entered its stratum with probability 0.1724&#41;: the partial likelihood is an approximation to the full-risk-set ordinal likelihood</p>
+</li>
+<li><p>the inverse-Hessian standard errors are conditional on the ONE sampled control set that was drawn: they do not include the variance induced by the risk-set sampling itself, so they are understated &#40;refit with <code>se&#61;:bootstrap</code> to include it, or <code>se&#61;:sandwich</code> for a misspecification-robust covariance&#41;</p>
+</li>
+</ul>
+<h4 id="siena_siena07_saom_by_method_of_moments"><a href="#siena_siena07_saom_by_method_of_moments" class="header-anchor">Siena — <code>siena07</code>, SAOM by method of moments</a></h4>
+<ul>
+<li><p>the fit did NOT meet the RSiena convergence standard &#40;|t-ratio| &lt; threshold for every parameter and tconv.max &#61; 0.194 below its own&#41;: the estimates do not solve the moment equations</p>
+</li>
+<li><p>Method of Moments by stochastic approximation: the moments are Monte-Carlo estimates from simulated trajectories, so the estimates carry Monte-Carlo error</p>
+</li>
+<li><p>standard errors are D⁻¹ Σ D⁻ᵀ with BOTH factors estimated from the phase-3 simulations; the derivative matrix D is ridge-regularized &#40;&#43;0.01·I&#41; before inversion, which biases the reported standard errors</p>
+</li>
+</ul>
+<h4 id="fits_that_declare_no_approximation_at_all"><a href="#fits_that_declare_no_approximation_at_all" class="header-anchor">Fits that declare no approximation at all</a></h4>
+<table><tr><th align="left">package</th><th align="left">fit</th><th align="left">why there is nothing to declare</th></tr><tr><td align="left">ERGM</td><td align="left"><code>mple</code>, <strong>dyad-independent</strong> formula &#40;<code>edges</code>&#41;</td><td align="left">the objective <strong>is</strong> the exact likelihood of this model</td></tr><tr><td align="left">TERGM</td><td align="left"><code>stergm</code>/CMPLE, <strong>dyad-independent</strong> formula</td><td align="left">the objective <strong>is</strong> the exact likelihood of this model</td></tr><tr><td align="left">ERGMMulti</td><td align="left"><code>ergm_multi</code>, <strong>dyad-independent</strong> &#40;per-layer edges&#41;</td><td align="left">the objective <strong>is</strong> the exact likelihood of this model</td></tr><tr><td align="left">Relevent</td><td align="left"><code>fit_obpm</code>, ordinal B-P model</td><td align="left">the objective <strong>is</strong> the exact likelihood of this model</td></tr><tr><td align="left">Relevent</td><td align="left"><code>fit_timing</code>, exact-time hazard model</td><td align="left">the objective <strong>is</strong> the exact likelihood of this model</td></tr></table>
+<h2 id="validation_against_the_reference_implementations"><a href="#validation_against_the_reference_implementations" class="header-anchor">Validation against the reference implementations</a></h2>
+<p>A row exists here only if a golden fixture exists in the package repository: a frozen set of numbers produced by the R implementation, together with the script that produced them, the R and package versions, and the seed. <strong>No fixture, no claim.</strong> The dataset column is the scale that has actually been validated — not a claim about the scale the code will run at.</p>
+<table><tr><th align="left">package</th><th align="left">fixture</th><th align="left">reference implementation</th><th align="left">R</th><th align="left">validated on</th></tr><tr><td align="left">Networks</td><td align="left"><code>florentine_sna</code></td><td align="left"><code>sna</code> 2.8</td><td align="left">4.6.1</td><td align="left">network::flo &#40;Padgett Florentine marriage&#41;</td></tr><tr><td align="left">SNA</td><td align="left">—</td><td align="left"><em>no golden fixture</em></td><td align="left"></td><td align="left"></td></tr><tr><td align="left">ERGM</td><td align="left"><code>flomarriage_ergm</code></td><td align="left"><code>ergm</code> 4.12.0</td><td align="left">4.6.1</td><td align="left">ergm::flomarriage &#40;Padgett&#41;: 16 Florentine families, 20 undirected marriage ties, wealth covariate</td></tr><tr><td align="left">TERGM</td><td align="left"><code>panel_stergm</code></td><td align="left"><code>btergm</code> 1.11.1, <code>ergm</code> 4.12.0, <code>tergm</code> 4.2.2</td><td align="left">4.6.1</td><td align="left">simulated: 25 actors, 8 directed waves, alternating two-group <code>grp</code> attribute</td></tr><tr><td align="left">ERGMCount</td><td align="left"><code>zach_poisson</code></td><td align="left"><code>ergm_count</code> 4.1.3, <code>ergm</code> 4.12.0</td><td align="left">4.6.1</td><td align="left">ergm.count::zach &#40;Zachary 1977&#41;: 34 karate-club members, undirected, <code>contexts</code> edge counts 0-7</td></tr><tr><td align="left">ERGMEgo</td><td align="left"><code>fauxmesa_ego_census</code></td><td align="left"><code>ergm_ego</code> 1.1.4, <code>ergm</code> 4.12.0</td><td align="left">4.6.1</td><td align="left">ergm::faux.mesa.high: 205 students, 203 undirected friendship ties, Grade 7-12</td></tr><tr><td align="left">ERGMMulti</td><td align="left"><code>twolayer_ergm_multi</code></td><td align="left"><code>ergm_multi</code> 0.3.0, <code>ergm</code> 4.12.0</td><td align="left">4.6.1</td><td align="left">simulated: 2 directed layers on the same 20 actors, alternating two-group <code>grp</code></td></tr><tr><td align="left">ERGMRank</td><td align="left"><code>newcomb_rank</code></td><td align="left"><code>ergm_rank</code> 4.1.2, <code>ergm</code> 4.12.0</td><td align="left">4.6.1</td><td align="left">ergm.rank::newcomb&#91;&#91;1&#93;&#93; &#40;Newcomb 1961&#41;: 17 fraternity men, week 1, each ranking the other 16</td></tr><tr><td align="left">REM</td><td align="left"><code>rem_clogit</code></td><td align="left"><code>survival</code> 3.8.6</td><td align="left">4.6.1</td><td align="left">simulated relational event sequence &#40;10 actors, 80 events&#41;</td></tr><tr><td align="left">REM</td><td align="left"><code>rem_ties</code></td><td align="left"><code>survival</code> 3.8.6</td><td align="left">4.6.1</td><td align="left">simulated relational event sequence &#40;8 actors, 90 events&#41; observed on a coarse clock &#40;resolution 0.03&#41;, which is what makes the ties</td></tr><tr><td align="left">Relevent</td><td align="left"><code>relevent_rem_dyad</code></td><td align="left"><code>relevent</code> 1.2.1</td><td align="left">4.6.1</td><td align="left">simulated dyadic event sequence &#40;8 actors, 100 events&#41;</td></tr><tr><td align="left">Siena</td><td align="left"><code>s50_siena07</code></td><td align="left"><code>rsiena</code> 1.6.6</td><td align="left">4.6.1</td><td align="left">RSiena::s50 &#40;van Duijn&#41;: 50 actors, 3 friendship waves, smoke1 covariate</td></tr></table>
+<p>Two entries in that table are <strong>not</strong> claims of agreement, and are called out in the limitations below: <code>newcomb_rank</code> pins ERGMRank against a <em>different estimator</em>, and <code>s50_siena07</code> pins Siena against RSiena on the estimand while documenting that the procedure is materially weaker.</p>
+<h2 id="missing-data_support"><a href="#missing-data_support" class="header-anchor">Missing-data support</a></h2>
+<p>The ecosystem contract &#40;<code>Networks.supports_missing</code> / <code>Networks.require_observed</code>&#41;: a routine that has not declared a missing-data method <strong>refuses</strong> a network with masked dyads rather than silently reading unobserved ties at face value. Both columns below are read out of the code — the first from the <code>Networks.supports_missing</code> trait, which defaults to <code>false</code> &#40;so this is a census, not an advertisement&#41;, and the second from the routine&#39;s own method table.</p>
+<p>The second column is worth reading carefully, because it is narrower than the contract&#39;s slogan. <code>missing &#61; :face</code> is described as the auditable opt-in <em>everywhere</em>, but only three of the thirteen fitting functions actually accept the keyword. For the rest, refusing is all they can do: there is no way to ask them to proceed on face values, and a masked network must be resolved before it reaches them &#40;<a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/1">Networks#1</a>&#41;.</p>
+<table><tr><th align="left">package</th><th align="left">routine</th><th align="left">handles masked dyads</th><th align="left">face-value opt-in</th></tr><tr><td align="left">ERGM</td><td align="left"><code>mple</code></td><td align="left"><strong>yes</strong> — available-case objective; masked dyads excluded</td><td align="left"><em>not needed — it handles the mask</em></td></tr><tr><td align="left">ERGM</td><td align="left"><code>mcmle</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><code>missing &#61; :face</code></td></tr><tr><td align="left">SNA</td><td align="left"><code>netlm</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><code>missing &#61; :face</code></td></tr><tr><td align="left">SNA</td><td align="left"><code>netlogit</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><code>missing &#61; :face</code></td></tr><tr><td align="left">TERGM</td><td align="left"><code>stergm</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">ERGMCount</td><td align="left"><code>fit_ergm_count</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">ERGMEgo</td><td align="left"><code>fit_ergm_ego</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">ERGMMulti</td><td align="left"><code>ergm_multi</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">ERGMRank</td><td align="left"><code>fit_ergm_rank</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">REM</td><td align="left"><code>fit_rem</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">Relevent</td><td align="left"><code>fit_obpm</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">Relevent</td><td align="left"><code>fit_timing</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr><tr><td align="left">Siena</td><td align="left"><code>siena07</code></td><td align="left">no — a masked network is <strong>rejected</strong></td><td align="left"><em>none — it can only refuse</em></td></tr></table>
+<h2 id="known_limitations_and_who_owns_them"><a href="#known_limitations_and_who_owns_them" class="header-anchor">Known limitations, and who owns them</a></h2>
+<p>Everything below is a real, reproduced finding. Each links to the issue that owns it.</p>
+<h3 id="sienajls_saom_procedure_is_materially_weaker_than_rsienas_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliasienajlissues2siena2"><a href="#sienajls_saom_procedure_is_materially_weaker_than_rsienas_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliasienajlissues2siena2" class="header-anchor">Siena.jl&#39;s SAOM procedure is materially weaker than RSiena&#39;s — <a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl/issues/2">Siena#2</a></a></h3>
+<p><strong>This is the most serious open finding in the ecosystem, and it can bite you silently.</strong> The <em>estimand</em> is right: on the <code>s50</code> fixture every parameter lands within 0.28 RSiena standard errors of RSiena&#39;s own estimate. The <em>procedure</em> is not:</p>
+<ul>
+<li><p><strong>~1 seed in 10 diverges outright while reporting <code>diverged &#61;&#61; false</code>.</strong> Two of 24 surveyed seeds reached <code>tconv.max ≈ 50</code> &#40;reciprocity 5.77 against a true ≈ 2.40&#41;. The parameter clamp never fires, so <strong><code>result.tconv_max</code> is the only signal you have</strong> that a fit is garbage. Check it. Do not trust <code>diverged</code>.</p>
+</li>
+<li><p><strong>3–19× noisier than RSiena at the same simulation budget</strong> &#40;smoke1-similarity: seed-to-seed sd 0.045, against RSiena&#39;s 0.0057&#41;.</p>
+</li>
+<li><p><strong>It fails the convergence standard it enforces on itself</strong>: <code>tconv.max</code> came out 0.26–0.77 across five seeds, against the 0.25 threshold Siena.jl checks. RSiena gets 0.13 on the same data.</p>
+</li>
+<li><p><strong>More budget makes it worse, not better.</strong> Raising <code>phase1_iterations</code> to 200 or 400 each diverged one seed in six; <code>n_simulations &#61; 5</code> inflates the sd about tenfold. The shipped defaults are the only stable operating point.</p>
+</li>
+</ul>
+<p>Until this is fixed: run several seeds, compare the estimates, and read <code>tconv_max</code> on every one.</p>
+<h3 id="two_rsiena_comparisons_cannot_be_made_at_all_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliasienajlissues2siena2"><a href="#two_rsiena_comparisons_cannot_be_made_at_all_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliasienajlissues2siena2" class="header-anchor">Two RSiena comparisons cannot be made at all — <a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl/issues/2">Siena#2</a></a></h3>
+<p><code>SienaResult</code> exposes neither the <strong>derivative matrix</strong> nor the <strong>phase-3 statistic covariance</strong>, so two of the comparisons the parity issue asks for cannot be performed. RSiena&#39;s values are frozen in the fixture as reference-only, unasserted; the check is one accessor away.</p>
+<h3 id="ergmranks_swap-mple_is_a_different_estimator_not_an_approximation_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmrankjlissues1ergmrank1"><a href="#ergmranks_swap-mple_is_a_different_estimator_not_an_approximation_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmrankjlissues1ergmrank1" class="header-anchor">ERGMRank&#39;s swap-MPLE is a different estimator, not an approximation — <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/issues/1">ERGMRank#1</a></a></h3>
+<p><code>ergm.rank</code> fits by MCMC-MLE; ERGMRank.jl fits a <strong>swap pseudo-likelihood</strong>. The swap comparisons overlap &#40;each ranking enters <em>n</em> − 2 of them&#41;, so their product is not the likelihood, and <strong>no consistency result is claimed</strong>. Against R on the Newcomb fixture it is systematically <strong>16× R&#39;s seed noise</strong> — though the gap is only about <strong>0.3 of a standard error</strong>, so it is a difference of estimator, not a bug. The fixture pins the <em>character</em> of the gap rather than asserting agreement.</p>
+<h3 id="pseudo-likelihood_hessian_standard_errors_are_anticonservative_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmrankjlissues1ergmrank1_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmmultijlissues1ergmmulti1_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmcountjlissues2ergmcount2_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaremjlissues2rem2"><a href="#pseudo-likelihood_hessian_standard_errors_are_anticonservative_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmrankjlissues1ergmrank1_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmmultijlissues1ergmmulti1_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmcountjlissues2ergmcount2_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaremjlissues2rem2" class="header-anchor">Pseudo-likelihood Hessian standard errors are anticonservative — <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/issues/1">ERGMRank#1</a>, <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl/issues/1">ERGMMulti#1</a>, <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/issues/2">ERGMCount#2</a>, <a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl/issues/2">REM#2</a></a></h3>
+<p>Where the objective is a pseudo-likelihood and the model is dyad-dependent, the inverse-Hessian standard errors treat overlapping conditionals as independent and come out <strong>too small</strong>. Measured against <code>Networks.bootstrap_cov</code> on dependent models:</p>
+<table><tr><th align="left">package</th><th align="left">bootstrap SE ÷ Hessian SE</th></tr><tr><td align="left">ERGMRank</td><td align="left"><strong>5.4×</strong> and 3.4×</td></tr><tr><td align="left">ERGMMulti</td><td align="left">up to 9.0×</td></tr><tr><td align="left">ERGMCount</td><td align="left">1.20×</td></tr><tr><td align="left">REM</td><td align="left">1.03–1.17×</td></tr></table>
+<p>Pass <strong><code>se &#61; :bootstrap</code></strong> &#40;or <code>se &#61; :sandwich</code> for REM&#41; whenever the model is dyad-dependent. Point estimates are byte-identical across the <code>se</code> options; only the covariance changes.</p>
+<h3 id="rems_uncertainty_ignores_the_risk-set_sampling_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaremjlissues2rem2"><a href="#rems_uncertainty_ignores_the_risk-set_sampling_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaremjlissues2rem2" class="header-anchor">REM&#39;s uncertainty ignores the risk-set sampling — <a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl/issues/2">REM#2</a></a></h3>
+<p>The default inverse-Hessian standard errors are conditional on the <strong>one</strong> sampled control set that was drawn, so they omit the variance induced by the case-control sampling itself. <code>se &#61; :bootstrap</code> &#40;law of total variance&#41; or <code>se &#61; :sandwich</code> includes it. Relatedly, the actor universe must be <strong>declared</strong> &#40;<a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl/issues/1">REM#1</a>&#41;: inferring it from observed event endpoints drops eligible non-participants from the risk set and changes the estimand.</p>
+<h3 id="ergmcount_truncates_an_unbounded_support_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmcountjlissues1ergmcount1"><a href="#ergmcount_truncates_an_unbounded_support_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmcountjlissues1ergmcount1" class="header-anchor">ERGMCount truncates an unbounded support — <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/issues/1">ERGMCount#1</a></a></h3>
+<p>Poisson/geometric references have unbounded support; the fit enumerates <code>0:max_val</code> and reports the <strong>boundary mass</strong> it is leaning on &#40;see the caveats above — it is reported per fit, not assumed away&#41;. It is currently data-adaptive rather than error-controlled.</p>
+<h3 id="ergmegos_design_variance_encodes_only_a_simple_design_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmegojlissues1ergmego1"><a href="#ergmegos_design_variance_encodes_only_a_simple_design_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliaergmegojlissues1ergmego1" class="header-anchor">ERGMEgo&#39;s design variance encodes only a simple design — <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl/issues/1">ERGMEgo#1</a></a></h3>
+<p>The survey-design variance component is the weighted-mean variance of the target statistics under <strong>independent egos</strong> with the given case weights. It encodes no strata, clusters, finite-population correction, replicate weights, without-replacement inclusion probabilities, or alter dependence. Since the design component is roughly <strong>17× the estimation component</strong>, an ego standard error essentially <em>is</em> its design variance — so a richer sampling design than the one assumed will give you standard errors that are too narrow.</p>
+<h3 id="tergm_has_no_egmme_and_cmle_is_not_cmle_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliatergmjlissues1tergm1"><a href="#tergm_has_no_egmme_and_cmle_is_not_cmle_a_hrefhttpsgithubcomstatistical-network-analysis-with-juliatergmjlissues1tergm1" class="header-anchor">TERGM has no EGMME, and <code>cmle</code> is not CMLE — <a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl/issues/1">TERGM#1</a></a></h3>
+<p><code>TERGM.egmme</code> is unimplemented and deliberately <strong>unexported</strong>: it throws rather than silently doing something else. <code>cmle</code> throws rather than quietly falling back to CMPLE. For a dyad-dependent formula, the CMPLE rows above show <code>exact? &#61; no</code>.</p>
+<h3 id="missing-dyad_semantics_across_conversions_a_hrefhttpsgithubcomstatistical-network-analysis-with-julianetworksjlissues1networks1"><a href="#missing-dyad_semantics_across_conversions_a_hrefhttpsgithubcomstatistical-network-analysis-with-julianetworksjlissues1networks1" class="header-anchor">Missing-dyad semantics across conversions — <a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/1">Networks#1</a></a></h3>
+<p>Conversions between <code>Network</code>, <code>DynamicNetwork</code> and the Siena/REM data structures are now mask-preserving where they can be and <strong>reject</strong> where they cannot. In particular, <strong>Siena&#39;s structural mask is not a missing mask</strong>: Siena records ties that are <em>determined</em>, <code>Networks</code> records ties that are <em>unobserved</em>, and encoding one as the other would tell the estimator that a tie is known to be impossible. There is no faithful encoding, so the conversion refuses.</p>
+<h3 id="the_module_is_networks_the_type_is_network_a_hrefhttpsgithubcomstatistical-network-analysis-with-julianetworksjlissues2networks2"><a href="#the_module_is_networks_the_type_is_network_a_hrefhttpsgithubcomstatistical-network-analysis-with-julianetworksjlissues2networks2" class="header-anchor">The module is <code>Networks</code>, the type is <code>Network</code> — <a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/2">Networks#2</a></a></h3>
+<p><code>using Networks</code>, then <code>Network&#40;5&#41;</code>. The module was renamed &#40;the type name appears in ~200 downstream signatures&#41;; <code>using Network</code> is not a thing.</p>
+<h3 id="what_is_not_covered_here"><a href="#what_is_not_covered_here" class="header-anchor">What is not covered here</a></h3>
+<p>This page covers <strong>fitted estimators</strong>. Descriptive measures &#40;<code>SNA.jl</code> centralities, cohesion, equivalence&#41;, simulation-only entry points &#40;<code>simulate_*</code>&#41;, and the visualization packages &#40;<code>NDTV.jl</code>, <code>TSNA.jl</code>&#41; are not fits and have no result metadata to report; their own issues are <a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl/issues/1">NDTV#1</a>, <a href="https://github.com/statistical-network-analysis-with-Julia/TSNA.jl/issues/1">TSNA#1</a> and <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl/issues/1">ERGMUserterms#1</a>. Regenerating this page is tracked by <a href="https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/issues/2">site#2</a>; release/registry sequencing by <a href="https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/issues/3">site#3</a>.</p>
+</div><!-- .page-content -->
+<footer class="mt-auto text-center text-muted py-4 border-top">
+  <div class="container">
+    <p class="mb-1">
+      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
+      &middot; MIT License
+    </p>
+    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
+<script>hljs.highlightAll();</script>
+ 
+<script>
+(function() {
+  var sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  var links = sidebar.querySelectorAll('a[href^="#"]');
+  if (!links.length) return;
+  var sections = [];
+  links.forEach(function(link) {
+    var id = link.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ el: el, link: link });
+  });
+  function update() {
+    var scrollY = window.scrollY + 80;
+    var current = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+</body>
+</html>

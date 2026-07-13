@@ -1,0 +1,4 @@
+Sitemap: https://statistical-network-analysis-with-julia.github.io/sitemap.xml
+
+User-agent: *
+Disallow:
