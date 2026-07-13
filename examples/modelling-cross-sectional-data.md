@@ -9,7 +9,7 @@ does family wealth attract marriage ties, and do alliances cluster beyond
 what wealth explains?
 
 ```julia
-using Network, ERGM
+using Networks, ERGM
 
 net = network(16; directed=false)
 ties = [(1, 9), (2, 6), (2, 7), (2, 9), (3, 5), (3, 9), (4, 7), (4, 11),

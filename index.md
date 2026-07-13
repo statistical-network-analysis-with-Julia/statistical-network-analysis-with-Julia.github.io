@@ -121,11 +121,11 @@ All packages require **Julia 1.12+** and are MIT-licensed. If you know the R sta
 <h3 class="section-title">Infrastructure</h3>
 <div class="pkg-grid">
   <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/Network.jl">Network.jl</a> <span class="badge-julia">Julia</span></h4>
+    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl">Networks.jl</a> <span class="badge-julia">Julia</span></h4>
     <p>Core network data structures with vertex, edge, and network-level attributes. Implements the Graphs.jl interface.</p>
     <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/Network.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/Network.jl/stable/">Docs</a>
+      <a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl">GitHub</a>
+      <a href="https://statistical-network-analysis-with-Julia.github.io/Networks.jl/stable/">Docs</a>
       <span class="r-port">based on R network</span>
     </div>
   </div>

@@ -1,0 +1,82 @@
+# Freshness gate for the generated capability and parity matrix (site#2).
+#
+# `capabilities.md` is produced by running the ecosystem: every row of its
+# estimator table is `Networks.fit_metadata` applied to an actual small fit, and
+# every row of its validation table is the [provenance] block of a golden fixture
+# on disk. That is only worth anything if the committed page cannot silently rot
+# behind the code — so this job reconstructs the ecosystem, regenerates the page,
+# and fails if what the code reports is no longer what the page says.
+#
+# The generator masks numeric literals before comparing (a boundary mass, a
+# case-control inclusion probability, a Monte-Carlo convergence statistic can
+# wobble in the last digits across Julia versions and thread counts even under a
+# fixed seed), so a failure here is a STRUCTURAL change: an estimator changed its
+# objective, an exactness verdict flipped, a standard-error method moved, a
+# declared caveat appeared or disappeared, or a golden fixture was added or lost.
+# Any of those must be reflected on the page. Regenerate and commit:
+#
+#     julia --project=. tools/generate_capability_matrix.jl
+#
+# Note: the monorepo root is not itself a git repository — the packages are
+# independent repos wired together by [sources] path dependencies — so this job
+# rebuilds that layout by cloning the siblings, the same approach the deferred CI
+# options in tools/README.md describe.
+
+name: Capability matrix
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this site repo
+        uses: actions/checkout@v4
+        with:
+          path: site
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - uses: julia-actions/cache@v2
+
+      # The ecosystem's 15 packages, each an independent repository. The Networks
+      # module still lives in a repository called `Network.jl` (the rename is
+      # Network#2 and is about the Julia names, not the repo), so it is cloned
+      # into a directory named for the package, which is what [sources] and the
+      # generator expect.
+      - name: Reconstruct the ecosystem layout
+        run: |
+          mkdir -p snwj
+          cd snwj
+          org=https://github.com/statistical-network-analysis-with-Julia
+          git clone --depth 1 "$org/Network.jl" Networks.jl
+          for pkg in SNA ERGM ERGMCount ERGMEgo ERGMMulti ERGMRank ERGMUserterms \
+                     TERGM REM Relevent Siena NetworkDynamic TSNA NDTV; do
+            git clone --depth 1 "$org/$pkg.jl" "$pkg.jl"
+          done
+
+      - name: Build an environment with every package developed
+        run: |
+          julia -e '
+            using Pkg
+            root = joinpath(pwd(), "snwj")
+            Pkg.activate(joinpath(root, ".capmatrix-env"))
+            for d in readdir(root; join=true)
+                isfile(joinpath(d, "Project.toml")) || continue
+                Pkg.develop(path=d)
+            end
+            Pkg.instantiate()'
+
+      - name: Is capabilities.md still what the code reports?
+        env:
+          SNWJ_ROOT: ${{ github.workspace }}/snwj
+        run: |
+          julia --project=snwj/.capmatrix-env \
+            site/tools/generate_capability_matrix.jl --check

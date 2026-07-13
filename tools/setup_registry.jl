@@ -20,12 +20,12 @@
 # package, not the working tree.  Commit (and ideally tag) every package
 # before running with --register; the dry run flags dirty trees for you.
 #
-# The monorepo root (the directory that contains Network.jl, ERGM.jl, ...,
+# The monorepo root (the directory that contains Networks.jl, ERGM.jl, ...,
 # and this site repo side by side) is taken from ENV["SNWJ_ROOT"] if set,
 # otherwise it defaults to the parent directory of this repo.
 #
 # Registration order (dependents strictly after their dependencies):
-#   Network → NetworkDynamic / SNA / ERGM / Siena → REM → Relevent,
+#   Networks → NetworkDynamic / SNA / ERGM / Siena → REM → Relevent,
 #   NDTV / TSNA, and the ERGM satellite packages (ERGMCount, ERGMEgo,
 #   ERGMMulti, ERGMRank, ERGMUserterms, TERGM).
 #
@@ -45,21 +45,21 @@ const ROOT = get(ENV, "SNWJ_ROOT", dirname(SITE_DIR))
 
 # Topological order: every package appears after all of its local deps.
 const REGISTRATION_ORDER = [
-    "Network.jl",         # foundation: no local deps
-    "NetworkDynamic.jl",  # ← Network
-    "SNA.jl",             # ← Network
-    "ERGM.jl",            # ← Network
-    "Siena.jl",           # ← Network (extension)
-    "REM.jl",             # ← Network (+ NetworkDynamic weakdep)
-    "Relevent.jl",        # ← Network, REM
-    "NDTV.jl",            # ← Network, NetworkDynamic
-    "TSNA.jl",            # ← Network, NetworkDynamic, SNA
-    "TERGM.jl",           # ← Network, ERGM
-    "ERGMCount.jl",       # ← Network, ERGM
-    "ERGMEgo.jl",         # ← Network, ERGM
-    "ERGMMulti.jl",       # ← Network, ERGM
-    "ERGMRank.jl",        # ← Network, ERGM
-    "ERGMUserterms.jl",   # ← Network, ERGM
+    "Networks.jl",         # foundation: no local deps
+    "NetworkDynamic.jl",  # ← Networks
+    "SNA.jl",             # ← Networks
+    "ERGM.jl",            # ← Networks
+    "Siena.jl",           # ← Networks (extension)
+    "REM.jl",             # ← Networks (+ NetworkDynamic weakdep)
+    "Relevent.jl",        # ← Networks, REM
+    "NDTV.jl",            # ← Networks, NetworkDynamic
+    "TSNA.jl",            # ← Networks, NetworkDynamic, SNA
+    "TERGM.jl",           # ← Networks, ERGM
+    "ERGMCount.jl",       # ← Networks, ERGM
+    "ERGMEgo.jl",         # ← Networks, ERGM
+    "ERGMMulti.jl",       # ← Networks, ERGM
+    "ERGMRank.jl",        # ← Networks, ERGM
+    "ERGMUserterms.jl",   # ← Networks, ERGM
 ]
 
 # ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 # Usage:
 #     julia tools/run_benchmarks.jl [filter...]
 #
-# The monorepo root (the directory that contains Network.jl, ERGM.jl, ...,
+# The monorepo root (the directory that contains Networks.jl, ERGM.jl, ...,
 # and this site repo side by side) is taken from ENV["SNWJ_ROOT"] if set,
 # otherwise it defaults to the parent directory of this repo. Any positional
 # arguments are substring filters on the package name, e.g.

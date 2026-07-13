@@ -10,7 +10,7 @@ Renaissance Florentine families. Every measure below matches R `sna` on
 the same data (the package's test suite pins these values).
 
 ```julia
-using Network, SNA
+using Networks, SNA
 
 # Padgett's Florentine marriage network: 16 families, 20 marriage ties
 families = ["Acciaiuoli", "Albizzi", "Barbadori", "Bischeri", "Castellani",

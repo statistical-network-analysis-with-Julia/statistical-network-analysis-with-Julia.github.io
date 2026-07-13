@@ -32,7 +32,7 @@ Three conventions carry most of the translation:
 
 | R package | Julia package | Main entry points |
 |:---|:---|:---|
-| `network` | [Network.jl](https://github.com/statistical-network-analysis-with-Julia/Network.jl) | `network`, `network_from_matrix`, `load_dataset` |
+| `network` | [Networks.jl](https://github.com/statistical-network-analysis-with-Julia/Networks.jl) | `network`, `network_from_matrix`, `load_dataset` |
 | `sna` | [SNA.jl](https://github.com/statistical-network-analysis-with-Julia/SNA.jl) | `degree_centrality`, `gden`, `triad_census`, ... |
 | `ergm` | [ERGM.jl](https://github.com/statistical-network-analysis-with-Julia/ERGM.jl) | `ergm` / `fit_ergm`, `gof`, `simulate_ergm` |
 | `ergm.count` | [ERGMCount.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl) | `ergm_count` |
@@ -48,7 +48,7 @@ Three conventions carry most of the translation:
 | `ndtv` | [NDTV.jl](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl) | `render_animation`, `filmstrip`, `timeline_plot` |
 
 The packages are not yet in the General registry: either add them by URL
-in dependency order (Network.jl first, then SNA/ERGM/NetworkDynamic, then
+in dependency order (Networks.jl first, then SNA/ERGM/NetworkDynamic, then
 their dependents — each README has the ordered `Pkg.add(url=...)` block),
 or clone all repositories side by side and start Julia with the root
 workspace project (`julia --project=.` in the clone root), which wires
@@ -59,12 +59,12 @@ will eventually work.
 All packages require Julia 1.12+.
 
 A convenience worth knowing from day one: `using ERGM` (and the ERGM
-variants) re-exports the whole Network.jl API, so a single `using ERGM`
+variants) re-exports the whole Networks.jl API, so a single `using ERGM`
 gives you `network`, `add_edge!`, attribute setters, and `load_dataset`.
 
-## Networks: `network` → Network.jl
+## Networks: `network` → Networks.jl
 
-| R (`network`) | Julia (Network.jl) |
+| R (`network`) | Julia (Networks.jl) |
 |:---|:---|
 | `network.initialize(16)` | `network(16)` (directed by default, like R) |
 | `network(16, directed=FALSE)` | `network(16; directed=false)` |
@@ -135,7 +135,7 @@ fit <- ergm(samplike ~ edges + mutual + nodematch("group", diff=TRUE))
 
 ```julia
 # Julia
-using ERGM, Random               # ERGM re-exports the Network.jl API
+using ERGM, Random               # ERGM re-exports the Networks.jl API
 
 net = load_dataset(:sampson)     # statnet's samplike
 levels = ["Loyal", "Outcasts", "Turks"]
@@ -168,7 +168,7 @@ Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 That coefficient table (Estimate / Std.Error / z value / Pr(>|z|) with
 significance codes, p-values floored at `<1e-16` instead of printing
-`0.0`) is the shared presentation layer from Network.jl — every fitted
+`0.0`) is the shared presentation layer from Networks.jl — every fitted
 model in the ecosystem prints through it.
 
 Note the one real semantic difference in that translation: the term
@@ -288,14 +288,14 @@ score-function derivative estimation, and standard errors from all
 phase-3 simulations.
 
 Since a `Vector` of `Network` objects converts directly (a package
-extension activates when Network.jl is loaded), you can describe
+extension activates when Networks.jl is loaded), you can describe
 cross-sections with SNA.jl and model their dynamics with Siena.jl without
 touching a matrix. A minimal round trip — three synthetic waves, two
 effects (this is a mechanics demo on random data, so the estimates
 themselves are uninteresting):
 
 ```julia
-using Network, Siena, Random
+using Networks, Siena, Random
 
 rng = Xoshiro(11)
 wave1 = network(25; directed=true)
@@ -525,7 +525,7 @@ simulate(fit, nsim=3)
 In Julia (the output below is what this code actually prints):
 
 ```julia
-using ERGM, SNA, Random          # ERGM re-exports the Network.jl API
+using ERGM, SNA, Random          # ERGM re-exports the Networks.jl API
 
 flo = load_dataset(:florentine_marriage)
 println((nv(flo), ne(flo)))

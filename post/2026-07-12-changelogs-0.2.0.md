@@ -16,7 +16,7 @@ baseline, with every breaking change carrying a one-line migration hint.
 
 | Package | 0.2.0 in one line |
 |:---|:---|
-| [Network.jl](https://github.com/statistical-network-analysis-with-Julia/Network.jl/blob/main/CHANGELOG.md) | Compile-time directedness (`Network{T,D}`), attribute-preserving `copy`, missing-dyad masks, bundled datasets, shared result presentation |
+| [Networks.jl](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/blob/main/CHANGELOG.md) | Compile-time directedness (`Network{T,D}`), attribute-preserving `copy`, missing-dyad masks, bundled datasets, shared result presentation |
 | [SNA.jl](https://github.com/statistical-network-analysis-with-Julia/SNA.jl/blob/main/CHANGELOG.md) | cliques/clustering/degree bugs fixed, Graphs.jl generics extended (not shadowed), QAP inference and `centralization`, R-`sna` semantics |
 | [ERGM.jl](https://github.com/statistical-network-analysis-with-Julia/ERGM.jl/blob/main/CHANGELOG.md) | Attribute-preserving copies (the critical fix), statnet-grade MCMLE, directed `GWESP` → `:OTP`, `NodeMatch(diff=true)` → per-level homophily, new terms, O(deg) change stats |
 | [ERGMCount.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/blob/main/CHANGELOG.md) | ergm.count-faithful references, real pseudo-likelihood, Gibbs sampler actually uses change statistics |
@@ -25,7 +25,7 @@ baseline, with every breaking change carrying a one-line migration hint.
 | [ERGMRank.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/blob/main/CHANGELOG.md) | ergm.rank complete-ordering model, flipped rank orientation, swap-based pseudo-likelihood, new term set |
 | [ERGMUserterms.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl/blob/main/CHANGELOG.md) | Add-direction `change_stat` contract for custom terms; validation harness enforces it |
 | [TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl/blob/main/CHANGELOG.md) | CMPLE on attribute-preserving Y⁺/Y⁻ auxiliaries, block-bootstrap SEs, `GOFResult`-based GOF |
-| [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl/blob/main/CHANGELOG.md) | RSiena-parity inference (score derivatives, Polyak–Ruppert, t < 0.1), conditional estimation, Network.jl bridge, threaded phase 3 |
+| [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl/blob/main/CHANGELOG.md) | RSiena-parity inference (score derivatives, Polyak–Ruppert, t < 0.1), conditional estimation, Networks.jl bridge, threaded phase 3 |
 | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl/blob/main/CHANGELOG.md) | `AttributeMatch`/`EventNetworkState` renames, lazy decay (O(1) updates), corrected control sampling |
 | [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl/blob/main/CHANGELOG.md) | 13 Gibson p-shifts, `CovSnd`/`CovRec`/`CovInt`, real MLE fitters, streaming statistics |
 | [NetworkDynamic.jl](https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl/blob/main/CHANGELOG.md) | R-faithful point-spell semantics, `deactivate!`, stable-ID extraction, mutation tracking |
@@ -42,8 +42,8 @@ baseline, with every breaking change carrying a one-line migration hint.
   two model packages together — or `using ERGM, StatsBase` — no longer
   breaks the verb API.
 - **One `gof` generic, one coefficient table**: every fit prints through
-  Network.jl's shared presentation layer, and goodness-of-fit returns
-  `Network.GOFResult` with `(1+k)/(N+1)` Monte-Carlo p-values.
+  Networks.jl's shared presentation layer, and goodness-of-fit returns
+  `Networks.GOFResult` with `(1+k)/(N+1)` Monte-Carlo p-values.
 - **Reproducibility**: `rng::AbstractRNG` keywords on sampling/fitting
   paths, with thread-count-independent seeding where work is parallelized.
 
@@ -58,14 +58,14 @@ changelogs; these are the ones most likely to touch existing scripts:
   `NodeMatch(attr; diff=true)` now means per-level differential homophily
   (as in R); the old mismatch count is the new `NodeMismatch` term.
   `NodeFactor` drops the first level by default (`base=0` keeps all).
-  `gof` returns `Network.GOFResult`; `mcmc_diagnostics` throws on MPLE
+  `gof` returns `Networks.GOFResult`; `mcmc_diagnostics` throws on MPLE
   fits; custom terms must use the add-direction `change_stat` convention.
-- **Network.jl** — `Network{T}` became `Network{T,D}` (one-parameter
+- **Networks.jl** — `Network{T}` became `Network{T,D}` (one-parameter
   annotations still work; `net.directed` is read-only);
   `Graphs.is_directed` is truthful; `Graphs.is_bipartite` is now
   graph-theoretic, with the two-mode metadata flag renamed `is_two_mode`;
   DataFrames methods moved behind a package extension.
-- **TERGM.jl** — `stergm_gof` returns `Network.GOFResult` instead of a
+- **TERGM.jl** — `stergm_gof` returns `Networks.GOFResult` instead of a
   NamedTuple; formula fields renamed to `formation`/`dissolution`;
   simulation takes coefficients positionally; the
   `FormationTerm`/`DissolutionTerm` wrappers and `EdgeAge`/`Memory`/

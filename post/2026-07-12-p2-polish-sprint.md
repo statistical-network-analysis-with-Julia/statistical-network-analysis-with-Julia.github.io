@@ -25,7 +25,7 @@ landed. Highlights:
   standardized `fit_<model>` entry point (`fit_ergm`, `fit_siena`,
   `fit_rem`, `fit_relevent`, `fit_stergm`, `fit_ergm_count`, ...) with
   the R-faithful names kept as aliases, and every fitted model prints
-  through a shared presentation layer in Network.jl: the same R-style
+  through a shared presentation layer in Networks.jl: the same R-style
   coefficient table (Estimate / Std.Error / z value / Pr(>|z|) with
   significance codes), p-values floored at `<1e-16` instead of a
   misleading `0.0`, one `gof` generic across the ecosystem, and
