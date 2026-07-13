@@ -57,11 +57,7 @@ const ROOT = normpath(get(ENV, "SNWJ_ROOT", joinpath(SITE, "..")))
 const PAGE = joinpath(SITE, "capabilities.md")
 const ORG = "statistical-network-analysis-with-Julia"
 
-# The Networks.jl checkout is still published as the `Network.jl` repository
-# (the module/type rename is Network#2, which is about the Julia names, not the
-# repository name), so that is where its issues live.
-const REPO_OF = Dict("Networks" => "Network.jl")
-issue(pkg, n) = "[$pkg#$n](https://github.com/$ORG/$(get(REPO_OF, pkg, pkg * ".jl"))/issues/$n)"
+issue(pkg, n) = "[$pkg#$n](https://github.com/$ORG/$pkg.jl/issues/$n)"
 site_issue(n) = "[site#$n](https://github.com/$ORG/$ORG.github.io/issues/$n)"
 
 # ---------------------------------------------------------------------------
@@ -607,8 +603,7 @@ function render(io::IO, rows::Vector{ProbeRow})
     ### The module is `Networks`, the type is `Network` — $(issue("Networks", 2))
 
     `using Networks`, then `Network(5)`. The module was renamed (the type name appears in
-    ~200 downstream signatures); `using Network` is not a thing. The GitHub repository is
-    still called `Network.jl`.
+    ~200 downstream signatures); `using Network` is not a thing.
 
     ### What is not covered here
 

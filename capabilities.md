@@ -212,7 +212,7 @@ The second column is worth reading carefully, because it is narrower than the co
 slogan. `missing = :face` is described as the auditable opt-in *everywhere*, but only
 three of the thirteen fitting functions actually accept the keyword. For the rest,
 refusing is all they can do: there is no way to ask them to proceed on face values, and
-a masked network must be resolved before it reaches them ([Networks#1](https://github.com/statistical-network-analysis-with-Julia/Network.jl/issues/1)).
+a masked network must be resolved before it reaches them ([Networks#1](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/1)).
 
 | package | routine | handles masked dyads | face-value opt-in |
 |:---|:---|:---|:---|
@@ -321,7 +321,7 @@ errors that are too narrow.
 silently doing something else. `cmle` throws rather than quietly falling back to CMPLE.
 For a dyad-dependent formula, the CMPLE rows above show `exact? = no`.
 
-### Missing-dyad semantics across conversions — [Networks#1](https://github.com/statistical-network-analysis-with-Julia/Network.jl/issues/1)
+### Missing-dyad semantics across conversions — [Networks#1](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/1)
 
 Conversions between `Network`, `DynamicNetwork` and the Siena/REM data structures are
 now mask-preserving where they can be and **reject** where they cannot. In particular,
@@ -330,11 +330,10 @@ now mask-preserving where they can be and **reject** where they cannot. In parti
 other would tell the estimator that a tie is known to be impossible. There is no
 faithful encoding, so the conversion refuses.
 
-### The module is `Networks`, the type is `Network` — [Networks#2](https://github.com/statistical-network-analysis-with-Julia/Network.jl/issues/2)
+### The module is `Networks`, the type is `Network` — [Networks#2](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/2)
 
 `using Networks`, then `Network(5)`. The module was renamed (the type name appears in
-~200 downstream signatures); `using Network` is not a thing. The GitHub repository is
-still called `Network.jl`.
+~200 downstream signatures); `using Network` is not a thing.
 
 ### What is not covered here
 

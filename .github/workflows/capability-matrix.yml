@@ -46,19 +46,16 @@ jobs:
 
       - uses: julia-actions/cache@v2
 
-      # The ecosystem's 15 packages, each an independent repository. The Networks
-      # module still lives in a repository called `Network.jl` (the rename is
-      # Network#2 and is about the Julia names, not the repo), so it is cloned
-      # into a directory named for the package, which is what [sources] and the
-      # generator expect.
+      # The ecosystem's 15 packages, each an independent repository, cloned side
+      # by side into the layout the [sources] path dependencies and the generator
+      # both expect.
       - name: Reconstruct the ecosystem layout
         run: |
           mkdir -p snwj
           cd snwj
           org=https://github.com/statistical-network-analysis-with-Julia
-          git clone --depth 1 "$org/Network.jl" Networks.jl
-          for pkg in SNA ERGM ERGMCount ERGMEgo ERGMMulti ERGMRank ERGMUserterms \
-                     TERGM REM Relevent Siena NetworkDynamic TSNA NDTV; do
+          for pkg in Networks SNA ERGM ERGMCount ERGMEgo ERGMMulti ERGMRank \
+                     ERGMUserterms TERGM REM Relevent Siena NetworkDynamic TSNA NDTV; do
             git clone --depth 1 "$org/$pkg.jl" "$pkg.jl"
           done
 

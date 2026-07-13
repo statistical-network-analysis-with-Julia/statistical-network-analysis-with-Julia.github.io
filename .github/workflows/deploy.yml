@@ -23,10 +23,14 @@ jobs:
       - name: Install dependencies
         run: julia --project -e 'using Pkg; Pkg.instantiate()'
 
+      # A block scalar, not a folded plain scalar: YAML joins the continuation
+      # lines of the latter with spaces, which handed Julia the single line
+      # `using Franklin optimize(...)` and failed with a ParseError.
       - name: Build site
-        run: julia --project -e '
-          using Franklin
-          optimize(minify=false, prerender=false)'
+        run: |
+          julia --project -e '
+            using Franklin
+            optimize(minify=false, prerender=false)'
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
