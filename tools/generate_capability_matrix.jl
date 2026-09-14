@@ -46,7 +46,7 @@
 
 using Networks
 using SNA, ERGM, ERGMCount, ERGMEgo, ERGMMulti, ERGMRank
-using REM, Relevent, Siena, TERGM
+using REM, Relevent, Siena, TERGM, TSNA
 using Random
 
 const SITE = normpath(joinpath(@__DIR__, ".."))
@@ -130,7 +130,6 @@ end
 
 # --- ERGMEgo: an egocentric census of a small simulated population
 function ego_fit()
-    Random.seed!(107)          # ERGM's MCMC sampler draws from the global RNG
     rng = Xoshiro(21)
     n = 20
     net = network(n; directed=false)
@@ -145,13 +144,16 @@ end
 # --- ERGMRank: the same swap-MPLE under its two standard-error options, which
 #     is the contrast that matters for this package (see the limitations below)
 function rank_net()
-    m = zeros(Int, 4, 4)
-    m[1, 2] = 3; m[1, 3] = 2; m[1, 4] = 1
-    m[2, 1] = 3; m[2, 3] = 1; m[2, 4] = 2
-    m[3, 1] = 1; m[3, 2] = 3; m[3, 4] = 2
-    m[4, 1] = 2; m[4, 2] = 1; m[4, 3] = 3
-    return RankNetwork(m)
+    n = 6
+    rng = MersenneTwister(1)
+    ranks = zeros(Int, n, n)
+    for ego in 1:n
+        alters = [actor for actor in 1:n if actor != ego]
+        ranks[ego, alters] = randperm(rng, n - 1)
+    end
+    return RankNetwork(ranks)
 end
+
 const RANK_TERMS = [RankDeference(), RankNonconformity()]
 
 # --- REM / Relevent: one simulated event stream with a reciprocity signal,
@@ -172,46 +174,36 @@ end
 
 rem_fit() = REM.fit_rem(EventSequence(event_stream(6, 30; seed=5);
                                       actors=ActorSet(collect(1:6))),
-                        [Repetition(), Reciprocity()]; n_controls=5, seed=1)
+                        [Repetition(), Reciprocity()]; n_controls=5, rng=Xoshiro(1))
 
-# --- Siena: a two-wave SAOM on a simulated network, at the package's own
-#     default operating point (see the limitations: this is the package whose
-#     PROCEDURE, not estimand, is the open finding)
+# --- Siena: small strict-converged mechanics probe, not substantive inference.
 function siena_fit()
-    n = 20
-    rng = Xoshiro(3)
-    w1 = zeros(Int, n, n)
-    for i in 1:n, j in 1:n
-        i == j && continue
-        rand(rng) < 0.15 && (w1[i, j] = 1)
+    n = 10
+    before = zeros(Int, n, n)
+    for i in 1:n
+        before[i, mod1(i + 1, n)] = 1
     end
-    gen = siena_data()
-    add_nodeset!(gen, NodeSet(n))
-    add_dependent!(gen, DependentNetwork(:net, [w1, w1]))
-    geff = get_effects(gen)
-    include_effects!(geff, :net, [:outdegree, :recip])
-    gstate, _ = simulate_saom(gen, geff, [4.0, -1.5, 1.0]; seed=5)
-    w2 = copy(gstate.networks[:net])
-
+    after = copy(before)
+    for i in 1:5
+        after[i, mod1(i + 2, n)] = 1
+    end
     data = siena_data()
     add_nodeset!(data, NodeSet(n))
-    add_dependent!(data, DependentNetwork(:net, [w1, w2]))
+    add_dependent!(data, DependentNetwork(:net, [before, after]))
     effects = get_effects(data)
-    include_effects!(effects, :net, [:outdegree, :recip])
-    alg = siena_algorithm(seed=21, verbose=false, phase1_iterations=50,
-                          n_subphases=4, phase3_iterations=500,
-                          derivative_sims=50)
-    return siena07(data, effects; algorithm=alg)
+    include_effects!(effects, :net, [:outdegree])
+    return fit_siena(data, effects; rng=MersenneTwister(1),
+        algorithm=SienaAlgorithm(verbose=false, phase3_iterations=2000))
 end
 
 # (package, description of the fit, thunk producing a fitted result)
 const PROBES = [
-    ("SNA", "`netlm`, dyadic OLS + QAP", () -> netlm(sna_net(), [SNA_X]; nullhyp=:classical)),
-    ("SNA", "`netlogit`, dyadic logit + QAP", () -> netlogit(sna_net(), [SNA_X]; nullhyp=:classical)),
+    ("SNA", "`netlm`, dyadic OLS, classical inference", () -> netlm(sna_net(), [SNA_X]; nullhyp=:classical)),
+    ("SNA", "`netlogit`, dyadic logit, classical inference", () -> netlogit(sna_net(), [SNA_X]; nullhyp=:classical)),
     ("ERGM", "`mple`, **dyad-independent** formula (`edges`)", () -> small_ergm(dependent=false)),
     ("ERGM", "`mple`, **dyad-dependent** formula (`edges + gwesp`)", () -> small_ergm(dependent=true)),
     ("ERGM", "`mcmle`, dyad-dependent formula", () -> mcmle(ERGMModel(ERGMFormula([Edges(), GWESP(0.5)]), ergm_net());
-                                                            n_samples=200, burnin=200, interval=5, max_iter=3)),
+                                                            n_samples=400, maxiter=40, rng=Xoshiro(10))),
     ("TERGM", "`stergm`/CMPLE, **dyad-independent** formula", () -> stergm(tergm_panels(), [Edges()], [Edges()])),
     ("TERGM", "`stergm`/CMPLE, **dyad-dependent** formula", () -> stergm(tergm_panels(), [Edges(), GWESP(0.5)], [Edges()])),
     ("ERGMCount", "`fit_ergm_count`, **dyad-independent** (`sum + nonzero`)", () -> fit_ergm_count(count_net(), [SumTerm(), NonzeroTerm()])),
@@ -221,6 +213,7 @@ const PROBES = [
     ("ERGMEgo", "`fit_ergm_ego`, MCMC method of moments", ego_fit),
     ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, default SEs", () -> fit_ergm_rank(rank_net(), RANK_TERMS)),
     ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, `se=:bootstrap`", () -> fit_ergm_rank(rank_net(), RANK_TERMS; se=:bootstrap, n_boot=40, rng=Xoshiro(3))),
+    ("ERGMRank", "`fit_ergm_rank`, MCMC-MLE", () -> fit_ergm_rank(rank_net(), RANK_TERMS; method=:mcmle, n_samples=1000, maxiter=40, rng=Xoshiro(17))),
     ("REM", "`fit_rem`, case-control conditional logit", rem_fit),
     ("Relevent", "`fit_obpm`, ordinal B-P model", () -> fit_obpm(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5)),
     ("Relevent", "`fit_timing`, exact-time hazard model", () -> fit_timing(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5)),
@@ -230,6 +223,10 @@ const PROBES = [
 # The fitting functions whose missing-data trait we report. `supports_missing`
 # defaults to `false`, so this is an honest census, not an allowlist.
 const ROUTINES = [
+    ("Networks", "`network_density`", network_density),
+    ("SNA", "`degree_centrality`", degree_centrality),
+    ("TSNA", "`t_density`", t_density),
+    ("TSNA", "`t_reciprocity`", t_reciprocity),
     ("ERGM", "`mple`", mple),
     ("ERGM", "`mcmle`", mcmle),
     ("SNA", "`netlm`", netlm),
@@ -294,31 +291,21 @@ struct ProbeRow
     pkg::String
     what::String
     md::Union{Networks.ResultMetadata, Nothing}
-    err::String
+    fit::Any
 end
 
 function run_probes()
     rows = ProbeRow[]
     for (pkg, what, thunk) in PROBES
-        try
-            push!(rows, ProbeRow(pkg, what, fit_metadata(thunk()), ""))
-        catch e
-            push!(rows, ProbeRow(pkg, what, nothing,
-                                 first(sprint(showerror, e), 200)))
-        end
+        println(stderr, "Capability probe: $pkg — $what")
+        fit = thunk()  # A failed probe must fail the gate, not become a page row.
+        push!(rows, ProbeRow(pkg, what, fit_metadata(fit), fit))
     end
     return rows
 end
 
 sym(x) = x === :unspecified ? "—" : "`$x`"
 yesno(b) = b ? "**yes**" : "no"
-
-# Does the routine actually expose the `missing = :face` opt-in, or can it only
-# refuse? Asked of the method table rather than asserted -- the ecosystem
-# *contract* is that `:face` is the auditable opt-in "everywhere", and it is
-# exactly the kind of claim that quietly stops being true. (Today: only three of
-# the thirteen fitting functions take the keyword at all.)
-has_missing_kwarg(f) = any(m -> :missing in Base.kwarg_decl(m), methods(f))
 
 # ---------------------------------------------------------------------------
 # Emit the Franklin page
@@ -343,10 +330,10 @@ function render(io::IO, rows::Vector{ProbeRow})
     > small model of every family and asks the fitted result what it did, through the shared
     > result-metadata protocol (`Networks.fit_metadata`); it reads the "validated against R"
     > rows out of the `[provenance]` block of the golden fixtures committed in the package
-    > repositories; and it reads missing-data support out of the `Networks.supports_missing`
-    > trait. A hand-maintained capability table drifts from the code within one release.
-    > This one cannot, because it *is* the code — and a CI check regenerates it and fails if
-    > the committed page has gone stale.
+    > repositories; and it reads the `Networks.supports_missing` and
+    > `Networks.missing_policies` traits. The StatsAPI table executes the accessors on those
+    > same fits. CI rejects failed probes and checks the page for drift. These small probes
+    > establish the reported API behavior, not general scientific validity or scalability.
 
     ## How to read the columns
 
@@ -372,10 +359,6 @@ function render(io::IO, rows::Vector{ProbeRow})
     println(io, "| package | fit | estimand | objective | exact? | standard errors | missing dyads | tied events |")
     println(io, "|:---|:---|:---|:---|:---:|:---|:---|:---|")
     for r in rows
-        if r.md === nothing
-            println(io, "| $(r.pkg) | $(r.what) | *probe failed: $(r.err)* | | | | | |")
-            continue
-        end
         m = r.md
         ties = m.tie_method === :not_applicable ? "n/a" : "`$(m.tie_method)`"
         println(io, "| $(r.pkg) | $(r.what) | $(sym(m.estimand)) | $(sym(m.objective)) | ",
@@ -391,14 +374,16 @@ function render(io::IO, rows::Vector{ProbeRow})
       enough here: the Poisson reference has unbounded support and the fit enumerates a
       truncated one, so it reports `exact? = no` and tells you the boundary mass it is
       leaning on ($(issue("ERGMCount", 1))).
-    - **`ERGMRank` is never exact, at any formula.** Its swap comparisons overlap by
-      construction, so there is no dyad-independent special case to fall back on
-      ($(issue("ERGMRank", 1))).
+    - **`ERGMRank` offers two estimators.** The default swap-MPLE multiplies overlapping
+      comparisons and is not an exact likelihood. `method=:mcmle` fits the ranking ERGM
+      by Monte Carlo likelihood; its simulation and convergence caveats remain relevant.
 
-    Every one of the twelve fitted-result types in the ecosystem declares this protocol, so
-    you can ask the same question of your own fit:
+    You can ask the same question of your own fit:
 
     ```julia
+    using Networks, ERGM
+    net = load_dataset(:florentine_marriage)
+    fit = ergm(net, [Edges(), GWESP(0.5)])
     md = fit_metadata(fit)
     md.objective      # :pseudolikelihood
     md.is_exact       # false — the formula is dyad-dependent
@@ -464,155 +449,131 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     println(io, """
 
-    Two entries in that table are **not** claims of agreement, and are called out in the
-    limitations below: `newcomb_rank` pins ERGMRank against a *different estimator*, and
-    `s50_siena07` pins Siena against RSiena on the estimand while documenting that the
-    procedure is materially weaker.
+    Fixtures can compare different estimators or document residual differences. Read the
+    fixture's assertions and tolerances before treating a listed reference as equivalence.
+
+    ## Shared result accessors
+
+    Each cell below comes from calling the accessor on the same fitted object used above.
+    `yes` means the call returned; `NaN` means a scalar criterion is explicitly unavailable;
+    `—` means the call is unsupported. For moment estimators and pseudo-likelihoods,
+    a returned AIC/BIC is not evidence that ordinary likelihood comparisons are justified.
+    """)
+    accessors = [:coef, :stderror, :vcov, :confint, :loglikelihood, :nobs, :dof, :aic, :bic, :coeftable]
+    println(io, "| package | fit | ", join(["`$f`" for f in accessors], " | "), " |")
+    println(io, "|:---|:---|", join(fill(":---:", length(accessors)), "|"), "|")
+    for r in rows
+        cells = String[]
+        for key in accessors
+            f = getproperty(Networks.StatsAPI, key)
+            status = try
+                value = f(r.fit)
+                value isa Real && isnan(value) ? "NaN" : "yes"
+            catch err
+                err isa Union{MethodError, ArgumentError} || rethrow()
+                "—"
+            end
+            push!(cells, status)
+        end
+        println(io, "| $(r.pkg) | $(r.what) | ", join(cells, " | "), " |")
+    end
+
+    println(io, """
 
     ## Missing-data support
 
-    The ecosystem contract (`Networks.supports_missing` / `Networks.require_observed`): a
-    routine that has not declared a missing-data method **refuses** a network with masked
-    dyads rather than silently reading unobserved ties at face value. Both columns below are
-    read out of the code — the first from the `Networks.supports_missing` trait, which
-    defaults to `false` (so this is a census, not an advertisement), and the second from the
-    routine's own method table.
-
-    The second column is worth reading carefully, because it is narrower than the contract's
-    slogan. `missing = :face` is described as the auditable opt-in *everywhere*, but only
-    three of the thirteen fitting functions actually accept the keyword. For the rest,
-    refusing is all they can do: there is no way to ask them to proceed on face values, and
-    a masked network must be resolved before it reaches them ($(issue("Networks", 1))).
+    A masked dyad is unobserved, not absent. The first column reports the
+    `supports_missing` declaration verbatim; the second reports `missing_policies(f)`.
+    A true trait alone does not say whether a routine excludes, conditions on, or refuses
+    a mask: read the accepted policies and the routine documentation. `:error` alone
+    promises rejection and may mean there is no `missing=` keyword. `:face` uses stored
+    values; `:condition_on_face` fixes them during MCMC. Neither is missing-data MLE.
+    ERGM's `:mle` instead integrates missing ties with free and constrained chains;
+    inspect convergence and Monte Carlo diagnostics for that fit.
     """)
-    println(io, "| package | routine | handles masked dyads | face-value opt-in |")
-    println(io, "|:---|:---|:---|:---|")
+    println(io, "| package | routine | `supports_missing` | accepted `missing` policies |")
+    println(io, "|:---|:---|:---:|:---|")
     for (pkg, name, f) in ROUTINES
-        handles = Networks.supports_missing(f)
-        optin = handles ? "*not needed — it handles the mask*" :
-                has_missing_kwarg(f) ? "`missing = :face`" :
-                                       "*none — it can only refuse*"
-        println(io, "| $pkg | $name | ",
-                handles ? "**yes** — available-case objective; masked dyads excluded" :
-                          "no — a masked network is **rejected**",
-                " | ", optin, " |")
+        policies = join(["`:$p`" for p in Networks.missing_policies(f)], ", ")
+        println(io, "| $pkg | $name | `$(Networks.supports_missing(f))` | $policies |")
     end
 
-    # --- limitations
     println(io, """
 
-    ## Known limitations, and who owns them
+    ## Scientific limitations
 
-    Everything below is a real, reproduced finding. Each links to the issue that owns it.
+    ### Siena convergence and inference
 
-    ### Siena.jl's SAOM procedure is materially weaker than RSiena's — $(issue("Siena", 2))
+    `siena07` uses simulated method of moments. It rejects an unconverged fit by default;
+    `siena_algorithm(allow_unconverged=true)` explicitly returns a diagnostic fit with a
+    warning. Inspect `converged`, every t-ratio, `tconv_max`, `derivative_matrix`, and
+    `phase3_cov`; repeat independent seeds and assess goodness of fit before inference.
+    Convergence requires every absolute t-ratio below 0.1 and `tconv_max` below 0.25.
+    Newton refinement improves convergence, but a passing diagnostic does not establish
+    equivalence to RSiena across models, effects, or datasets. Maximum-likelihood and
+    Bayesian estimation remain unsupported; structural zeros/ones are not missing ties.
 
-    **This is the most serious open finding in the ecosystem, and it can bite you
-    silently.** The *estimand* is right: on the `s50` fixture every parameter lands within
-    0.28 RSiena standard errors of RSiena's own estimate. The *procedure* is not:
+    ### Rank and other pseudo-likelihood estimators
 
-    - **~1 seed in 10 diverges outright while reporting `diverged == false`.** Two of 24
-      surveyed seeds reached `tconv.max ≈ 50` (reciprocity 5.77 against a true ≈ 2.40).
-      The parameter clamp never fires, so **`result.tconv_max` is the only signal you
-      have** that a fit is garbage. Check it. Do not trust `diverged`.
-    - **3–19× noisier than RSiena at the same simulation budget** (smoke1-similarity:
-      seed-to-seed sd 0.045, against RSiena's 0.0057).
-    - **It fails the convergence standard it enforces on itself**: `tconv.max` came out
-      0.26–0.77 across five seeds, against the 0.25 threshold Siena.jl checks. RSiena gets
-      0.13 on the same data.
-    - **More budget makes it worse, not better.** Raising `phase1_iterations` to 200 or 400
-      each diverged one seed in six; `n_simulations = 5` inflates the sd about tenfold. The
-      shipped defaults are the only stable operating point.
+    ERGMRank's default swap-MPLE is a different objective from ranking MCMC-MLE. Use
+    `method=:mcmle` for the latter and inspect convergence and Monte Carlo diagnostics.
+    Dependent ERGM-family pseudo-likelihood Hessian errors can underestimate uncertainty.
+    Where offered, `se=:bootstrap` changes the covariance, not the objective or consistency
+    properties. Check each routine's documentation; this option is not universal.
 
-    Until this is fixed: run several seeds, compare the estimates, and read `tconv_max` on
-    every one.
+    ### REM risk sets and uncertainty
 
-    ### Two RSiena comparisons cannot be made at all — $(issue("Siena", 2))
+    Declare the complete eligible actor universe, including nonparticipants. Omitting
+    eligible actors changes the risk set and the estimand. Under a correctly specified
+    nested case-control model, the sampled likelihood's Hessian already accounts for the
+    information lost by sampling controls. `se=:sandwich` uses event-clustered scores for
+    robustness to within-stratum misspecification; it does not establish robustness to
+    arbitrary dependence between events. REM rejects `se=:bootstrap`. `control_draw_cov`
+    measures sensitivity to control redraws and must not be added to the fitted covariance
+    as a supposed missing variance component.
 
-    `SienaResult` exposes neither the **derivative matrix** nor the **phase-3 statistic
-    covariance**, so two of the comparisons the parity issue asks for cannot be performed.
-    RSiena's values are frozen in the fixture as reference-only, unasserted; the check is
-    one accessor away.
+    ### Relevent timing and effect coverage
 
-    ### ERGMRank's swap-MPLE is a different estimator, not an approximation — $(issue("ERGMRank", 1))
+    Ordinal models condition on event order; timing models assume piecewise exponential
+    waiting times and require statistics constant between events. `fit_timing` rejects
+    finite-half-life decay statistics because their integrated hazard is not implemented;
+    these statistics remain available for ordinal/conditional fits. Cumulative-history
+    variants with `halflife=Inf` are interval-constant. For timing fits, `coef`,
+    `stderror`, `vcov` and `coeftable` include the
+    log-baseline first, followed by the effects. The legacy `.coefficients` and
+    `.std_errors` fields contain effects only. Choose tie handling explicitly where times
+    coincide. Time-varying covariate arrays and Bayesian fitting are unsupported.
 
-    `ergm.rank` fits by MCMC-MLE; ERGMRank.jl fits a **swap pseudo-likelihood**. The swap
-    comparisons overlap (each ranking enters *n* − 2 of them), so their product is not the
-    likelihood, and **no consistency result is claimed**. Against R on the Newcomb fixture
-    it is systematically **16× R's seed noise** — though the gap is only about **0.3 of a
-    standard error**, so it is a difference of estimator, not a bug. The fixture pins the
-    *character* of the gap rather than asserting agreement.
+    Both fitters reject a verified separating direction: the likelihood keeps improving
+    toward an infinite coefficient, so no finite maximum-likelihood estimate exists.
+    This check does not detect every boundary case; inspect convergence and uncertainty.
 
-    ### Pseudo-likelihood Hessian standard errors are anticonservative — $(issue("ERGMRank", 1)), $(issue("ERGMMulti", 1)), $(issue("ERGMCount", 2)), $(issue("REM", 2))
+    ### Count support and egocentric survey designs
 
-    Where the objective is a pseudo-likelihood and the model is dyad-dependent, the
-    inverse-Hessian standard errors treat overlapping conditionals as independent and come
-    out **too small**. Measured against `Networks.bootstrap_cov` on dependent models:
+    Poisson/geometric count ERGMs enumerate a finite support. Adaptive doubling checks
+    coefficient movement in standard-error units, omitted tail mass and boundary mass;
+    this controls a numerical approximation and does not make infinite support exact.
+    Inspect the fitted support diagnostics. Egocentric inference assumes independent egos
+    with supplied case weights. Strata, clusters, replicate weights and richer inclusion
+    designs require additional survey-design variance treatment.
 
-    | package | bootstrap SE ÷ Hessian SE |
-    |:---|:---|
-    | ERGMRank | **5.4×** and 3.4× |
-    | ERGMMulti | up to 9.0× |
-    | ERGMCount | 1.20× |
-    | REM | 1.03–1.17× |
+    ### Temporal models and observation
 
-    Pass **`se = :bootstrap`** (or `se = :sandwich` for REM) whenever the model is
-    dyad-dependent. Point estimates are byte-identical across the `se` options; only the
-    covariance changes.
+    TERGM fits formation and persistence by CMPLE, exact for dyad-independent formulas.
+    `method=:cmle` and `TERGM.egmme` throw; dependent CMLE and EGMME are unavailable.
+    TSNA uses active-vertex density and dyadic reciprocity by default. Its temporal
+    analyses reject masks unless `missing=:face` is explicit; face values cannot recover
+    unobserved histories. Conversions preserve representable masks and reject incompatible
+    encodings: Siena structural masks describe determined ties, not unobserved ties.
 
-    ### REM's uncertainty ignores the risk-set sampling — $(issue("REM", 2))
+    ### Scope and installation
 
-    The default inverse-Hessian standard errors are conditional on the **one** sampled
-    control set that was drawn, so they omit the variance induced by the case-control
-    sampling itself. `se = :bootstrap` (law of total variance) or `se = :sandwich` includes
-    it. Relatedly, the actor universe must be **declared** ($(issue("REM", 1))): inferring
-    it from observed event endpoints drops eligible non-participants from the risk set and
-    changes the estimand.
-
-    ### ERGMCount truncates an unbounded support — $(issue("ERGMCount", 1))
-
-    Poisson/geometric references have unbounded support; the fit enumerates `0:max_val` and
-    reports the **boundary mass** it is leaning on (see the caveats above — it is
-    reported per fit, not assumed away). It is currently data-adaptive rather than
-    error-controlled.
-
-    ### ERGMEgo's design variance encodes only a simple design — $(issue("ERGMEgo", 1))
-
-    The survey-design variance component is the weighted-mean variance of the target
-    statistics under **independent egos** with the given case weights. It encodes no
-    strata, clusters, finite-population correction, replicate weights, without-replacement
-    inclusion probabilities, or alter dependence. Since the design component is roughly
-    **17× the estimation component**, an ego standard error essentially *is* its design
-    variance — so a richer sampling design than the one assumed will give you standard
-    errors that are too narrow.
-
-    ### TERGM has no EGMME, and `cmle` is not CMLE — $(issue("TERGM", 1))
-
-    `TERGM.egmme` is unimplemented and deliberately **unexported**: it throws rather than
-    silently doing something else. `cmle` throws rather than quietly falling back to CMPLE.
-    For a dyad-dependent formula, the CMPLE rows above show `exact? = no`.
-
-    ### Missing-dyad semantics across conversions — $(issue("Networks", 1))
-
-    Conversions between `Network`, `DynamicNetwork` and the Siena/REM data structures are
-    now mask-preserving where they can be and **reject** where they cannot. In particular,
-    **Siena's structural mask is not a missing mask**: Siena records ties that are
-    *determined*, `Networks` records ties that are *unobserved*, and encoding one as the
-    other would tell the estimator that a tie is known to be impossible. There is no
-    faithful encoding, so the conversion refuses.
-
-    ### The module is `Networks`, the type is `Network` — $(issue("Networks", 2))
-
-    `using Networks`, then `Network(5)`. The module was renamed (the type name appears in
-    ~200 downstream signatures); `using Network` is not a thing.
-
-    ### What is not covered here
-
-    This page covers **fitted estimators**. Descriptive measures (`SNA.jl` centralities,
-    cohesion, equivalence), simulation-only entry points (`simulate_*`), and the
-    visualization packages (`NDTV.jl`, `TSNA.jl`) are not fits and have no result metadata
-    to report; their own issues are $(issue("NDTV", 1)), $(issue("TSNA", 1)) and
-    $(issue("ERGMUserterms", 1)). Regenerating this page is tracked by $(site_issue(2));
-    release/registry sequencing by $(site_issue(3)).
+    These tables cover small fitted models and selected missing-data policies. They do
+    not validate every descriptive measure, simulation, visualization, or scale. The
+    [migration guide](/migration/) describes current API differences. The published
+    [workspace recipe](https://github.com/$ORG/$ORG.github.io/tree/main/tools/workspace)
+    reconstructs sibling checkouts. A passing local snapshot installation check does not
+    establish registry publication or the availability of unpushed changes.
     """)
     return nothing
 end
@@ -631,7 +592,17 @@ end
 # drift (an estimator that changed its objective, a caveat that appeared or
 # disappeared, a fixture that was added or lost) and does not fail CI over
 # Monte-Carlo jitter in a quoted quantity.
-normalize(s) = replace(s, r"-?\d+\.?\d*(?:[eE][-+]?\d+)?" => "#")
+function normalize(s)
+    # Only self-reported fit caveats contain Monte Carlo quantities. Keep fixture
+    # versions, data scales, scientific thresholds, and executable examples exact.
+    start = findfirst("## The caveats the fits declare about themselves", s)
+    stop = findfirst("## Validation against the reference implementations", s)
+    (start === nothing || stop === nothing) && return s
+    before = s[begin:prevind(s, first(start))]
+    caveats = s[first(start):prevind(s, first(stop))]
+    after = s[first(stop):end]
+    return before * replace(caveats, r"-?\d+\.?\d*(?:[eE][-+]?\d+)?" => "#") * after
+end
 
 function main()
     check = "--check" in ARGS

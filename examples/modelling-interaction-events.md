@@ -3,67 +3,49 @@
 
 # Modelling Interaction Events
 
-Analyse time-stamped event sequences with a Relational Event Model
-([REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl)).
-Here we *simulate* 400 events among 8 actors from a model with known
-inertia (repetition) and reciprocity effects, then check that estimation
-recovers them — a pattern you can reuse to validate any specification.
+Model the bundled World Trade Center police radio-call sequence from Butts,
+Petrescu-Prahova and Cross (2007). It contains 481 ordered events and an
+eligible universe of 37 actors, including two actors absent from the event
+endpoints. The bundled time column is an **event number**, not elapsed clock
+time: use an ordinal model, not a waiting-time likelihood.
 
 ```julia
-using REM, Random
+using Networks, REM, Relevent, Random
 
-rng = Random.Xoshiro(2026)
-n = 8
-β = [0.6, 0.9]                      # true [repetition, reciprocity]
-stats = [Repetition(), Reciprocity()]
-dyads = [(s, r) for s in 1:n for r in 1:n if s != r]
-state = EventNetworkState{Float64}(n_actors=n)
-state.actors = Set(1:n)
+calls = load_dataset(:wtc_police_calls)
+events = [Event(row[2], row[3], Float64(row[1])) for row in eachrow(calls.events)]
+seq = EventSequence(events; actors=ActorSet(1:calls.n_actors))
+@assert length(events) == 481
+@assert calls.n_actors == 37
 
-events = Event{Float64}[]
-for step in 1:400
-    η = [sum(β .* compute_all(stats, state, s, r)) for (s, r) in dyads]
-    w = exp.(η .- maximum(η)); w ./= sum(w)
-    u = rand(rng); pick = findfirst(>=(u), cumsum(w))
-    ev = Event(dyads[pick][1], dyads[pick][2], Float64(step))
-    push!(events, ev)
-    update!(state, ev)
-end
-seq = EventSequence(events)
-
-result = fit_rem(seq, stats; n_controls=100, seed=42)
+# Sample controls from the declared eligible universe for each event.
+result = REM.fit_rem(seq, [Repetition(), Reciprocity()];
+                     n_controls=50, rng=Xoshiro(42))
 println(result)
+println(fit_metadata(result))
+
+# Full-risk-set ordinal model with two R relevent effects.
+full = fit_obpm(events, [PShift(:AB_BA), CovSnd(Float64.(calls.is_icr))], calls.n_actors)
+println(full)
 ```
 
-Output:
+The REM fit relates past interaction to the next selected dyad. Relevent's
+`PShift(:AB_BA)` measures immediate turn reversal; `CovSnd` compares senders
+in institutional coordinator roles with other senders. The two examples
+have different statistics and cannot be compared as two estimates of the
+same specification. Positive coefficients indicate greater relative event
+propensity, conditional on the chosen risk set and history.
 
-```
-Relational Event Model Results
-==============================
-Events: 400, Observations: 22400
-Log-likelihood: -314.0359
-Converged: true
+Declaring all eligible actors matters: deriving the universe from endpoints
+would exclude legitimate non-events. Under a correctly specified sampled
+conditional likelihood, Hessian uncertainty already reflects the loss of
+information from control sampling. `se=:sandwich` provides an event-clustered
+alternative for within-stratum misspecification. `control_draw_cov` measures
+sensitivity to control redraws; it is not an extra variance term, and REM
+rejects `se=:bootstrap`.
 
-             Estimate  Std.Error  z value  Pr(>|z|)
-repetition     0.5949     0.1452   4.0960   4.2e-05 ***
-reciprocity    0.9666     0.1421   6.8035   1.0e-11 ***
----
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-(Note the p-values print as `4.2e-05`, not a rounded `0.0000` — the
-shared presentation layer floors underflowing p-values at `<1e-16`.)
-
-**Interpretation.** Both estimates land close to the truth
-(repetition 0.59 vs 0.6; reciprocity 0.97 vs 0.9), well within one
-standard error. Substantively: having interacted with someone before
-raises the rate of doing so again (`repetition` > 0), and receiving an
-interaction raises the rate of returning it (`reciprocity` > 0). The
-model is estimated by case-control sampling — each observed event is
-compared against sampled non-events from the risk set — which is what
-makes REMs tractable for long event streams.
-
-REM.jl fits the *ordinal* model (event order, not exact waiting times).
-For exact-timing and full-risk-set estimators, see
-[Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl).
-Background: the [model families page](/models/).
+These are observational radio communications during one emergency. Role
+coefficients need not be causal, and repeated events may reflect omitted
+coordination processes. Inspect fit diagnostics and compare substantive
+specifications. The [data provenance](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/tree/main/data)
+and [migration guide](/migration/) document the source and effect conventions.

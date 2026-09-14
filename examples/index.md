@@ -1,29 +1,24 @@
-@def title = "Examples"
+@def title = "Worked examples"
 
-# Examples
+# From data to interpretation
 
-Worked, runnable analyses using the ecosystem's packages — each with real
-data or a simulated ground truth, printed output, and interpretation. For
-the statistical background behind each method, see
-[Families of Models](/models/).
+Four executable analyses introduce network structure, cross-sectional models,
+interaction sequences and change over time. Each example uses bundled empirical
+data, explains the model's question, and identifies limits on interpretation.
+
+New to the ecosystem? [Prepare your Julia environment](/getting-started/)
+first. Read [the method comparison](/models/) when choosing a model, or use
+[the package directory](/packages/) to go directly to a reference guide.
 
 ~~~
 <div class="example-grid">
-  <a class="example-card" href="/examples/describing-network-structure/">
-    <h4>Describing Network Structure</h4>
-    <p>Compute density, reciprocity, transitivity, and centrality scores.</p>
-  </a>
-  <a class="example-card" href="/examples/modelling-cross-sectional-data/">
-    <h4>Modelling Cross-Sectional Data</h4>
-    <p>Fit an Exponential Random Graph Model to an observed network.</p>
-  </a>
-  <a class="example-card" href="/examples/modelling-interaction-events/">
-    <h4>Modelling Interaction Events</h4>
-    <p>Analyse time-stamped event sequences with a Relational Event Model.</p>
-  </a>
-  <a class="example-card" href="/examples/modelling-network-change/">
-    <h4>Modelling Network Change</h4>
-    <p>Fit a separable temporal ERGM (STERGM) to network panels observed over time.</p>
-  </a>
+  <a class="example-card" href="/examples/describing-network-structure/"><span class="kicker">Networks · SNA / Florentine families</span><h2>Describe network structure</h2><p>Measure density and centrality, compare marriage and business ties, and interpret a QAP association test.</p></a>
+  <a class="example-card" href="/examples/modelling-cross-sectional-data/"><span class="kicker">ERGM / Florentine marriage ties</span><h2>Model an observed network</h2><p>Choose binary-network statistics, fit an ERGM, and distinguish pseudolikelihood from MCMC likelihood inference.</p></a>
+  <a class="example-card" href="/examples/modelling-interaction-events/"><span class="kicker">REM · Relevent / WTC radio events</span><h2>Model interaction sequences</h2><p>Compare risk-set approaches using ordered radio interactions. Keep event order distinct from elapsed time.</p></a>
+  <a class="example-card" href="/examples/modelling-network-change/"><span class="kicker">TERGM · Siena / s50 friendship panels</span><h2>Study networks over time</h2><p>Fit formation and persistence, inspect estimation diagnostics, then continue to the actor-oriented workflow.</p></a>
 </div>
 ~~~
+
+The package documentation expands these examples into data preparation, model
+specification, API references and diagnostics. [Capabilities and limitations](/capabilities/)
+records which estimators and reference comparisons are currently supported.

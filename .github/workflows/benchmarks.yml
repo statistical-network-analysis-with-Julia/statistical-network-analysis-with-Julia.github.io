@@ -1,4 +1,4 @@
-name: Capability matrix
+name: Benchmark regressions
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '17 5 * * 1'
+    - cron: '47 5 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -18,9 +18,9 @@ env:
   SNWJ_ROOT: ${{ github.workspace }}
 
 jobs:
-  check-freshness:
+  benchmark-regressions:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,5 +33,8 @@ jobs:
         run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone
       - name: Test the tooling gates
         run: julia statistical-network-analysis-with-Julia.github.io/tools/test/runtests.jl
-      - name: Regenerate and check the capability matrix
-        run: julia --project=.snippet-env statistical-network-analysis-with-Julia.github.io/tools/generate_capability_matrix.jl --check
+      - name: Allocation and dedicated regression gates
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/run_benchmarks.jl --regressions-only
+      - name: Scheduled timing suites and embedded scaling assertions
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/run_benchmarks.jl

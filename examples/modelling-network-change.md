@@ -3,66 +3,45 @@
 
 # Modelling Network Change
 
-Model network panels observed at discrete time points with a **separable
-temporal ERGM** (STERGM) using
-[TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl).
-A STERGM is a specific temporal ERGM that factors each transition into a
-*formation* model (which new ties appear?) and a *dissolution* model
-(which existing ties persist?). We simulate 5 panels with known dynamics
-and recover the coefficients.
+Fit a separable temporal ERGM to the bundled `s50` friendship panels: 50
+girls observed at three yearly waves in the Teenage Friends and Lifestyle
+Study. The two components ask how absent ties form and how existing ties
+persist between observations. The data and provenance are distributed with
+[Networks.jl](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/tree/main/data).
 
 ```julia
-using Networks, ERGM, TERGM, Random
+using Networks, ERGM, TERGM
 
-rng = Random.Xoshiro(7)
-init = network(30)                  # 30 actors, directed
-for i in 1:30, j in 1:30
-    i != j && rand(rng) < 0.08 && add_edge!(init, i, j)
-end
-
-formula = STERGM([Edges()], [Edges()])
-θ_formation = [-2.5]                # sparse tie formation
-θ_persistence = [1.0]               # ties tend to persist
-
-panels = simulate_network_sequence(formula, init, 4,
-                                   θ_formation, θ_persistence;
-                                   burnin=4000, rng=rng)
+s50 = load_dataset(:s50)
+panels = s50.friendship
+@assert length(panels) == 3
+@assert all(nv(net) == 50 for net in panels)
 
 result = stergm(panels, [Edges()], [Edges()])
 println(result)
+logistic(x) = 1 / (1 + exp(-x))
+println("formation probability = ", logistic(only(formation_coef(result))))
+println("persistence probability = ", logistic(only(persistence_coef(result))))
 ```
 
-Output:
+Each probability describes one yearly transition under a model with constant
+parameters and independent dyads. A positive persistence coefficient means
+existing ties tend to survive; it is the coefficient of R's `Persist()`,
+not the sign of `Diss()`. Use `persistence_coef` and `persistence_se` for
+this component; the old `dissolution_*` names are deprecated.
 
-```
-STERGM Results (cmple)
-========================================
-Panels: 5; converged: true
-Pseudo-log-likelihood: formation -822.059, dissolution -290.224
+This edges-only CMPLE equals the conditional MLE. Adding reciprocity or
+closure changes that claim: the product of dependent conditional
+probabilities is a pseudo-likelihood, and its Hessian standard errors can
+be too small. TERGM.jl does not implement dependent CMLE or EGMME, and
+requesting those methods raises an error.
 
-Formation:
-       Estimate  Std.Error   z value  Pr(>|z|)
-edges   -2.4720     0.0681  -36.3127    <1e-16 ***
+The observed panels omit changes between waves. These coefficients cannot
+distinguish a tie that survived continuously from one that dissolved and
+re-formed before the next survey. Friendship nominations are observational;
+this example estimates transition associations, not causal effects.
 
-Dissolution (persistence):
-       Estimate  Std.Error  z value  Pr(>|z|)
-edges    0.8393     0.1001   8.3868    <1e-16 ***
----
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-**Interpretation.** Estimation recovers the generating process: the
-formation coefficient −2.47 (truth −2.5) says a non-tied dyad forms a tie
-in a given period with probability logistic(−2.47) ≈ 7.8%, and the
-dissolution coefficient 0.84 (truth 1.0) says an existing tie *persists*
-with probability logistic(0.84) ≈ 70% — note TERGM.jl parameterizes
-dissolution as **persistence**, so positive values mean longer-lived
-ties. Estimation is by conditional maximum pseudo-likelihood over the
-Krivitsky–Handcock formation network (union of consecutive panels) and
-dissolution network (intersection); for dyad-independent models like this
-one, that *is* the conditional MLE.
-
-**Next steps:** actor-oriented alternatives to tie-oriented temporal
-models are covered on the [model families page](/models/); for
-visualizing change, see
+For actor-oriented modelling of the same bundled panels, see the
+[RSiena migration workflow](/migration/#saoms_rsiena_sienajl). For
+visualizing network change, see
 [NDTV.jl](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl).

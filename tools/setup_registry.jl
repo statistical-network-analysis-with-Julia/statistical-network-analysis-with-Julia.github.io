@@ -49,7 +49,7 @@ const REGISTRATION_ORDER = [
     "NetworkDynamic.jl",  # ← Networks
     "SNA.jl",             # ← Networks
     "ERGM.jl",            # ← Networks
-    "Siena.jl",           # ← Networks (extension)
+    "Siena.jl",           # ← Networks (hard dependency)
     "REM.jl",             # ← Networks (+ NetworkDynamic weakdep)
     "Relevent.jl",        # ← Networks, REM
     "NDTV.jl",            # ← Networks, NetworkDynamic

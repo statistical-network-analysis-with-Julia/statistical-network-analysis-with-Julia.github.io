@@ -28,9 +28,8 @@
 #     these are install instructions, usually with placeholder paths, and
 #     running them would modify the shared checker environment,
 #   * the block is clearly output-only (the nearest preceding text line is
-#     an "Output:"-style label, or the block does not parse as Julia —
-#     unparseable blocks are listed as warnings so real syntax errors in
-#     examples still surface).
+#     an "Output:"-style label).
+# Malformed Julia is a failure; label intentional output as text/julia-repl.
 #
 # Environment: run this script with --project pointing at an environment in
 # which all the local packages are `Pkg.develop`ed (see tools/README.md for
@@ -162,15 +161,15 @@ function run_file(path::AbstractString, snippets::Vector{Snippet})
             parsed = try
                 Meta.parseall(sn.code; filename = path)
             catch err
-                push!(warnings, Failure(sn.line,
-                    "does not parse (treated as output-only): " * sprint(showerror, err)))
-                continue
+                push!(failures, Failure(sn.line,
+                    "invalid Julia syntax: " * sprint(showerror, err)))
+                break
             end
             # parseall wraps statements in a toplevel block; check for embedded
             # parse errors (Meta.parseall does not always throw).
             if _has_parse_error(parsed)
-                push!(warnings, Failure(sn.line, "does not parse (treated as output-only)"))
-                continue
+                push!(failures, Failure(sn.line, "invalid or incomplete Julia syntax"))
+                break
             end
             n_run += 1
             ok = _eval_block(sandbox, parsed, sn, path, failures)
@@ -213,12 +212,23 @@ end
 # Main
 # ---------------------------------------------------------------------------
 
+function matches_filter(path, filter)
+    relative = replace(relpath(path, ROOT), '\\' => '/')
+    filter = replace(filter, '\\' => '/')
+    first_part = first(split(filter, '/'))
+    if endswith(first_part, ".jl") || endswith(first_part, ".github.io")
+        return first(split(relative, '/')) == first_part && startswith(relative, filter)
+    end
+    return occursin(filter, relative)
+end
+
 function main(args)
     filters = collect(args)
     files = collect_files(ROOT)
     if !isempty(filters)
-        files = [f for f in files if any(occursin(flt, f) for flt in filters)]
+        files = [f for f in files if any(matches_filter(f, flt) for flt in filters)]
     end
+    isempty(files) && error("No Markdown files matched the requested snippet scope")
 
     println("Monorepo root: $ROOT")
     println("Checking $(length(files)) Markdown file(s)\n")

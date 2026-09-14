@@ -4,6 +4,7 @@
 #
 # Usage:
 #     julia tools/run_benchmarks.jl [filter...]
+#     julia tools/run_benchmarks.jl --regressions-only [filter...]
 #
 # The monorepo root (the directory that contains Networks.jl, ERGM.jl, ...,
 # and this site repo side by side) is taken from ENV["SNWJ_ROOT"] if set,
@@ -32,14 +33,15 @@
 const SITE_DIR = realpath(joinpath(@__DIR__, ".."))
 const ROOT = get(ENV, "SNWJ_ROOT", dirname(SITE_DIR))
 
-function collect_suites(root::AbstractString, filters::Vector{String})
+function collect_suites(root::AbstractString, filters::Vector{String}; regressions_only=false)
     suites = String[]
     for entry in sort(readdir(root))
         repo = joinpath(root, entry)
         isdir(repo) || continue
         startswith(entry, ".") && continue
         realpath(repo) == SITE_DIR && continue
-        isfile(joinpath(repo, "benchmark", "benchmarks.jl")) || continue
+        entrypoint = regressions_only ? "regression_tests.jl" : "benchmarks.jl"
+        isfile(joinpath(repo, "benchmark", entrypoint)) || continue
         if isempty(filters) || any(occursin(f, entry) for f in filters)
             push!(suites, repo)
         end
@@ -59,36 +61,38 @@ struct BenchRow
     memory::Int
 end
 
-function run_suite(repo::AbstractString)
+function run_suite(repo::AbstractString; regressions_only=false)
     pkg = basename(repo)
     benchdir = joinpath(repo, "benchmark")
     rows = BenchRow[]
     notes = String[]
 
     println(stderr, "── $pkg: instantiating benchmark environment ...")
-    instcmd = `$(Base.julia_cmd()) --project=$benchdir -e "using Pkg; Pkg.instantiate()"`
+    instcmd = `$(Base.julia_cmd()) --project=$benchdir -e "using Pkg; Pkg.resolve(); Pkg.instantiate()"`
     if !success(pipeline(instcmd; stdout=stderr, stderr=stderr))
         return rows, notes, false, "environment instantiation failed"
     end
 
-    println(stderr, "── $pkg: running benchmarks.jl ...")
-    out = IOBuffer()
-    cmd = `$(Base.julia_cmd()) --project=$benchdir $(joinpath(benchdir, "benchmarks.jl"))`
-    ok = success(pipeline(cmd; stdout=out, stderr=stderr))
-    for line in eachline(IOBuffer(take!(out)))
-        fields = split(line, '\t')
-        if fields[1] == "BENCHJL" && length(fields) == 5
-            push!(rows, BenchRow(pkg, fields[2],
-                                 parse(Float64, fields[3]),
-                                 parse(Int, fields[4]),
-                                 parse(Int, fields[5])))
-        elseif fields[1] == "SCALING" && length(fields) >= 4
-            push!(notes, "$pkg scaling $(fields[2]) [$(fields[3])]: $(fields[4])x")
-        else
-            println(line)   # pass through anything else the suite printed
+    if !regressions_only
+        println(stderr, "── $pkg: running benchmarks.jl ...")
+        out = IOBuffer()
+        cmd = `$(Base.julia_cmd()) --project=$benchdir $(joinpath(benchdir, "benchmarks.jl"))`
+        ok = success(pipeline(cmd; stdout=out, stderr=stderr))
+        for line in eachline(IOBuffer(take!(out)))
+            fields = split(line, '\t')
+            if fields[1] == "BENCHJL" && length(fields) == 5
+                push!(rows, BenchRow(pkg, fields[2],
+                                     parse(Float64, fields[3]),
+                                     parse(Int, fields[4]),
+                                     parse(Int, fields[5])))
+            elseif fields[1] == "SCALING" && length(fields) >= 4
+                push!(notes, "$pkg scaling $(fields[2]) [$(fields[3])]: $(fields[4])x")
+            else
+                println(line)
+            end
         end
+        ok || return rows, notes, false, "benchmarks.jl failed (see output above)"
     end
-    ok || return rows, notes, false, "benchmarks.jl failed (see output above)"
 
     regfile = joinpath(benchdir, "regression_tests.jl")
     if isfile(regfile)
@@ -142,7 +146,10 @@ end
 # ---------------------------------------------------------------------------
 
 function main(args)
-    suites = collect_suites(ROOT, String.(args))
+    regressions_only = "--regressions-only" in args
+    filters = String[a for a in args if a != "--regressions-only"]
+    any(startswith(a, "--") for a in filters) && error("Unknown benchmark option")
+    suites = collect_suites(ROOT, filters; regressions_only)
     if isempty(suites)
         println(stderr, "no benchmark suites found under $ROOT",
                 isempty(args) ? "" : " matching $(join(args, ", "))")
@@ -153,7 +160,7 @@ function main(args)
     all_notes = String[]
     failures = String[]
     for repo in suites
-        rows, notes, ok, reason = run_suite(repo)
+        rows, notes, ok, reason = run_suite(repo; regressions_only)
         append!(all_rows, rows)
         append!(all_notes, notes)
         ok || push!(failures, "$(basename(repo)): $reason")
@@ -179,4 +186,6 @@ function main(args)
     end
 end
 
-main(ARGS)
+if abspath(PROGRAM_FILE) == @__FILE__
+    main(ARGS)
+end

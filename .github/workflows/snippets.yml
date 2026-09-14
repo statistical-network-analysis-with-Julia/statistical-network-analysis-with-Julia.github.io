@@ -1,4 +1,4 @@
-name: Capability matrix
+name: Executable documentation
 
 on:
   push:
@@ -18,9 +18,9 @@ env:
   SNWJ_ROOT: ${{ github.workspace }}
 
 jobs:
-  check-freshness:
+  snippets:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,5 +33,5 @@ jobs:
         run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone
       - name: Test the tooling gates
         run: julia statistical-network-analysis-with-Julia.github.io/tools/test/runtests.jl
-      - name: Regenerate and check the capability matrix
-        run: julia --project=.snippet-env statistical-network-analysis-with-Julia.github.io/tools/generate_capability_matrix.jl --check
+      - name: Execute every package README, documentation page, and site example
+        run: julia --project=.snippet-env statistical-network-analysis-with-Julia.github.io/tools/check_snippets.jl

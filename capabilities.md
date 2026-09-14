@@ -15,10 +15,10 @@ of it has been checked against R.</p>
 > small model of every family and asks the fitted result what it did, through the shared
 > result-metadata protocol (`Networks.fit_metadata`); it reads the "validated against R"
 > rows out of the `[provenance]` block of the golden fixtures committed in the package
-> repositories; and it reads missing-data support out of the `Networks.supports_missing`
-> trait. A hand-maintained capability table drifts from the code within one release.
-> This one cannot, because it *is* the code — and a CI check regenerates it and fails if
-> the committed page has gone stale.
+> repositories; and it reads the `Networks.supports_missing` and
+> `Networks.missing_policies` traits. The StatsAPI table executes the accessors on those
+> same fits. CI rejects failed probes and checks the page for drift. These small probes
+> establish the reported API behavior, not general scientific validity or scalability.
 
 ## How to read the columns
 
@@ -42,8 +42,8 @@ of it has been checked against R.</p>
 
 | package | fit | estimand | objective | exact? | standard errors | missing dyads | tied events |
 |:---|:---|:---|:---|:---:|:---|:---|:---|
-| SNA | `netlm`, dyadic OLS + QAP | `network_regression` | `least_squares` | **yes** | `none` | `none` | n/a |
-| SNA | `netlogit`, dyadic logit + QAP | `network_logit_regression` | `likelihood` | **yes** | `fisher` | `none` | n/a |
+| SNA | `netlm`, dyadic OLS, classical inference | `network_regression` | `least_squares` | **yes** | `ols` | `none` | n/a |
+| SNA | `netlogit`, dyadic logit, classical inference | `network_logit_regression` | `likelihood` | **yes** | `fisher` | `none` | n/a |
 | ERGM | `mple`, **dyad-independent** formula (`edges`) | `ergm` | `pseudolikelihood` | **yes** | `hessian` | `none` | n/a |
 | ERGM | `mple`, **dyad-dependent** formula (`edges + gwesp`) | `ergm` | `pseudolikelihood` | no | `hessian` | `none` | n/a |
 | ERGM | `mcmle`, dyad-dependent formula | `ergm` | `mc_likelihood` | no | `fisher` | `none` | n/a |
@@ -56,6 +56,7 @@ of it has been checked against R.</p>
 | ERGMEgo | `fit_ergm_ego`, MCMC method of moments | `ergm_ego` | `moment` | no | `sandwich` | `none` | n/a |
 | ERGMRank | `fit_ergm_rank`, swap-MPLE, default SEs | `rank_ergm` | `pseudolikelihood` | no | `hessian` | `none` | n/a |
 | ERGMRank | `fit_ergm_rank`, swap-MPLE, `se=:bootstrap` | `rank_ergm` | `pseudolikelihood` | no | `bootstrap` | `none` | n/a |
+| ERGMRank | `fit_ergm_rank`, MCMC-MLE | `rank_ergm` | `likelihood` | no | `fisher` | `none` | n/a |
 | REM | `fit_rem`, case-control conditional logit | `relational_event` | `partial_likelihood` | no | `hessian` | `none` | `none` |
 | Relevent | `fit_obpm`, ordinal B-P model | `relational_event` | `likelihood` | **yes** | `hessian` | `none` | `none` |
 | Relevent | `fit_timing`, exact-time hazard model | `relational_event_timing` | `likelihood` | **yes** | `hessian` | `none` | `none` |
@@ -68,14 +69,16 @@ would have got wrong:
   enough here: the Poisson reference has unbounded support and the fit enumerates a
   truncated one, so it reports `exact? = no` and tells you the boundary mass it is
   leaning on ([ERGMCount#1](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/issues/1)).
-- **`ERGMRank` is never exact, at any formula.** Its swap comparisons overlap by
-  construction, so there is no dyad-independent special case to fall back on
-  ([ERGMRank#1](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/issues/1)).
+- **`ERGMRank` offers two estimators.** The default swap-MPLE multiplies overlapping
+  comparisons and is not an exact likelihood. `method=:mcmle` fits the ranking ERGM
+  by Monte Carlo likelihood; its simulation and convergence caveats remain relevant.
 
-Every one of the twelve fitted-result types in the ecosystem declares this protocol, so
-you can ask the same question of your own fit:
+You can ask the same question of your own fit:
 
 ```julia
+using Networks, ERGM
+net = load_dataset(:florentine_marriage)
+fit = ergm(net, [Edges(), GWESP(0.5)])
 md = fit_metadata(fit)
 md.objective      # :pseudolikelihood
 md.is_exact       # false — the formula is dyad-dependent
@@ -89,19 +92,17 @@ These are not editorial. Each line is an entry of `approximations(fit)` on the
 corresponding row above — attached to the fitted object, printed by its `show` method,
 and reproduced here verbatim.
 
-#### SNA — `netlm`, dyadic OLS + QAP
+#### SNA — `netlm`, dyadic OLS, classical inference
 
 - the dyads are treated as independent observations by the estimator; the dyadic dependence is addressed only by the null distribution the p-values are read off
-- no standard errors are reported; the t-statistics use homoskedastic iid-dyad OLS standard errors and serve only as the test statistic compared against the null distribution
+- the standard errors are homoskedastic iid-dyad OLS standard errors and serve only as the test statistic compared against the null distribution
 - nullhyp = :classical: the p-values are parametric t/z tests that assume independent dyads — for reference only, since dyadic dependence typically invalidates them. No permutation was performed
-- the missing-dyad policy applied to the inputs is not recorded on the result: masked dyads are rejected by default (missing = :error), and with missing = :face they enter the design matrix at their stored face value
 
-#### SNA — `netlogit`, dyadic logit + QAP
+#### SNA — `netlogit`, dyadic logit, classical inference
 
 - the dyads are treated as independent observations by the estimator; the dyadic dependence is addressed only by the null distribution the p-values are read off
 - the standard errors are the inverse Fisher information of a binomial GLM that treats the dyads as independent: they are expected anticonservative under dyadic dependence, and the reported p-values are not derived from them
 - nullhyp = :classical: the p-values are parametric t/z tests that assume independent dyads — for reference only, since dyadic dependence typically invalidates them. No permutation was performed
-- the missing-dyad policy applied to the inputs is not recorded on the result: masked dyads are rejected by default (missing = :error), and with missing = :face they enter the design matrix at their stored face value
 
 #### ERGM — `mple`, **dyad-dependent** formula (`edges + gwesp`)
 
@@ -110,21 +111,24 @@ and reproduced here verbatim.
 
 #### ERGM — `mcmle`, dyad-dependent formula
 
-- MCMLE: the likelihood is approximated by an MCMC sample, so the estimates carry Monte-Carlo error
+- MCMLE: the likelihood is approximated by an MCMC sample, so the estimates carry Monte-Carlo error (included in the standard errors; see mcmc_se)
 - the reported log-likelihood (and AIC/BIC) is a path-sampling bridge estimate from a dyad-independent reference model
 
 #### TERGM — `stergm`/CMPLE, **dyad-dependent** formula
 
 - conditional maximum pseudo-likelihood of a dyad-dependent formula: the dyad conditionals of each transition are multiplied as if independent, so the point estimates are biased in finite samples
 - inverse-Hessian standard errors of the naive conditional pseudo-likelihood: expected anticonservative under dyadic dependence
+- coefficient(s) Form~gwesp.OTP.fixed.0.5 fixed at -Inf (observed statistic at its smallest attainable value): no finite estimate exists; the other coefficients are estimated on the free dyads these statistics do not touch, as R ergm does (drop=TRUE), with standard error 0 and p-value 0 recorded for the fixed ones
 
 #### ERGMCount — `fit_ergm_count`, **dyad-independent** (`sum + nonzero`)
 
-- count support truncated at 0:10; max boundary mass 4.41e-5 (the reference measure is unbounded, so the enumerated support is an approximation to the model's)
+- count support truncated at 0:20; max boundary mass 3.88e-13 (the reference measure is unbounded, so the enumerated support is an approximation to the model's)
+- support chosen by error-controlled doubling: the last doubling to max_val = 20 moved the estimates by at most 0.000769 standard errors and left 0.000356 expected dyads past the previous bound (tolerance 0.001)
 
 #### ERGMCount — `fit_ergm_count`, **dyad-dependent** (`sum + mutual`)
 
-- count support truncated at 0:10; max boundary mass 2.83e-9 (the reference measure is unbounded, so the enumerated support is an approximation to the model's)
+- count support truncated at 0:20; max boundary mass 3.13e-25 (the reference measure is unbounded, so the enumerated support is an approximation to the model's)
+- support chosen by error-controlled doubling: the last doubling to max_val = 20 moved the estimates by at most 8.34e-10 standard errors and left 3.49e-10 expected dyads past the previous bound (tolerance 0.001)
 - maximum pseudo-likelihood of a dyad-dependent model: the dyad conditionals are multiplied as if independent, so the point estimates are biased in finite samples
 - inverse-Hessian standard errors of the naive pseudo-likelihood: expected anticonservative under dyadic dependence (refit with `se=:bootstrap` for a parametric-bootstrap covariance)
 
@@ -135,10 +139,10 @@ and reproduced here verbatim.
 
 #### ERGMEgo — `fit_ergm_ego`, MCMC method of moments
 
-- method-of-moments fit by MCMC: the targets are matched against simulated means, so the estimates carry Monte-Carlo error
-- the model is simulated on a pseudo-population network of size 20, not the population of size 20; the edges coefficient is put on the population scale by the size adjustment -0.0
+- method-of-moments fit by MCMC: the targets are matched against simulated means, so the estimates carry Monte-Carlo error (final sample: 100 draws, effective sample size 5.0, max convergence t-ratio 0.0409, Hotelling p 0.932)
+- the model is simulated on a pseudo-population network of size 20, not the population of size 20; the edges coefficient is put on the population scale by the size adjustment 0.0
 - the survey-design variance component is the weighted-mean variance of the target statistics under INDEPENDENT egos with the given case weights: it encodes no strata, clusters, finite-population correction, replicate weights, without-replacement inclusion probabilities, or alter dependence, so the standard errors are narrower than "survey-design variance" implies for any richer sampling design
-- the Monte-Carlo variance of the pseudo-population construction itself is not included in the reported standard errors
+- the standard errors are the design sandwich I⁻¹ Σ_design I⁻¹ plus the Monte-Carlo estimation term I⁻¹/n_eff of the moment equations (ergm.ego's decomposition); the information I is itself the covariance of the statistics on a finite MCMC sample, so both components carry Monte-Carlo noise — increase n_samples or interval to reduce it
 
 #### ERGMRank — `fit_ergm_rank`, swap-MPLE, default SEs
 
@@ -150,16 +154,20 @@ and reproduced here verbatim.
 - swap pseudo-likelihood: the (ego, alter-pair) swap conditionals are multiplied as if independent, but they overlap (each ranking enters n − 2 comparisons), so this is not the likelihood and no consistency result is claimed for the estimator
 - standard errors are a parametric bootstrap of the swap MPLE (simulate rank networks at θ̂ with the AlterSwap sampler, refit, empirical covariance): they do NOT treat the overlapping swap comparisons as independent, but they are Monte-Carlo estimates and assume the fitted model generated the data
 
+#### ERGMRank — `fit_ergm_rank`, MCMC-MLE
+
+- MCMC MLE: the likelihood is approximated by an MCMC sample of the AlterSwap chain (n_samples draws per iteration), so the estimates carry Monte-Carlo error — included in the standard errors as the V·Σ_mc·V component (fit.vcov_fisher is the Fisher part alone; show prints R's MCMC %)
+- the reported log-likelihood (and AIC/BIC) is a path-sampling bridge estimate along θ_u = u·θ̂ from the uniform ordering model (θ = 0, log Z = n·log((n−1)!)) with 16 rungs — a Monte-Carlo quantity with its own error
+
 #### REM — `fit_rem`, case-control conditional logit
 
-- case-control sampling of the risk set (each non-case dyad entered its stratum with probability 0.1724): the partial likelihood is an approximation to the full-risk-set ordinal likelihood
-- the inverse-Hessian standard errors are conditional on the ONE sampled control set that was drawn: they do not include the variance induced by the risk-set sampling itself, so they are understated (refit with `se=:bootstrap` to include it, or `se=:sandwich` for a misspecification-robust covariance)
+- case-control sampling of the risk set (each non-case dyad entered its stratum with probability 0.1724): the partial likelihood is an approximation to the full-risk-set ordinal likelihood, and if the model is misspecified the estimates depend on the control draw — refit with a larger `n_controls` or the full risk set, or measure the draw-to-draw spread with `control_draw_cov`
+- the inverse-Hessian standard errors (`se=:hessian`) are the observed information of the sampled partial likelihood — a consistent variance estimator under nested case-control sampling (the information lost by sampling is already in it)
 
 #### Siena — `siena07`, SAOM by method of moments
 
-- the fit did NOT meet the RSiena convergence standard (|t-ratio| < threshold for every parameter and tconv.max = 0.194 below its own): the estimates do not solve the moment equations
 - Method of Moments by stochastic approximation: the moments are Monte-Carlo estimates from simulated trajectories, so the estimates carry Monte-Carlo error
-- standard errors are D⁻¹ Σ D⁻ᵀ with BOTH factors estimated from the phase-3 simulations; the derivative matrix D is ridge-regularized (+0.01·I) before inversion, which biases the reported standard errors
+- standard errors are D⁻¹ Σ D⁻ᵀ with BOTH factors estimated from the phase-3 simulations; unidentified derivative matrices produce undefined standard errors instead of an implicit ridge
 
 #### Fits that declare no approximation at all
 
@@ -182,165 +190,164 @@ code will run at.
 | package | fixture | reference implementation | R | validated on |
 |:---|:---|:---|:---|:---|
 | Networks | `florentine_sna` | `sna` 2.8 | 4.6.1 | network::flo (Padgett Florentine marriage) |
-| SNA | — | *no golden fixture* | | |
+| Networks | `network_density` | `sna` 2.8 | 4.6.1 | hand-built 4- and 5-vertex networks (see script) |
+| SNA | `sna_reference` | `ergm` 4.12.0, `sna` 2.8 | 4.6.1 | ergm florentine and sampson |
+| ERGM | `ergm_terms` | `ergm` 4.12.0 | 4.6.1 |  |
 | ERGM | `flomarriage_ergm` | `ergm` 4.12.0 | 4.6.1 | ergm::flomarriage (Padgett): 16 Florentine families, 20 undirected marriage ties, wealth covariate |
+| ERGM | `flomarriage_missing_ergm` | `ergm` 4.12.0 | 4.6.1 | ergm::flomarriage (Padgett): 16 Florentine families, 20 undirected marriage ties, wealth covariate |
 | TERGM | `panel_stergm` | `btergm` 1.11.1, `ergm` 4.12.0, `tergm` 4.2.2 | 4.6.1 | simulated: 25 actors, 8 directed waves, alternating two-group `grp` attribute |
+| ERGMCount | `count_terms` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 |  |
 | ERGMCount | `zach_poisson` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 | ergm.count::zach (Zachary 1977): 34 karate-club members, undirected, `contexts` edge counts 0-7 |
 | ERGMEgo | `fauxmesa_ego_census` | `ergm_ego` 1.1.4, `ergm` 4.12.0 | 4.6.1 | ergm::faux.mesa.high: 205 students, 203 undirected friendship ties, Grade 7-12 |
+| ERGMEgo | `fauxmesa_ego_weighted` | `ergm_ego` 1.1.4, `ergm` 4.12.0 | 4.6.1 | ergm::faux.mesa.high: 205 students, 203 undirected friendship ties, Grade 7-12 |
 | ERGMMulti | `twolayer_ergm_multi` | `ergm_multi` 0.3.0, `ergm` 4.12.0 | 4.6.1 | simulated: 2 directed layers on the same 20 actors, alternating two-group `grp` |
+| ERGMMulti | `twolayer_layer_terms` | `ergm_multi` 0.3.0, `ergm` 4.12.0 | 4.6.1 | the SAME two directed 20-actor layers as twolayer_ergm_multi.toml (identical generating code and seed), wrapped as ergm.multi Layer(list(A = net1, B = net2)) |
 | ERGMRank | `newcomb_rank` | `ergm_rank` 4.1.2, `ergm` 4.12.0 | 4.6.1 | ergm.rank::newcomb[[1]] (Newcomb 1961): 17 fraternity men, week 1, each ranking the other 16 |
+| ERGMRank | `rank_terms` | `ergm_rank` 4.1.2, `ergm` 4.12.0 | 4.6.1 | the 4-actor ERGMRank.jl test network (README/docstrings) and a seeded random 8-actor complete ranking |
 | REM | `rem_clogit` | `survival` 3.8.6 | 4.6.1 | simulated relational event sequence (10 actors, 80 events) |
+| REM | `rem_eventnet` | `survival` 3.8.6 | 4.6.1 | the rem_clogit.R sequence (10 actors, 80 events |
+| REM | `rem_relevent_wtc` | `relevent` 1.2.1 | 4.6.1 | WTC police radio calls (Butts, Petrescu-Prahova & Cross 2007): Networks.jl/data/wtc_police_calls_{events,actors}.tsv, read by R and by Networks.load_dataset(:wtc_police_calls) |
 | REM | `rem_ties` | `survival` 3.8.6 | 4.6.1 | simulated relational event sequence (8 actors, 90 events) observed on a coarse clock (resolution 0.03), which is what makes the ties |
+| Relevent | `relevent_catalogue` | `relevent` 1.2.1 | 4.6.1 | 14 fixed directed events, 5 actors |
 | Relevent | `relevent_rem_dyad` | `relevent` 1.2.1 | 4.6.1 | simulated dyadic event sequence (8 actors, 100 events) |
 | Siena | `s50_siena07` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50 (van Duijn): 50 actors, 3 friendship waves, smoke1 covariate |
+| Siena | `s50_targets.toml` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50: three friendship/alcohol waves, centered smoke1 |
 
-Two entries in that table are **not** claims of agreement, and are called out in the
-limitations below: `newcomb_rank` pins ERGMRank against a *different estimator*, and
-`s50_siena07` pins Siena against RSiena on the estimand while documenting that the
-procedure is materially weaker.
+Fixtures can compare different estimators or document residual differences. Read the
+fixture's assertions and tolerances before treating a listed reference as equivalence.
+
+## Shared result accessors
+
+Each cell below comes from calling the accessor on the same fitted object used above.
+`yes` means the call returned; `NaN` means a scalar criterion is explicitly unavailable;
+`—` means the call is unsupported. For moment estimators and pseudo-likelihoods,
+a returned AIC/BIC is not evidence that ordinary likelihood comparisons are justified.
+
+| package | fit | `coef` | `stderror` | `vcov` | `confint` | `loglikelihood` | `nobs` | `dof` | `aic` | `bic` | `coeftable` |
+|:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| SNA | `netlm`, dyadic OLS, classical inference | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| SNA | `netlogit`, dyadic logit, classical inference | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGM | `mple`, **dyad-independent** formula (`edges`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGM | `mple`, **dyad-dependent** formula (`edges + gwesp`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGM | `mcmle`, dyad-dependent formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| TERGM | `stergm`/CMPLE, **dyad-independent** formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| TERGM | `stergm`/CMPLE, **dyad-dependent** formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMCount | `fit_ergm_count`, **dyad-independent** (`sum + nonzero`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMCount | `fit_ergm_count`, **dyad-dependent** (`sum + mutual`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMMulti | `ergm_multi`, **dyad-independent** (per-layer edges) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMMulti | `ergm_multi`, **dyad-dependent** (interlayer dependence) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMEgo | `fit_ergm_ego`, MCMC method of moments | yes | yes | yes | yes | — | yes | yes | — | — | yes |
+| ERGMRank | `fit_ergm_rank`, swap-MPLE, default SEs | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMRank | `fit_ergm_rank`, swap-MPLE, `se=:bootstrap` | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMRank | `fit_ergm_rank`, MCMC-MLE | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| REM | `fit_rem`, case-control conditional logit | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Relevent | `fit_obpm`, ordinal B-P model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Relevent | `fit_timing`, exact-time hazard model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Siena | `siena07`, SAOM by method of moments | yes | yes | yes | yes | — | — | — | — | — | yes |
 
 ## Missing-data support
 
-The ecosystem contract (`Networks.supports_missing` / `Networks.require_observed`): a
-routine that has not declared a missing-data method **refuses** a network with masked
-dyads rather than silently reading unobserved ties at face value. Both columns below are
-read out of the code — the first from the `Networks.supports_missing` trait, which
-defaults to `false` (so this is a census, not an advertisement), and the second from the
-routine's own method table.
+A masked dyad is unobserved, not absent. The first column reports the
+`supports_missing` declaration verbatim; the second reports `missing_policies(f)`.
+A true trait alone does not say whether a routine excludes, conditions on, or refuses
+a mask: read the accepted policies and the routine documentation. `:error` alone
+promises rejection and may mean there is no `missing=` keyword. `:face` uses stored
+values; `:condition_on_face` fixes them during MCMC. Neither is missing-data MLE.
+ERGM's `:mle` instead integrates missing ties with free and constrained chains;
+inspect convergence and Monte Carlo diagnostics for that fit.
 
-The second column is worth reading carefully, because it is narrower than the contract's
-slogan. `missing = :face` is described as the auditable opt-in *everywhere*, but only
-three of the thirteen fitting functions actually accept the keyword. For the rest,
-refusing is all they can do: there is no way to ask them to proceed on face values, and
-a masked network must be resolved before it reaches them ([Networks#1](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/1)).
+| package | routine | `supports_missing` | accepted `missing` policies |
+|:---|:---|:---:|:---|
+| Networks | `network_density` | `false` | `:error`, `:face` |
+| SNA | `degree_centrality` | `false` | `:error`, `:face` |
+| TSNA | `t_density` | `false` | `:error`, `:face` |
+| TSNA | `t_reciprocity` | `false` | `:error`, `:face` |
+| ERGM | `mple` | `true` | `:error` |
+| ERGM | `mcmle` | `true` | `:error`, `:condition_on_face`, `:mle` |
+| SNA | `netlm` | `false` | `:error`, `:face` |
+| SNA | `netlogit` | `false` | `:error`, `:face` |
+| TERGM | `stergm` | `false` | `:error` |
+| ERGMCount | `fit_ergm_count` | `false` | `:error` |
+| ERGMEgo | `fit_ergm_ego` | `false` | `:error` |
+| ERGMMulti | `ergm_multi` | `false` | `:error` |
+| ERGMRank | `fit_ergm_rank` | `false` | `:error` |
+| REM | `fit_rem` | `false` | `:error` |
+| Relevent | `fit_obpm` | `false` | `:error` |
+| Relevent | `fit_timing` | `false` | `:error` |
+| Siena | `siena07` | `false` | `:error` |
 
-| package | routine | handles masked dyads | face-value opt-in |
-|:---|:---|:---|:---|
-| ERGM | `mple` | **yes** — available-case objective; masked dyads excluded | *not needed — it handles the mask* |
-| ERGM | `mcmle` | no — a masked network is **rejected** | `missing = :face` |
-| SNA | `netlm` | no — a masked network is **rejected** | `missing = :face` |
-| SNA | `netlogit` | no — a masked network is **rejected** | `missing = :face` |
-| TERGM | `stergm` | no — a masked network is **rejected** | *none — it can only refuse* |
-| ERGMCount | `fit_ergm_count` | no — a masked network is **rejected** | *none — it can only refuse* |
-| ERGMEgo | `fit_ergm_ego` | no — a masked network is **rejected** | *none — it can only refuse* |
-| ERGMMulti | `ergm_multi` | no — a masked network is **rejected** | *none — it can only refuse* |
-| ERGMRank | `fit_ergm_rank` | no — a masked network is **rejected** | *none — it can only refuse* |
-| REM | `fit_rem` | no — a masked network is **rejected** | *none — it can only refuse* |
-| Relevent | `fit_obpm` | no — a masked network is **rejected** | *none — it can only refuse* |
-| Relevent | `fit_timing` | no — a masked network is **rejected** | *none — it can only refuse* |
-| Siena | `siena07` | no — a masked network is **rejected** | *none — it can only refuse* |
+## Scientific limitations
 
-## Known limitations, and who owns them
+### Siena convergence and inference
 
-Everything below is a real, reproduced finding. Each links to the issue that owns it.
+`siena07` uses simulated method of moments. It rejects an unconverged fit by default;
+`siena_algorithm(allow_unconverged=true)` explicitly returns a diagnostic fit with a
+warning. Inspect `converged`, every t-ratio, `tconv_max`, `derivative_matrix`, and
+`phase3_cov`; repeat independent seeds and assess goodness of fit before inference.
+Convergence requires every absolute t-ratio below 0.1 and `tconv_max` below 0.25.
+Newton refinement improves convergence, but a passing diagnostic does not establish
+equivalence to RSiena across models, effects, or datasets. Maximum-likelihood and
+Bayesian estimation remain unsupported; structural zeros/ones are not missing ties.
 
-### Siena.jl's SAOM procedure is materially weaker than RSiena's — [Siena#2](https://github.com/statistical-network-analysis-with-Julia/Siena.jl/issues/2)
+### Rank and other pseudo-likelihood estimators
 
-**This is the most serious open finding in the ecosystem, and it can bite you
-silently.** The *estimand* is right: on the `s50` fixture every parameter lands within
-0.28 RSiena standard errors of RSiena's own estimate. The *procedure* is not:
+ERGMRank's default swap-MPLE is a different objective from ranking MCMC-MLE. Use
+`method=:mcmle` for the latter and inspect convergence and Monte Carlo diagnostics.
+Dependent ERGM-family pseudo-likelihood Hessian errors can underestimate uncertainty.
+Where offered, `se=:bootstrap` changes the covariance, not the objective or consistency
+properties. Check each routine's documentation; this option is not universal.
 
-- **~1 seed in 10 diverges outright while reporting `diverged == false`.** Two of 24
-  surveyed seeds reached `tconv.max ≈ 50` (reciprocity 5.77 against a true ≈ 2.40).
-  The parameter clamp never fires, so **`result.tconv_max` is the only signal you
-  have** that a fit is garbage. Check it. Do not trust `diverged`.
-- **3–19× noisier than RSiena at the same simulation budget** (smoke1-similarity:
-  seed-to-seed sd 0.045, against RSiena's 0.0057).
-- **It fails the convergence standard it enforces on itself**: `tconv.max` came out
-  0.26–0.77 across five seeds, against the 0.25 threshold Siena.jl checks. RSiena gets
-  0.13 on the same data.
-- **More budget makes it worse, not better.** Raising `phase1_iterations` to 200 or 400
-  each diverged one seed in six; `n_simulations = 5` inflates the sd about tenfold. The
-  shipped defaults are the only stable operating point.
+### REM risk sets and uncertainty
 
-Until this is fixed: run several seeds, compare the estimates, and read `tconv_max` on
-every one.
+Declare the complete eligible actor universe, including nonparticipants. Omitting
+eligible actors changes the risk set and the estimand. Under a correctly specified
+nested case-control model, the sampled likelihood's Hessian already accounts for the
+information lost by sampling controls. `se=:sandwich` uses event-clustered scores for
+robustness to within-stratum misspecification; it does not establish robustness to
+arbitrary dependence between events. REM rejects `se=:bootstrap`. `control_draw_cov`
+measures sensitivity to control redraws and must not be added to the fitted covariance
+as a supposed missing variance component.
 
-### Two RSiena comparisons cannot be made at all — [Siena#2](https://github.com/statistical-network-analysis-with-Julia/Siena.jl/issues/2)
+### Relevent timing and effect coverage
 
-`SienaResult` exposes neither the **derivative matrix** nor the **phase-3 statistic
-covariance**, so two of the comparisons the parity issue asks for cannot be performed.
-RSiena's values are frozen in the fixture as reference-only, unasserted; the check is
-one accessor away.
+Ordinal models condition on event order; timing models assume piecewise exponential
+waiting times and require statistics constant between events. `fit_timing` rejects
+finite-half-life decay statistics because their integrated hazard is not implemented;
+these statistics remain available for ordinal/conditional fits. Cumulative-history
+variants with `halflife=Inf` are interval-constant. For timing fits, `coef`,
+`stderror`, `vcov` and `coeftable` include the
+log-baseline first, followed by the effects. The legacy `.coefficients` and
+`.std_errors` fields contain effects only. Choose tie handling explicitly where times
+coincide. Time-varying covariate arrays and Bayesian fitting are unsupported.
 
-### ERGMRank's swap-MPLE is a different estimator, not an approximation — [ERGMRank#1](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/issues/1)
+Both fitters reject a verified separating direction: the likelihood keeps improving
+toward an infinite coefficient, so no finite maximum-likelihood estimate exists.
+This check does not detect every boundary case; inspect convergence and uncertainty.
 
-`ergm.rank` fits by MCMC-MLE; ERGMRank.jl fits a **swap pseudo-likelihood**. The swap
-comparisons overlap (each ranking enters *n* − 2 of them), so their product is not the
-likelihood, and **no consistency result is claimed**. Against R on the Newcomb fixture
-it is systematically **16× R's seed noise** — though the gap is only about **0.3 of a
-standard error**, so it is a difference of estimator, not a bug. The fixture pins the
-*character* of the gap rather than asserting agreement.
+### Count support and egocentric survey designs
 
-### Pseudo-likelihood Hessian standard errors are anticonservative — [ERGMRank#1](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl/issues/1), [ERGMMulti#1](https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl/issues/1), [ERGMCount#2](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/issues/2), [REM#2](https://github.com/statistical-network-analysis-with-Julia/REM.jl/issues/2)
+Poisson/geometric count ERGMs enumerate a finite support. Adaptive doubling checks
+coefficient movement in standard-error units, omitted tail mass and boundary mass;
+this controls a numerical approximation and does not make infinite support exact.
+Inspect the fitted support diagnostics. Egocentric inference assumes independent egos
+with supplied case weights. Strata, clusters, replicate weights and richer inclusion
+designs require additional survey-design variance treatment.
 
-Where the objective is a pseudo-likelihood and the model is dyad-dependent, the
-inverse-Hessian standard errors treat overlapping conditionals as independent and come
-out **too small**. Measured against `Networks.bootstrap_cov` on dependent models:
+### Temporal models and observation
 
-| package | bootstrap SE ÷ Hessian SE |
-|:---|:---|
-| ERGMRank | **5.4×** and 3.4× |
-| ERGMMulti | up to 9.0× |
-| ERGMCount | 1.20× |
-| REM | 1.03–1.17× |
+TERGM fits formation and persistence by CMPLE, exact for dyad-independent formulas.
+`method=:cmle` and `TERGM.egmme` throw; dependent CMLE and EGMME are unavailable.
+TSNA uses active-vertex density and dyadic reciprocity by default. Its temporal
+analyses reject masks unless `missing=:face` is explicit; face values cannot recover
+unobserved histories. Conversions preserve representable masks and reject incompatible
+encodings: Siena structural masks describe determined ties, not unobserved ties.
 
-Pass **`se = :bootstrap`** (or `se = :sandwich` for REM) whenever the model is
-dyad-dependent. Point estimates are byte-identical across the `se` options; only the
-covariance changes.
+### Scope and installation
 
-### REM's uncertainty ignores the risk-set sampling — [REM#2](https://github.com/statistical-network-analysis-with-Julia/REM.jl/issues/2)
-
-The default inverse-Hessian standard errors are conditional on the **one** sampled
-control set that was drawn, so they omit the variance induced by the case-control
-sampling itself. `se = :bootstrap` (law of total variance) or `se = :sandwich` includes
-it. Relatedly, the actor universe must be **declared** ([REM#1](https://github.com/statistical-network-analysis-with-Julia/REM.jl/issues/1)): inferring
-it from observed event endpoints drops eligible non-participants from the risk set and
-changes the estimand.
-
-### ERGMCount truncates an unbounded support — [ERGMCount#1](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/issues/1)
-
-Poisson/geometric references have unbounded support; the fit enumerates `0:max_val` and
-reports the **boundary mass** it is leaning on (see the caveats above — it is
-reported per fit, not assumed away). It is currently data-adaptive rather than
-error-controlled.
-
-### ERGMEgo's design variance encodes only a simple design — [ERGMEgo#1](https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl/issues/1)
-
-The survey-design variance component is the weighted-mean variance of the target
-statistics under **independent egos** with the given case weights. It encodes no
-strata, clusters, finite-population correction, replicate weights, without-replacement
-inclusion probabilities, or alter dependence. Since the design component is roughly
-**17× the estimation component**, an ego standard error essentially *is* its design
-variance — so a richer sampling design than the one assumed will give you standard
-errors that are too narrow.
-
-### TERGM has no EGMME, and `cmle` is not CMLE — [TERGM#1](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl/issues/1)
-
-`TERGM.egmme` is unimplemented and deliberately **unexported**: it throws rather than
-silently doing something else. `cmle` throws rather than quietly falling back to CMPLE.
-For a dyad-dependent formula, the CMPLE rows above show `exact? = no`.
-
-### Missing-dyad semantics across conversions — [Networks#1](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/1)
-
-Conversions between `Network`, `DynamicNetwork` and the Siena/REM data structures are
-now mask-preserving where they can be and **reject** where they cannot. In particular,
-**Siena's structural mask is not a missing mask**: Siena records ties that are
-*determined*, `Networks` records ties that are *unobserved*, and encoding one as the
-other would tell the estimator that a tie is known to be impossible. There is no
-faithful encoding, so the conversion refuses.
-
-### The module is `Networks`, the type is `Network` — [Networks#2](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/issues/2)
-
-`using Networks`, then `Network(5)`. The module was renamed (the type name appears in
-~200 downstream signatures); `using Network` is not a thing.
-
-### What is not covered here
-
-This page covers **fitted estimators**. Descriptive measures (`SNA.jl` centralities,
-cohesion, equivalence), simulation-only entry points (`simulate_*`), and the
-visualization packages (`NDTV.jl`, `TSNA.jl`) are not fits and have no result metadata
-to report; their own issues are [NDTV#1](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl/issues/1), [TSNA#1](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl/issues/1) and
-[ERGMUserterms#1](https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl/issues/1). Regenerating this page is tracked by [site#2](https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/issues/2);
-release/registry sequencing by [site#3](https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/issues/3).
+These tables cover small fitted models and selected missing-data policies. They do
+not validate every descriptive measure, simulation, visualization, or scale. The
+[migration guide](/migration/) describes current API differences. The published
+[workspace recipe](https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/tree/main/tools/workspace)
+reconstructs sibling checkouts. A passing local snapshot installation check does not
+establish registry publication or the availability of unpushed changes.
 

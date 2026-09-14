@@ -28,3 +28,7 @@ JuliaLocalPreferences.toml
 __site/
 __cache/
 node_modules/
+
+# Python preview tooling
+__pycache__/
+*.py[cod]

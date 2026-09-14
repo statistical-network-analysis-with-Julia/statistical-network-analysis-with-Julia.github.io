@@ -8,8 +8,7 @@ This page maps the R workflows you already know — statnet's
 `network`/`sna`/`ergm` stack, `RSiena`, and `relevent` — onto their Julia
 equivalents, package by package and verb by verb. It ends with a
 [complete worked example](#a_complete_worked_example) (loading a classic
-dataset, describing it, fitting an ERGM by MCMC MLE, checking fit) whose
-output was produced by running the code on this page, and an honest list
+dataset, describing it, fitting an ERGM by MCMC MLE, checking fit), and a list
 of [what still differs from R](#what_still_differs_from_r).
 
 Three conventions carry most of the translation:
@@ -22,9 +21,10 @@ Three conventions carry most of the translation:
    dot-separated names become snake_case (`network.extract` →
    `network_extract`, `component.dist` → `component_dist`).
 3. **Model accessors are the shared StatsAPI generics.** `coef`,
-   `stderror`, `vcov`, `loglikelihood`, `aic`, `bic` work on every fitted
-   model object in the ecosystem and compose with `StatsBase`, `GLM`,
-   etc. — `using ERGM, Siena, REM` together is safe.
+   `stderror`, and `vcov` share function identities across packages. Likelihood,
+   AIC and BIC are available only where defined for the estimator; Siena's
+   Method of Moments has none. See the [generated accessor table](/capabilities/).
+   `using ERGM, Siena, REM` together preserves the shared bindings.
 
 \toc
 
@@ -40,27 +40,23 @@ Three conventions carry most of the translation:
 | `ergm.multi` | [ERGMMulti.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl) | `ergm_multi` |
 | `ergm.rank` | [ERGMRank.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl) | `ergm_rank`, `as_rank_network` |
 | `ergm.userterms` | [ERGMUserterms.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl) | `@ergm_term`, `validate_term`, `test_term` |
-| `tergm` | [TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl) | `stergm`, `stergm_gof`, `simulate_network_sequence` |
-| `RSiena` | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl) | `siena_data`, `get_effects`, `fit_siena` / `siena07`, `siena_gof` |
+| `tergm` | [TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl) | `stergm`, `gof`, `simulate_network_sequence` |
+| `RSiena` | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl) | `siena_data`, `get_effects`, `fit_siena` / `siena07`, `gof` |
 | `relevent` | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl) + [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl) | `fit_rem`; `fit_relevent` / `rem_dyad` |
 | `networkDynamic` | [NetworkDynamic.jl](https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl) | `DynamicNetwork`, `activate!`, `network_extract` |
 | `tsna` | [TSNA.jl](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl) | `t_sna_stats`, `earliest_arrival`, `forward_reachable_set` |
 | `ndtv` | [NDTV.jl](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl) | `render_animation`, `filmstrip`, `timeline_plot` |
 
-The packages are not yet in the General registry: either add them by URL
-in dependency order (Networks.jl first, then SNA/ERGM/NetworkDynamic, then
-their dependents — each README has the ordered `Pkg.add(url=...)` block),
-or clone all repositories side by side and start Julia with the root
-workspace project (`julia --project=.` in the clone root), which wires
-every package together via `[sources]` path dependencies. A LocalRegistry
-is being prepared (this site repository's `tools/setup_registry.jl`, run
-after the packages are committed/tagged) so that plain `Pkg.add("ERGM")`
-will eventually work.
-All packages require Julia 1.12+.
+Use Julia 1.12 or newer and the published
+[workspace recipe](https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/tree/main/tools/workspace)
+to clone the sibling repositories and prepare `.snippet-env`. The packages
+remain unreleased; successful local snapshot validation does not establish a
+registry release or make unpushed changes available to other users.
 
-A convenience worth knowing from day one: `using ERGM` (and the ERGM
-variants) re-exports the whole Networks.jl API, so a single `using ERGM`
-gives you `network`, `add_edge!`, attribute setters, and `load_dataset`.
+`using ERGM` and its variants re-export selected everyday network operations,
+including construction, edge updates, attributes and datasets. Use
+`using Networks` explicitly when you need its wider conversion and metadata API.
+The module is `Networks`; `Network` is its network type.
 
 ## Networks: `network` → Networks.jl
 
@@ -119,9 +115,10 @@ so Graphs.jl generics dispatch correctly on it.
 | `sedist / equiv.clust / blockmodel` | `structural_equivalence` / `equiv_clust` / `blockmodel` |
 | `rgraph(20, tprob=0.1)` | `rgraph(20; tprob=0.1)` |
 
-The values agree with R: SNA.jl's test suite pins `gden`, `gtrans`,
-centrality scores, and the dyad/triad censuses to golden-master values
-computed with `sna` 2.8.
+SNA.jl compares these measures with provenanced R fixtures on selected
+undirected, directed, and two-mode networks. The [capability matrix](/capabilities/)
+reports the fixture versions and datasets; those checks do not establish
+equivalence for every input.
 
 ## ERGMs: `ergm` → ERGM.jl
 
@@ -135,7 +132,7 @@ fit <- ergm(samplike ~ edges + mutual + nodematch("group", diff=TRUE))
 
 ```julia
 # Julia
-using ERGM, Random               # ERGM re-exports the Networks.jl API
+using ERGM, Random               # ERGM re-exports common network operations
 
 net = load_dataset(:sampson)     # statnet's samplike
 levels = ["Loyal", "Outcasts", "Turks"]
@@ -145,31 +142,9 @@ fit = ergm(net, [Edges(); Mutual();
 println(fit)
 ```
 
-Output:
-
-```
-ERGM Results
-============
-Method: mcmle
-Log-likelihood: -132.4494
-AIC: 274.9, BIC: 293.52
-Converged: true
-
-Coefficients:
-                          Estimate  Std.Error  z value  Pr(>|z|)
-edges                      -2.2411     0.2342  -9.5678    <1e-16 ***
-mutual                      1.3640     0.4972   2.7431    0.0061 **
-nodematch.group.Loyal       1.6726     0.3532   4.7357   2.2e-06 ***
-nodematch.group.Outcasts    2.8340     0.7633   3.7130    0.0002 ***
-nodematch.group.Turks       2.1938     0.4022   5.4542   4.9e-08 ***
----
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-That coefficient table (Estimate / Std.Error / z value / Pr(>|z|) with
-significance codes, p-values floored at `<1e-16` instead of printing
-`0.0`) is the shared presentation layer from Networks.jl — every fitted
-model in the ecosystem prints through it.
+Fitted coefficient tables use Networks.jl's shared presentation layer.
+Likelihood-based tables display estimates, standard errors, z values and
+p-values; permutation tables label their reference distribution and resolution.
 
 Note the one real semantic difference in that translation: the term
 system is one-statistic-per-term, so R's `nodematch(diff=TRUE)` — which
@@ -240,7 +215,7 @@ path-sampling (bridge) log-likelihood for AIC/BIC.
 | `ergm.rank` | `ergm_rank(rnet, [RankDeference(), ...])` |
 | `ergm.userterms` (C skeleton + rebuild) | `@ergm_term` macro, then `validate_term` / `test_term` — plain Julia, no recompilation |
 
-Every variant's result type supports the same StatsAPI accessors.
+Variants share StatsAPI function names. The [generated table](/capabilities/) records which calls return a quantity, an explicit NaN, or are unavailable.
 
 ## Temporal ERGMs: `tergm` → TERGM.jl
 
@@ -249,14 +224,13 @@ Every variant's result type supports the same StatsAPI accessors.
 | `stergm(nw_list, formation=~edges+mutual, dissolution=~edges, estimate="CMLE")` | `stergm(networks, [Edges(), Mutual()], [Edges()])` |
 | `tergm(nw_list ~ Form(~edges) + Persist(~edges), estimate="CMLE")` | same — the dissolution model is parameterized as *persistence*, like `Persist()` |
 | bootstrap SEs (`btergm`-style) | `stergm(...; se=:bootstrap, n_boot=200)` |
-| `gof(fit)` | `stergm_gof(fit)` |
+| `gof(fit)` | `gof(fit)` (`stergm_gof` remains an alias) |
 | `simulate(fit)` | `simulate_network_sequence(model, init, n_steps, θ_form, θ_diss)` |
 
 Estimation is conditional maximum pseudo-likelihood (CMPLE) on the
 Krivitsky–Handcock formation (union) and dissolution (intersection)
 networks — exact CMLE for dyad-independent models; MCMC-based CMLE and
-EGMME are not implemented (`method=:cmle` falls back to CMPLE with a
-warning). See the [worked STERGM example](/examples/modelling-network-change/).
+EGMME are not implemented; `method=:cmle` and `TERGM.egmme` throw explicit errors. See the [worked STERGM example](/examples/modelling-network-change/).
 
 ## SAOMs: `RSiena` → Siena.jl
 
@@ -271,85 +245,50 @@ The workflow is a deliberate mirror of RSiena's:
 | `coDyadCovar(m)` | `ConstantDyadCovariate(:name, m)` (also accepts a `Network`) |
 | `getEffects(data)` | `effects = get_effects(data)` |
 | `includeEffects(eff, transTrip, recip)` | `include_effects!(effects, :friendship, [:transTrip, :recip])` |
-| `sienaAlgorithmCreate(seed=42)` | `siena_algorithm(seed=42)` |
+| `sienaAlgorithmCreate(seed=42)` | `siena_algorithm(rng=MersenneTwister(42))` |
 | `siena07(alg, data=dat, effects=eff)` | `fit_siena(data, effects; algorithm=alg)` (`siena07` is an alias) |
 | `sienaAlgorithmCreate(cond=TRUE)` | `siena_algorithm(conditional=true)` (rates from phase-3 stopping times, in `result.rate_estimates`) |
 | `sienaCompositionChange(...)` | `CompositionChange()` + `add_change!` + `add_composition_change!(data, cc)` |
-| `sienaGOF(res, IndegreeDistribution, ...)` | `siena_gof_indegree(result, data, :friendship)` |
+| `sienaGOF(res, IndegreeDistribution, ...)` | `gof(result, IndegreeDistribution(:friendship); n_sim=100, rng=Xoshiro(2))` |
 
-Effect shortnames are RSiena's (`:outdegree`, `:recip`, `:transTrip`,
-`:cycle3`, `:inPop`, `:egoX`, `:simX`, `:avAlt`, ... — 150+ effects), and
-the target statistics are validated against RSiena's `getTargets` to six
-decimals on the `s50` data. Estimation is Method of Moments —
-unconditional by default, conditional (RSiena's `cond=TRUE`) via
-`siena_algorithm(conditional=true)` — with the RSiena publication
-standards for convergence (every |t-ratio| < 0.1 and `tconv.max` < 0.25),
-score-function derivative estimation, and standard errors from all
-phase-3 simulations.
+Effect names such as `:outdegree`, `:recip`, and `:transTrip` follow RSiena.
+The package has 150+ implementations; reference parity is checked for **34
+selected deterministic targets and one fitted s50 model**, not the whole catalogue.
+Estimation uses simulated Method of Moments, capped Newton refinement, and an
+independent final validation batch. A returned default fit must have every
+convergence |t-ratio| < 0.1, `tconv_max` < 0.25, and an identifiable derivative.
+Unconverged fits raise `SienaConvergenceError`; `allow_unconverged=true` returns
+warning-bearing diagnostic results, which should not be used for inference.
 
-Since a `Vector` of `Network` objects converts directly (a package
-extension activates when Networks.jl is loaded), you can describe
-cross-sections with SNA.jl and model their dynamics with Siena.jl without
-touching a matrix. A minimal round trip — three synthetic waves, two
-effects (this is a mechanics demo on random data, so the estimates
-themselves are uninteresting):
+The Networks bridge is an ordinary hard dependency. This example uses the
+bundled s50 friendship panel and smoking covariate from the reference model:
 
 ```julia
 using Networks, Siena, Random
-
-rng = Xoshiro(11)
-wave1 = network(25; directed=true)
-for i in 1:25, j in 1:25
-    i != j && rand(rng) < 0.06 && add_edge!(wave1, i, j)
-end
-waves = [wave1]
-for _ in 2:3                       # each later wave toggles 40 random dyads
-    w = copy(waves[end])
-    for _ in 1:40
-        i, j = rand(rng, 1:25), rand(rng, 1:25)
-        i == j && continue
-        has_edge(w, i, j) ? rem_edge!(w, i, j) : add_edge!(w, i, j)
-    end
-    push!(waves, w)
-end
-
+s50 = load_dataset(:s50)
 data = siena_data()
-add_nodeset!(data, NodeSet(25))
-add_dependent!(data, DependentNetwork(:friendship, waves))  # Network panel — no matrices
+add_nodeset!(data, NodeSet(50))
+add_dependent!(data, DependentNetwork(:friendship, s50.friendship))
+add_covariate!(data, ConstantCovariate(:smoke1, s50.smoke[:, 1]))
 effects = get_effects(data)
-include_effects!(effects, :friendship, [:outdegree, :recip])
-alg = siena_algorithm(seed=42, phase3_iterations=200, verbose=false)
-result = siena07(data, effects; algorithm=alg)
+include_effects!(effects, :friendship,
+    [:outdegree, :recip, :transTrip, :altsmoke1, :egosmoke1, :simsmoke1])
+result = fit_siena(data, effects; rng=MersenneTwister(1),
+                   algorithm=SienaAlgorithm(verbose=false))
+@assert result.converged
 println(result)
+result.derivative_matrix
+result.phase3_cov
 ```
 
-Output:
-
-```
-SAOM Estimation Results
-=======================
-Converged: true (max |t-ratio| = 0.086, overall max convergence ratio = 0.169)
-Iterations: 450
-
-Rate Parameters:
-----------------
-Rate friendship (period 1)     1.3505 (0.2655)
-Rate friendship (period 2)     1.3998 (0.2546)
-
-Objective Function Parameters:
-------------------------------
-           Estimate  Std.Error  z value  Pr(>|z|)
-outdegree    0.1369     0.2845   0.4812    0.6304
-recip        0.1494     0.4151   0.3598    0.7190
----
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-RSiena's structural zeros/ones (10/11 coding) are supported in the wave
-matrices, and composition change (actors joining/leaving) is handled with
-the Method-of-Moments semantics; maximum likelihood and Bayesian
-estimation are not implemented (see
-[differences](#what_still_differs_from_r)).
+Repeat independent seeds, inspect convergence and goodness of fit, and assess
+whether the observation and effect assumptions suit the research question.
+Conditional estimation uses finite-difference derivatives and can fail the
+strict criteria on models where unconditional estimation succeeds. Raw D and
+Sigma are exposed; standard errors use the sandwich `D⁻¹ Sigma D⁻ᵀ` without a
+fixed ridge. Structural codes 10/11 describe determined ties, not missing ties.
+Live-behavior selection effects, maximum likelihood and Bayesian estimation
+remain outside the built-in supported workflow.
 
 ## Relational events: `relevent` → REM.jl / Relevent.jl
 
@@ -365,52 +304,57 @@ statistics.
 | `rem.dyad(el, n, effects=..., ordinal=TRUE)` | `fit_relevent(events, stats, n)` (= `fit_obpm`) — exact ordinal likelihood; `rem_dyad` is an alias |
 | `rem.dyad(el, n, effects=..., ordinal=FALSE)` | `fit_relevent(events, stats, n; ordinal=false)` (= `fit_timing`) — exponential-baseline interval timing, `t0` sets the observation onset |
 | large-stream approximate fit (eventnet-style) | `fit_rem(seq, stats; n_controls=100)` — case-control conditional logit |
-| `"FESnd"` / inertia effects | `Repetition()`, `InertiaStatistic`, `PriorInteraction(halflife)` |
-| `"RRecSnd"`, `"RSndSnd"` (recency) | `RecencyStatistic`, `LocalInertia(halflife)` |
+| `"FESnd"`, `"FERec"`, `"FEInt"` | `FESnd(actor)`, `FERec(actor)`, `FEInt(actor)` (one contrast per selected actor) |
+| `"RRecSnd"`, `"RSndSnd"` (inverse recency ranks) | `RRecSnd(n_actors)`, `RSndSnd(n_actors)` |
 | reciprocity effects | `Reciprocity()`, `PriorInteraction(halflife; direction=:incoming)` |
 | `"PSAB-BA"` p-shifts | `PShift(:AB_BA)` or `PShift("PSAB-BA")` — all 13 Gibson shifts (`pshift_types()`) |
 | `covar=list(CovSnd=z, ...)` | `CovSnd(z)`, `CovRec(z)`, `CovInt(z)` |
-| triadic effects | `TransitiveClosure()`, `CyclicClosure()`, `SharedSender()`, `SharedReceiver()` |
-| degree effects | `SenderActivity()`, `ReceiverPopularity()`, `SendingCapacity(halflife)`, ... |
+| `covar=list(CovEvent=x)` | `CovEvent(dyad_matrix)` (one static sender-by-receiver matrix) |
+| `"OTPSnd"`, `"ITPSnd"`, `"ISPSnd"` | `OTPSnd(n_actors)`, `ITPSnd(n_actors)`, `ISPSnd(n_actors)` (R weighted-history definitions) |
+| normalized degree effects | `NIDSnd(n_actors)`, `NIDRec(n_actors)`, `NODSnd(n_actors)`, `NODRec(n_actors)`, `NTDegSnd(n_actors)`, `NTDegRec(n_actors)` |
 | `coef(fit)`, `summary(fit)` | `coef(fit)`, `stderror(fit)`, `println(fit)` |
 
 ```julia
-using REM, Relevent, Random
-
-rng = Xoshiro(3)
-events = [Event(rand(rng, 1:6), rand(rng, 1:6), Float64(t)) for t in 1:120]
-events = filter(e -> e.sender != e.receiver, events)
-
-# rem.dyad(..., ordinal=TRUE) equivalent: exact ordinal likelihood, full risk set
-stats = [PriorInteraction(20.0), PriorInteraction(20.0; direction=:incoming)]
-fit = fit_obpm(events, stats, 6)
+using Networks, REM, Relevent
+calls = load_dataset(:wtc_police_calls)
+events = [Event(row[2], row[3], Float64(row[1])) for row in eachrow(calls.events)]
+n_actors = calls.n_actors
+# Catalogue constructors take the eligible universe, including nonparticipants.
+recency = [RRecSnd(n_actors), RSndSnd(n_actors)]
+normalized_degrees = [NIDSnd(n_actors), NIDRec(n_actors), NODSnd(n_actors),
+                      NODRec(n_actors), NTDegSnd(n_actors), NTDegRec(n_actors)]
+weighted_paths = [OTPSnd(n_actors), ITPSnd(n_actors), ISPSnd(n_actors)]
+fit = fit_obpm(events, [PShift(:AB_BA), CovSnd(Float64.(calls.is_icr))], calls.n_actors)
 println(fit)
 ```
 
-Output:
+The data contain 481 ordered calls and 37 eligible actors, including actors who
+do not appear at event endpoints. The first column is an event index, so use an
+ordinal model; it cannot justify a waiting-time likelihood. The
+[worked REM example](/examples/modelling-interaction-events/) explains the risk
+set and compares distinct specifications without implying causal effects.
 
-```
-Ordinal Butts-Park Model Results
-================================
-N actors: 6
-N events: 103
-Log-likelihood: -349.5015
-Converged: true
+For genuine elapsed-time data, `fit_timing` exposes the log-baseline first in
+`coef`, `stderror`, `vcov`, and `coeftable`; legacy `.coefficients` and
+`.std_errors` contain effects only. Timing likelihoods require statistics that
+are constant between events: p-shifts, catalogue effects, and static covariates
+qualify. Finite-half-life decay statistics vary inside the waiting interval and
+are rejected by `fit_timing`; they remain available for ordinal/conditional
+fits. Cumulative-history variants with `halflife=Inf` can be used for timing.
+Tied events require an explicit supported
+policy; default exact-order/time fits reject them. The R-named effects have
+provenanced design fixtures. `FrPSndSnd`, `FrRecSnd`, `OSPSnd`, event-indexed
+covariate arrays, and Bayesian fitting remain unsupported.
 
-                            Estimate  Std.Error  z value  Pr(>|z|)
-prior_interaction_outgoing   -0.0308     0.1759  -0.1753    0.8609
-prior_interaction_incoming    0.2147     0.1655   1.2970    0.1946
----
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
+Both Relevent fitters reject a verified separating direction when no finite
+maximum-likelihood estimate exists. This check does not detect every boundary
+case; inspect convergence and uncertainty before interpreting coefficients.
 
-For a substantive REM analysis (simulate with known effects, recover
-them), see the [worked REM example](/examples/modelling-interaction-events/).
-Gibson's 13 participation-shift effects are available as
-`PShift(:AB_BA)` (R names like `"PSAB-BA"` accepted), and the
-`CovSnd`/`CovRec`/`CovInt` covariate blocks work as in R; nodal covariate
-effects can also go through REM.jl's
-`SenderAttribute`/`ReceiverAttribute`/`AttributeMatch`.
+REM's sampled likelihood uses a declared actor universe. Its Hessian reflects
+the information lost through control sampling under correct specification;
+`se=:sandwich` offers event-clustered score uncertainty. `se=:bootstrap` is
+rejected. `control_draw_cov` reports redraw sensitivity and must not be added
+as an allegedly omitted variance component.
 
 ## Dynamic networks: `networkDynamic` / `tsna` / `ndtv`
 
@@ -421,7 +365,7 @@ effects can also go through REM.jl's
 | `activate.edges(nd, onset, terminus, ...)` | `activate!(dnet, onset, terminus; edge=(1, 2))` |
 | `is.active(nd, at=2, e=...)` | `is_active(dnet, 2.0; edge=(1, 2))` |
 | `network.extract(nd, at=2)` | `network_extract(dnet, 2.0)` (returns a `Network`) |
-| `network.collapse(nd, onset, terminus)` | `network_collapse(dnet, onset, terminus)` |
+| `network.collapse(nd, onset, terminus)` | `network_collapse(dnet; onset=onset, terminus=terminus)` |
 | `as.networkDynamic(net)` | `as_dynamic_network(net)` |
 | `get.edge.activity(nd)` | `get_edge_activity(dnet)` |
 | `tSnaStats(nd, "gden")` | `t_sna_stats(dnet, times; measures=[:density])` |
@@ -439,57 +383,50 @@ tsna/ndtv camelCase spellings (`tSnaStats`, `earliestArrival`,
 `transmissionTimeline`, ...) kept as exported aliases — your R muscle
 memory keeps working, but new code can be idiomatic Julia.
 
+Temporal density uses active vertices by default; pass `active_only=false` for
+the full actor universe. Reciprocity defaults to `method=:dyadic`, including
+null dyads; use `:edgewise` for the fraction of reciprocated edges. Queries
+reject unobserved dyads unless `missing=:face` is explicit. Centrality vectors
+retain original actor indexing. `length(path)` counts edges; unreachable paths
+return `nothing`. Date/DateTime durations are converted to seconds where scalar
+rates or durations are reported. `MDSLayout` is the deterministic classical-MDS
+layout; the deprecated `KKLayout` alias does not implement Kamada–Kawai.
+
 ## What still differs from R
 
-Honest divergences to keep in mind — the things most likely to bite a
-statnet/RSiena user. (This list reflects the packages as of July 2026;
-each item is also documented at the API it concerns.)
+The following differences reflect the September continuation:
 
-- **No formula interface.** Models are specified as vectors of term
-  objects, never `net ~ edges + ...`. This is a deliberate design choice
-  (terms are ordinary values you can build programmatically), not a
-  missing feature.
-- **`fit_ergm` defaults to MPLE**, where R `ergm()` chooses MCMC MLE
-  automatically for dyad-dependent models. You must ask for
-  `method=:mcmle` yourself; dyad-dependent MPLE fits print a warning
-  about their standard errors and offer `se=:bootstrap` as a middle
-  ground. MCMLE standard errors come from the inverse Fisher information
-  of the final MCMC sample and do not add statnet's separate
-  MCMC-error component.
-- **`nodematch(diff=TRUE)` expands manually.** One term object per
-  attribute level (see the comprehension idiom above); R expands levels
-  automatically inside one formula term. `NodeFactor`, `NodeMix`, and the
-  degree-count terms (`Degree(0:2)`, ...) do expand automatically at
-  model construction, as in R.
-- **ERGM term coverage is narrower than statnet's.** Still missing:
-  curved-ERGM estimation (`gwesp(fixed=FALSE)` — only fixed-decay
-  geometrically weighted terms exist), offsets, and `constraints=`.
-  (`degree`/`idegree`/`odegree`, `gwidegree`/`gwodegree`, `gwdsp`, and
-  `nodemix` landed in 0.2.)
-- **`component_dist` uses weak components** on directed networks, where
-  R `sna::component.dist` defaults to `connected="strong"`.
-- **Missing data is narrower than in R.** `Network` supports missing
-  (unobserved) dyad masks: MPLE excludes masked dyads from the
-  pseudo-likelihood, and MCMLE *conditions on their face values* with a
-  one-time warning — an approximation, not statnet's full missing-data
-  MLE. Siena.jl supports RSiena's structural zeros/ones (10/11 coding)
-  in data, simulation, and moment statistics, and composition change
-  (actors joining/leaving) in estimation, but `NA` ties are not handled
-  in estimation. REM.jl assumes fully observed event streams.
-- **Siena.jl estimates by Method of Moments only.** Unconditional (the
-  default) and conditional (`siena_algorithm(conditional=true)`,
-  RSiena's `cond=TRUE`) estimation are implemented; Maximum Likelihood
-  and Bayesian estimation are not. Endowment/creation effects simulate
-  but do not estimate; `include_interaction!` does not exist yet.
-  Convergence criteria and derivative estimation follow RSiena's
-  published standards (t-ratios < 0.1, `tconv.max` < 0.25,
-  score-function derivatives; conditional estimation uses
-  finite-difference derivatives).
-- **TERGM is CMPLE-only** (exact CMLE for dyad-independent formulas);
-  no MCMC CMLE or EGMME.
-- **relevent gaps**: no tie-correction for simultaneous events in the
-  ordinal likelihood (ties are ranked arbitrarily, with a warning).
-  The 13 Gibson p-shifts and `CovSnd`/`CovRec`/`CovInt` landed in 0.2.
+- **Model syntax:** pass typed terms instead of an R formula. `fit_ergm` defaults
+  to MPLE; request `method=:mcmle` for likelihood fitting of dependent models.
+  MCMLE includes a Monte Carlo covariance component; `bridge_rungs=0` skips
+  bridge likelihood evaluation and makes likelihood criteria unavailable.
+- **ERGM coverage:** curved estimation, bipartite ERGM terms, offsets, and
+  general `constraints=` remain unavailable. Two-mode networks are supported
+  in Networks/SNA but explicitly refused by these ERGM fitters.
+- **Rank models:** swap-MPLE is a pseudo-likelihood, while `method=:mcmle`
+  estimates the ranking likelihood. They are different objectives, even when
+  numerical estimates happen to coincide.
+- **Missing observations:** ERGM MPLE excludes masked dyads. ERGM MCMLE rejects
+  them by default; `missing=:mle` integrates over missing ties using free and
+  constrained chains. `missing=:condition_on_face` fixes stored values and is a
+  different approximation. Siena lacks missing-tie estimation, and REM assumes
+  observed event histories. Structural zeros/ones are not missing ties.
+- **Siena:** Method of Moments only, with strict convergence failure. The
+  reference checks cover selected effects and one unconditional model.
+  Endowment/creation effects simulate but do not estimate; interactions and
+  built-in live-behavior selection remain unavailable. Conditional fits need
+  their own convergence and scientific assessment.
+- **SNA:** strong directed component defaults and all-actor closeness now match
+  the stated R conventions. Weighted shortest paths, full R equivalence
+  catalogues, and large sparse spectral/flow solvers remain gaps. QAP Wald
+  inference requires identifiable fits in every permutation; separation fails
+  explicitly rather than silently dropping replications.
+- **TERGM:** CMPLE, exact for dyad-independent formulas; dependent CMLE and
+  EGMME are unavailable. Dissolution-model coefficients describe persistence;
+  prefer the `persistence_coef` and `persistence_se` accessors.
+- **Relevent:** the effect and time-data limitations above still apply. No
+  implementation should be treated as complete R feature parity merely
+  because selected golden fixtures pass.
 
 Where R semantics and an earlier version of these packages disagreed
 (the `nodematch` `diff` keyword, directed GWESP's shared-partner
@@ -522,10 +459,10 @@ gof(fit)
 simulate(fit, nsim=3)
 ```
 
-In Julia (the output below is what this code actually prints):
+In Julia:
 
 ```julia
-using ERGM, SNA, Random          # ERGM re-exports the Networks.jl API
+using ERGM, SNA, Random          # ERGM re-exports common network operations
 
 flo = load_dataset(:florentine_marriage)
 println((nv(flo), ne(flo)))
@@ -538,16 +475,6 @@ for v in sortperm(deg, rev=true)[1:3]
 end
 ```
 
-Output:
-
-```
-(16, 20)
-density = 0.1667
-Medici  degree = 6
-Guadagni  degree = 4
-Strozzi  degree = 4
-```
-
 Fit the ERGM by MCMC maximum likelihood (`GWESP` makes the model
 dyad-dependent, so we skip MPLE):
 
@@ -557,29 +484,10 @@ result = ergm(flo, [Edges(), NodeCov(:wealth), GWESP(0.5)];
 println(result)
 ```
 
-Output:
-
-```
-ERGM Results
-============
-Method: mcmle
-Log-likelihood: -51.5584
-AIC: 109.12, BIC: 117.48
-Converged: true
-
-Coefficients:
-                 Estimate  Std.Error  z value  Pr(>|z|)
-edges             -2.5532     0.5400  -4.7284   2.3e-06 ***
-nodecov.wealth     0.0105     0.0050   2.0962    0.0361 *
-gwesp.fixed.0.5   -0.0229     0.2741  -0.0837    0.9333
----
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
-
-Wealth attracts marriage ties (as in every statnet tutorial); there is
-no extra triadic closure beyond it. Post-estimation works exactly as the
-R muscle memory expects, through the StatsAPI verbs and `gof`/
-`simulate_ergm`:
+Inspect the wealth and shared-partner coefficients with their uncertainty.
+An association with wealth does not establish a causal effect, and a small
+shared-partner coefficient does not establish absence of social closure.
+Continue with the shared StatsAPI accessors and simulation diagnostics:
 
 ```julia
 println("coef = ", round.(coef(result), digits=4))
@@ -594,17 +502,9 @@ sims = simulate_ergm(result; n_sim=3, rng=Xoshiro(2))
 println("simulated densities: ", round.(gden.(sims), digits=3))
 ```
 
-Output:
-
-```
-coef = [-2.5532, 0.0105, -0.0229]
-se   = [0.54, 0.005, 0.2741]
-degree GOF p-values (degree 0-6): [1.0, 1.0, 0.55, 0.26, 1.0, 0.51, 0.63]
-simulated densities: [0.158, 0.142, 0.142]
-```
-
-No GOF p-value flags a misfit, and simulated networks reproduce the
-observed density (0.167). From here, the corresponding R-to-Julia moves
-are: panels over time → [TERGM.jl](/examples/modelling-network-change/),
+Assess the simulated distributions, including features not directly fitted.
+GOF p-values alone cannot establish that a model is correct; estimates and
+diagnostics vary with Monte Carlo draws. Further workflows include
+panels over time → [TERGM.jl](/examples/modelling-network-change/),
 actor-oriented dynamics → Siena.jl (above), event streams →
 [REM.jl](/examples/modelling-interaction-events/).

@@ -1,6 +1,10 @@
 const ORG = "statistical-network-analysis-with-Julia"
 const GITHUB = "https://github.com/$ORG"
 
+function hfun_canonical_url()
+    return replace(locvar("fd_full_url"), r"/index\.html$" => "/")
+end
+
 """
     hfun_pkg_card(params)
 
@@ -14,7 +18,7 @@ function hfun_pkg_card(params)
     r_pkg = length(params) >= 3 ? params[3] : ""
 
     repo_url = "$GITHUB/$(name)"
-    doc_url = "https://$ORG.github.io/$(name)/stable/"
+    doc_url = "/$(name)/dev/"
 
     r_note = isnothing(r_pkg) || isempty(r_pkg) ? "" : """<span class="r-port">port of R $(r_pkg)</span>"""
 

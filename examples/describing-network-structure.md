@@ -12,38 +12,20 @@ the same data (the package's test suite pins these values).
 ```julia
 using Networks, SNA
 
-# Padgett's Florentine marriage network: 16 families, 20 marriage ties
-families = ["Acciaiuoli", "Albizzi", "Barbadori", "Bischeri", "Castellani",
-            "Ginori", "Guadagni", "Lamberteschi", "Medici", "Pazzi",
-            "Peruzzi", "Pucci", "Ridolfi", "Salviati", "Strozzi", "Tornabuoni"]
-net = network(16; directed=false)
-ties = [(1, 9), (2, 6), (2, 7), (2, 9), (3, 5), (3, 9), (4, 7), (4, 11),
-        (4, 15), (5, 11), (5, 15), (7, 8), (7, 16), (9, 13), (9, 14),
-        (9, 16), (10, 14), (11, 15), (13, 15), (13, 16)]
-for (i, j) in ties
-    add_edge!(net, i, j)
-end
+net = load_dataset(:florentine_marriage)
+families = vertex_attribute_vector(net, :name, String)
 
 # Graph-level indices
-gden(net)          # density
-gtrans(net)        # transitivity
-triad_census(net)  # undirected triad census (0, 1, 2, 3 edges)
+println("density = ", gden(net))
+println("transitivity = ", gtrans(net))
+println("triad census = ", triad_census(net))
 
 # Vertex-level centrality
 deg = degree_centrality(net)
 bet = betweenness_centrality(net)
-```
-
-Output:
-
-```
-gden = 0.1667
-gtrans = 0.1915
-triad_census = [324, 195, 38, 3]
-
-Medici        degree = 6   betweenness = 47.5
-Guadagni      degree = 4   betweenness = 23.17
-Albizzi       degree = 3   betweenness = 19.33
+for v in sortperm(bet; rev=true)[1:3]
+    println(families[v], ": degree = ", deg[v], ", betweenness = ", bet[v])
+end
 ```
 
 **Interpretation.** Only 16.7% of possible marriage ties exist, and just
@@ -51,8 +33,9 @@ Albizzi       degree = 3   betweenness = 19.33
 across families rather than clustering. The centrality ranking recovers
 the famous result: the **Medici** dominate both degree (6 marriage ties)
 and betweenness (47.5, twice the runner-up Guadagni). They sit *between*
-the other families, brokering alliances that never form directly — the
-structural basis Padgett & Ansell identified for the rise of the Medici.
+the other families, brokering alliances that never form directly — a structural pattern discussed by Padgett & Ansell in their account of
+the rise of the Medici. These descriptive statistics alone do not establish
+a causal explanation.
 
 ## Centralization and comparing two relations
 
@@ -76,38 +59,34 @@ centralization(flo, :betweenness)   # 0.3835
 gcor(a, b) = cor(vec(a), vec(b))
 qt = qaptest(gcor, flo, biz; reps=1000, rng=Xoshiro(1))
 
-# Network regression: predict business ties from marriage ties
-fit = netlogit(biz, flo; reps=1000, rng=Xoshiro(2))
+# A separate model: business ties versus absolute family wealth difference
+wealth = vertex_attribute_vector(flo, :wealth, Float64)
+wealth_difference = abs.(wealth .- wealth')
+fit = netlogit(biz, wealth_difference; reps=1000, rng=Xoshiro(2))
 println(fit)
 ```
 
-Output:
+The QAP correlation test evaluates whether marriage and business relations
+are associated. Inspect `qt.pgreq` for its upper-tail permutation proportion.
+Zero exceedances in 1000 draws means resolution below 0.001, not a zero
+population probability; the display reports that limit.
 
-```
-Network Logit Model (QAP)
-=========================
-Null hypothesis: qapspp (1000 replications)
-Dyadic observations: 120 (undirected dyads)
+The separate logistic model asks whether families with more similar wealth
+are more likely to have a business tie. Its slope is approximately −0.0032
+per thousand lira of absolute wealth difference, with QAP p ≈ 0.806 for this
+seeded run. These data provide little evidence for that particular wealth
+similarity association. It is a different question from the correlation
+between the two observed relations.
 
-                  Estimate     z-value  Pr(>=|stat|)
---------------------------------------------------------
-(intercept)      -2.586689     -6.5999           0.0 ***
-x1                2.181224      3.6256           0.0 ***
---------------------------------------------------------
-Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+QAP simultaneously relabels actors to preserve each matrix's structure.
+Inference depends on the permutation null and exchangeability of labels;
+it does not adjust for arbitrary unobserved confounding or establish
+causation. Measures are binary by default, including networks that carry
+edge weights. Directed components use strong connectivity by default; directed clique
+symmetrization requires mutual arcs. These are distinct conventions, matching
+R `sna`; request weak components or either-direction symmetrization explicitly.
+Masked dyads are rejected unless `missing=:face` is supplied.
 
-Null deviance: 166.36, Residual deviance: 77.65
-AIC: 81.65, BIC: 87.22
-```
-
-The observed graph correlation (0.38) exceeds every one of the 1000
-permutation draws (`qt.pgreq == 0.0`), and the logit coefficient on
-marriage says a marriage tie multiplies the odds of a business tie by
-about `exp(2.18) ≈ 9` — marriage and business alliances went together in
-Renaissance Florence. The permutation nulls (`nullhyp=:qapspp`, Dekker's
-double semi-partialing) respect the dyadic dependence that would
-invalidate a classical logistic test.
-
-**Next steps:** model *why* this structure arose with an
+**Next steps:** model patterns of tie formation with an
 [ERGM](/examples/modelling-cross-sectional-data/), or read about the
 model families on the [theory page](/models/).
