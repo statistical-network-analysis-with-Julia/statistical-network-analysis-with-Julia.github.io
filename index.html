@@ -2,254 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta content="index, follow" name="robots">
-  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
-  
-
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
+  <meta name="theme-color" content="#123d32">
+  <link rel="icon" href="/assets/img/logo.png">
+  <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+ 
   <link rel="stylesheet" href="/css/style.css">
-
-  
-    <title>Statistical Network Analysis with Julia</title>
-  
-  
+  <title>Statistical Network Analysis with Julia · StatNet for Julia</title>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-  <div class="container">
-    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link nav-red active" href="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-green " href="/models/">Families of Models</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-purple " href="/examples/">Examples</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-red " href="/post/">News</a>
-        </li>
-      </ul>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <nav class="nav-inner" aria-label="Main navigation">
+    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
+    <div class="site-navigation" id="site-navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
     </div>
-  </div>
-</nav>
-<div class="page-content">
+  </nav>
+</header>
+<main class="page-content" id="main-content" tabindex="-1">
 
-<div class="hero">
-  <div class="container text-center">
-    <h1>Statistical Network Analysis with Julia</h1>
-    <p class="lead">Fit the most prominent statistical models to networks. In Julia.</p>
+<div class="home-page">
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-copy"><span class="kicker">Statistical network analysis · Julia</span>
+    <h1 id="hero-title">Study structure.<br>Model <em>change.</em></h1>
+    <p>Build networks, describe their patterns, and fit statistical models of relationships and interactions. A connected ecosystem of Julia packages, with examples to guide your analysis.</p>
+    <div class="actions"><a class="button button-primary" href="/getting-started/">Start an analysis <span aria-hidden="true">→</span></a><a class="button button-secondary" href="/packages/">Explore packages</a></div>
   </div>
+  <figure class="hero-figure"><div class="figure-header"><span>CONNECTED DATA</span><span>01 / NETWORK STRUCTURE</span></div>
+<svg class="hero-network" viewBox="0 0 450 370" role="img" aria-labelledby="network-title network-description">
+<title id="network-title">Actors connected by relationships</title><desc id="network-description">An illustrative network with clustered relationships and actors that connect different groups. This is a schematic, not an empirical dataset.</desc>
+<g stroke="#bbcbb6" stroke-width="1.4"><line x1="60" y1="132" x2="109" y2="74"/>
+<line x1="60" y1="132" x2="150" y2="160"/>
+<line x1="60" y1="132" x2="75" y2="278"/>
+<line x1="109" y1="74" x2="150" y2="160"/>
+<line x1="109" y1="74" x2="205" y2="106"/>
+<line x1="150" y1="160" x2="205" y2="106"/>
+<line x1="150" y1="160" x2="132" y2="237"/>
+<line x1="205" y1="106" x2="259" y2="58"/>
+<line x1="205" y1="106" x2="318" y2="129"/>
+<line x1="205" y1="106" x2="266" y2="196"/>
+<line x1="259" y1="58" x2="318" y2="129"/>
+<line x1="259" y1="58" x2="363" y2="91"/>
+<line x1="318" y1="129" x2="363" y2="91"/>
+<line x1="318" y1="129" x2="266" y2="196"/>
+<line x1="318" y1="129" x2="405" y2="184"/>
+<line x1="363" y1="91" x2="405" y2="184"/>
+<line x1="334" y1="224" x2="266" y2="196"/>
+<line x1="334" y1="224" x2="382" y2="287"/>
+<line x1="334" y1="224" x2="405" y2="184"/>
+<line x1="266" y1="196" x2="208" y2="258"/>
+<line x1="266" y1="196" x2="132" y2="237"/>
+<line x1="208" y1="258" x2="132" y2="237"/>
+<line x1="208" y1="258" x2="230" y2="330"/>
+<line x1="132" y1="237" x2="75" y2="278"/>
+<line x1="382" y1="287" x2="405" y2="184"/>
+<line x1="382" y1="287" x2="230" y2="330"/></g>
+<g fill="none" stroke="#d3decd"><circle cx="205" cy="106" r="23"/><circle cx="266" cy="196" r="24"/><circle cx="132" cy="237" r="23"/></g>
+<g><circle cx="60" cy="132" r="6" fill="#2e6852"/>
+<circle cx="109" cy="74" r="6" fill="#2e6852"/>
+<circle cx="150" cy="160" r="6" fill="#2e6852"/>
+<circle cx="205" cy="106" r="10" fill="#7257a8"/>
+<circle cx="259" cy="58" r="6" fill="#2e6852"/>
+<circle cx="318" cy="129" r="6" fill="#2e6852"/>
+<circle cx="363" cy="91" r="6" fill="#2e6852"/>
+<circle cx="334" cy="224" r="6" fill="#2e6852"/>
+<circle cx="266" cy="196" r="10" fill="#7257a8"/>
+<circle cx="208" cy="258" r="6" fill="#2e6852"/>
+<circle cx="132" cy="237" r="10" fill="#7257a8"/>
+<circle cx="75" cy="278" r="6" fill="#2e6852"/>
+<circle cx="382" cy="287" r="6" fill="#2e6852"/>
+<circle cx="405" cy="184" r="6" fill="#2e6852"/>
+<circle cx="230" cy="330" r="6" fill="#2e6852"/></g><g font-family="monospace" font-size="9" fill="#52675e"><text x="22" y="113">ACTORS</text><text x="318" y="333">RELATIONS</text></g></svg>
+    <figcaption class="figure-caption"><span>Describe · fit · simulate · diagnose</span><span>Illustrative network</span></figcaption>
+  </figure>
+</section>
+<div class="fact-strip"><span><strong>15</strong> interoperable packages</span><span><strong>Julia 1.12+</strong></span><span><strong>MIT</strong> licensed</span><span>Development documentation · v0.2.0 unreleased</span></div>
+<section class="home-section" aria-labelledby="workflow-title">
+  <div class="section-heading"><div><span class="kicker">Start with your data</span><h2 id="workflow-title">What are you studying?</h2></div><a href="/models/">Compare model families →</a></div>
+  <div class="workflow-grid">
+    <a class="workflow-card" href="/examples/describing-network-structure/"><span class="card-number">01 / NETWORK SNAPSHOTS</span><h3>Relationships and structure</h3><p>Explore density, centrality and cohesion. Then model observed ties with an ERGM.</p><span class="card-action">Networks · SNA · ERGM <span aria-hidden="true">→</span></span></a>
+    <a class="workflow-card" href="/examples/modelling-network-change/"><span class="card-number">02 / NETWORK PANELS</span><h3>Networks observed over time</h3><p>Study tie formation and persistence, or model actors' opportunities to change their ties.</p><span class="card-action">TERGM · Siena <span aria-hidden="true">→</span></span></a>
+    <a class="workflow-card" href="/examples/modelling-interaction-events/"><span class="card-number">03 / INTERACTION SEQUENCES</span><h3>Who interacts with whom, next?</h3><p>Model ordered interactions or event timing, with explicit risk sets and observation windows.</p><span class="card-action">REM · Relevent <span aria-hidden="true">→</span></span></a>
+  </div>
+</section>
+<section class="home-section analysis-feature" aria-labelledby="first-analysis-title">
+  <div><span class="kicker">A first look at real data</span><h2 id="first-analysis-title">Sixteen families.<br>A network of alliances.</h2><p>Load the bundled Florentine marriage network and calculate its density and centrality. Follow the example to interpret the measures and compare relationships.</p><a href="/examples/describing-network-structure/">Walk through the analysis →</a></div><div>
+
+<pre><code class="language-julia">using Networks, SNA
+
+net &#61; load_dataset&#40;:florentine_marriage&#41;
+gden&#40;net&#41;
+degree_centrality&#40;net&#41;</code></pre>
+
+  </div>
+</section>
+<section class="home-section project-note" aria-label="About this ecosystem">
+  <div><h3>Familiar methods, explicit scope</h3><p>The packages draw on R's statnet ecosystem and RSiena. Coverage varies by package and estimator. Read the capability notes for supported data, uncertainty estimates and remaining limitations.</p><a href="/capabilities/">Check capabilities and limitations →</a></div>
+  <div><h3>A shared foundation for your workflow</h3><p>Networks.jl connects data structures, missing-data policies and result conventions across the ecosystem. Explore the package documentation for the next step in your analysis.</p><a href="/packages/">Browse all 15 packages →</a></div>
+</section>
 </div>
 
-<p>This project provides Julia implementations of established families of models for the statistical analysis of networks. The ecosystem covers network construction, descriptive analysis, Exponential Random Graph Models &#40;ERGMs&#41; and their extensions, Relational Event Models &#40;REMs&#41;, and Stochastic Actor-Oriented Models &#40;SAOMs&#41;.</p>
-<p>All packages require <strong>Julia 1.12&#43;</strong> and are MIT-licensed. If you know the R statnet stack or RSiena, start with the <a href="/migration/">migration guide</a>.</p>
-<p><strong>Installing</strong>: the packages are not yet in the General registry. Add them by URL in dependency order &#40;each README has the ordered <code>Pkg.add&#40;url&#61;...&#41;</code> block&#41;, or clone all repositories side by side and start Julia with the root workspace project &#40;<code>julia --project&#61;.</code> in the clone root&#41; — the <code>&#91;sources&#93;</code> path dependencies wire everything together. A LocalRegistry is being prepared &#40;this site repository&#39;s <code>tools/setup_registry.jl</code>, run after the packages are committed/tagged&#41; so plain <code>Pkg.add&#40;&quot;ERGM&quot;&#41;</code> will eventually work.</p>
-
-<h3 class="section-title">Stochastic Actor-Oriented Models (SAOMs)</h3>
-<div class="pkg-grid">
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl">Siena.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Stochastic actor-oriented models (SAOM) for longitudinal network analysis with 150+ effects.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/Siena.jl/stable/">Docs</a>
-      <span class="r-port">based on R RSiena</span>
-    </div>
-  </div>
-</div>
-
-<h3 class="section-title">Relational Event Models (REMs)</h3>
-<div class="pkg-grid">
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl">REM.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Relational event models for time-stamped interaction sequences with 25+ statistics and case-control sampling.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/REM.jl/stable/">Docs</a>
-      <span class="r-port">based on R eventnet</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/Relevent.jl">Relevent.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Extended relational event model features with ordinal BPM and timing models.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/Relevent.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/Relevent.jl/stable/">Docs</a>
-      <span class="r-port">based on R relevent</span>
-    </div>
-  </div>
-</div>
-
-<h3 class="section-title">Exponential Random Graph Models (ERGMs) and Extensions</h3>
-<div class="pkg-grid">
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/ERGM.jl">ERGM.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>ERGM fitting via MPLE and MCMLE, network simulation, and goodness-of-fit diagnostics.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/ERGM.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/ERGM.jl/stable/">Docs</a>
-      <span class="r-port">based on R ergm</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl">TERGM.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Temporal ERGMs with formation/dissolution dynamics and separable models (STERGM).</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/TERGM.jl/stable/">Docs</a>
-      <span class="r-port">based on R tergm</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl">ERGMCount.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>ERGMs for count-valued (weighted) networks with Poisson, geometric, and binomial references.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMCount.jl/stable/">Docs</a>
-      <span class="r-port">based on R ergm.count</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl">ERGMEgo.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>ERGMs from ego-centric network data with pseudo-population inference.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMEgo.jl/stable/">Docs</a>
-      <span class="r-port">based on R ergm.ego</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl">ERGMMulti.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>ERGMs for multilayer and multilevel networks with cross-layer terms.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMMulti.jl/stable/">Docs</a>
-      <span class="r-port">based on R ergm.multi</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl">ERGMRank.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>ERGMs for rank-order relational data.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMRank.jl/stable/">Docs</a>
-      <span class="r-port">based on R ergm.rank</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl">ERGMUserterms.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Tools for developing custom ERGM terms with validation and benchmarking utilities.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/ERGMUserterms.jl/stable/">Docs</a>
-      <span class="r-port">based on R ergm.userterms</span>
-    </div>
-  </div>
-</div>
-
-<h3 class="section-title">Infrastructure</h3>
-<div class="pkg-grid">
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl">Networks.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Core network data structures with vertex, edge, and network-level attributes. Implements the Graphs.jl interface.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/Networks.jl/stable/">Docs</a>
-      <span class="r-port">based on R network</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl">SNA.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Social network analysis: centrality, cohesion, equivalence, and network-level measures.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/SNA.jl/stable/">Docs</a>
-      <span class="r-port">based on R sna</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl">NetworkDynamic.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Dynamic network data structures with activity spells, time-varying attributes, and network extraction.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/NetworkDynamic.jl/stable/">Docs</a>
-      <span class="r-port">based on R networkDynamic</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/TSNA.jl">TSNA.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Temporal social network analysis: temporal centrality, time-respecting paths, reachability.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/TSNA.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/TSNA.jl/stable/">Docs</a>
-      <span class="r-port">based on R tsna</span>
-    </div>
-  </div>
-  <div class="pkg-card">
-    <h4><a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl">NDTV.jl</a> <span class="badge-julia">Julia</span></h4>
-    <p>Network dynamic temporal visualization with layout algorithms and animation export.</p>
-    <div class="links">
-      <a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl">GitHub</a>
-      <a href="https://statistical-network-analysis-with-Julia.github.io/NDTV.jl/stable/">Docs</a>
-      <span class="r-port">based on R ndtv</span>
-    </div>
-  </div>
-</div>
-
-</div><!-- .page-content -->
-<footer class="mt-auto text-center text-muted py-4 border-top">
-  <div class="container">
-    <p class="mb-1">
-      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
-      &middot; MIT License
-    </p>
-    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+</main>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-(function() {
-  var sidebar = document.querySelector('.sidebar');
-  if (!sidebar) return;
-  var links = sidebar.querySelectorAll('a[href^="#"]');
-  if (!links.length) return;
-  var sections = [];
-  links.forEach(function(link) {
-    var id = link.getAttribute('href').slice(1);
-    var el = document.getElementById(id);
-    if (el) sections.push({ el: el, link: link });
-  });
-  function update() {
-    var scrollY = window.scrollY + 80;
-    var current = null;
-    for (var i = sections.length - 1; i >= 0; i--) {
-      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
-    }
-    links.forEach(function(l) { l.classList.remove('active'); });
-    if (current) current.link.classList.add('active');
-  }
-  window.addEventListener('scroll', update, { passive: true });
-  update();
-})();
-</script>
+ <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
+<script>hljs.highlightAll();</script>
+ 
+<script src="/assets/site.js" defer></script>
 </body>
 </html>

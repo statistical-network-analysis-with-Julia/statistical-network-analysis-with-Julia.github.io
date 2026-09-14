@@ -2,133 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta content="index, follow" name="robots">
-  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
+  <meta name="theme-color" content="#123d32">
+  <link rel="icon" href="/assets/img/logo.png">
+  <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/examples/modelling-network-change/">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
  
-
   <link rel="stylesheet" href="/css/style.css">
-
-  
-  
-    <title>Modelling Network Change · StatNet for Julia</title>
-  
+  <title>Modelling Network Change · StatNet for Julia</title>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-  <div class="container">
-    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link nav-red " href="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-green " href="/models/">Families of Models</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-purple active" href="/examples/">Examples</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-red " href="/post/">News</a>
-        </li>
-      </ul>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <nav class="nav-inner" aria-label="Main navigation">
+    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
+    <div class="site-navigation" id="site-navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
     </div>
-  </div>
-</nav>
-<div class="page-content">
+  </nav>
+</header>
+<main class="page-content" id="main-content" tabindex="-1">
 <h1 id="modelling_network_change"><a href="#modelling_network_change" class="header-anchor">Modelling Network Change</a></h1>
-<p>Model network panels observed at discrete time points with a <strong>separable temporal ERGM</strong> &#40;STERGM&#41; using <a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl">TERGM.jl</a>. A STERGM is a specific temporal ERGM that factors each transition into a <em>formation</em> model &#40;which new ties appear?&#41; and a <em>dissolution</em> model &#40;which existing ties persist?&#41;. We simulate 5 panels with known dynamics and recover the coefficients.</p>
-<pre><code class="language-julia">using Networks, ERGM, TERGM, Random
+<p>Fit a separable temporal ERGM to the bundled <code>s50</code> friendship panels: 50 girls observed at three yearly waves in the Teenage Friends and Lifestyle Study. The two components ask how absent ties form and how existing ties persist between observations. The data and provenance are distributed with <a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl/tree/main/data">Networks.jl</a>.</p>
+<pre><code class="language-julia">using Networks, ERGM, TERGM
 
-rng &#61; Random.Xoshiro&#40;7&#41;
-init &#61; network&#40;30&#41;                  # 30 actors, directed
-for i in 1:30, j in 1:30
-    i &#33;&#61; j &amp;&amp; rand&#40;rng&#41; &lt; 0.08 &amp;&amp; add_edge&#33;&#40;init, i, j&#41;
-end
-
-formula &#61; STERGM&#40;&#91;Edges&#40;&#41;&#93;, &#91;Edges&#40;&#41;&#93;&#41;
-θ_formation &#61; &#91;-2.5&#93;                # sparse tie formation
-θ_persistence &#61; &#91;1.0&#93;               # ties tend to persist
-
-panels &#61; simulate_network_sequence&#40;formula, init, 4,
-                                   θ_formation, θ_persistence;
-                                   burnin&#61;4000, rng&#61;rng&#41;
+s50 &#61; load_dataset&#40;:s50&#41;
+panels &#61; s50.friendship
+@assert length&#40;panels&#41; &#61;&#61; 3
+@assert all&#40;nv&#40;net&#41; &#61;&#61; 50 for net in panels&#41;
 
 result &#61; stergm&#40;panels, &#91;Edges&#40;&#41;&#93;, &#91;Edges&#40;&#41;&#93;&#41;
-println&#40;result&#41;</code></pre>
-<p>Output:</p>
-<pre><code class="language-julia">STERGM Results &#40;cmple&#41;
-&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;&#61;
-Panels: 5; converged: true
-Pseudo-log-likelihood: formation -822.059, dissolution -290.224
-
-Formation:
-       Estimate  Std.Error   z value  Pr&#40;&gt;|z|&#41;
-edges   -2.4720     0.0681  -36.3127    &lt;1e-16 ***
-
-Dissolution &#40;persistence&#41;:
-       Estimate  Std.Error  z value  Pr&#40;&gt;|z|&#41;
-edges    0.8393     0.1001   8.3868    &lt;1e-16 ***
----
-Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<p><strong>Interpretation.</strong> Estimation recovers the generating process: the formation coefficient −2.47 &#40;truth −2.5&#41; says a non-tied dyad forms a tie in a given period with probability logistic&#40;−2.47&#41; ≈ 7.8&#37;, and the dissolution coefficient 0.84 &#40;truth 1.0&#41; says an existing tie <em>persists</em> with probability logistic&#40;0.84&#41; ≈ 70&#37; — note TERGM.jl parameterizes dissolution as <strong>persistence</strong>, so positive values mean longer-lived ties. Estimation is by conditional maximum pseudo-likelihood over the Krivitsky–Handcock formation network &#40;union of consecutive panels&#41; and dissolution network &#40;intersection&#41;; for dyad-independent models like this one, that <em>is</em> the conditional MLE.</p>
-<p><strong>Next steps:</strong> actor-oriented alternatives to tie-oriented temporal models are covered on the <a href="/models/">model families page</a>; for visualizing change, see <a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl">NDTV.jl</a>.</p>
-</div><!-- .page-content -->
-<footer class="mt-auto text-center text-muted py-4 border-top">
-  <div class="container">
-    <p class="mb-1">
-      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
-      &middot; MIT License
-    </p>
-    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+println&#40;result&#41;
+logistic&#40;x&#41; &#61; 1 / &#40;1 &#43; exp&#40;-x&#41;&#41;
+println&#40;&quot;formation probability &#61; &quot;, logistic&#40;only&#40;formation_coef&#40;result&#41;&#41;&#41;&#41;
+println&#40;&quot;persistence probability &#61; &quot;, logistic&#40;only&#40;persistence_coef&#40;result&#41;&#41;&#41;&#41;</code></pre>
+<p>Each probability describes one yearly transition under a model with constant parameters and independent dyads. A positive persistence coefficient means existing ties tend to survive; it is the coefficient of R&#39;s <code>Persist&#40;&#41;</code>, not the sign of <code>Diss&#40;&#41;</code>. Use <code>persistence_coef</code> and <code>persistence_se</code> for this component; the old <code>dissolution_*</code> names are deprecated.</p>
+<p>This edges-only CMPLE equals the conditional MLE. Adding reciprocity or closure changes that claim: the product of dependent conditional probabilities is a pseudo-likelihood, and its Hessian standard errors can be too small. TERGM.jl does not implement dependent CMLE or EGMME, and requesting those methods raises an error.</p>
+<p>The observed panels omit changes between waves. These coefficients cannot distinguish a tie that survived continuously from one that dissolved and re-formed before the next survey. Friendship nominations are observational; this example estimates transition associations, not causal effects.</p>
+<p>For actor-oriented modelling of the same bundled panels, see the <a href="/migration/#saoms_rsiena_sienajl">RSiena migration workflow</a>. For visualizing network change, see <a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl">NDTV.jl</a>.</p>
+</main>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
 <script>hljs.highlightAll();</script>
  
-<script>
-(function() {
-  var sidebar = document.querySelector('.sidebar');
-  if (!sidebar) return;
-  var links = sidebar.querySelectorAll('a[href^="#"]');
-  if (!links.length) return;
-  var sections = [];
-  links.forEach(function(link) {
-    var id = link.getAttribute('href').slice(1);
-    var el = document.getElementById(id);
-    if (el) sections.push({ el: el, link: link });
-  });
-  function update() {
-    var scrollY = window.scrollY + 80;
-    var current = null;
-    for (var i = sections.length - 1; i >= 0; i--) {
-      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
-    }
-    links.forEach(function(l) { l.classList.remove('active'); });
-    if (current) current.link.classList.add('active');
-  }
-  window.addEventListener('scroll', update, { passive: true });
-  update();
-})();
-</script>
+<script src="/assets/site.js" defer></script>
 </body>
 </html>

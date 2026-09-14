@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
+  <meta name="theme-color" content="#123d32">
+  <link rel="icon" href="/assets/img/logo.png">
+  <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/getting-started/">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+ 
+  <link rel="stylesheet" href="/css/style.css">
+  <title>Get started · StatNet for Julia</title>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <nav class="nav-inner" aria-label="Main navigation">
+    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
+    <div class="site-navigation" id="site-navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </nav>
+</header>
+<main class="page-content" id="main-content" tabindex="-1">
+<h1 id="your_first_network_analysis"><a href="#your_first_network_analysis" class="header-anchor">Your first network analysis</a></h1>
+<p>Set up the Julia workspace, load a bundled dataset, and choose the next step for your research question. No data download is needed for the first example.</p>
+<h2 id="set_up_the_workspace"><a href="#set_up_the_workspace" class="header-anchor"><ol>
+<li><p>Set up the workspace</p>
+</li>
+</ol>
+</a></h2>
+<p>Use <strong>Julia 1.12 or newer</strong>, Git, and a terminal. The current 0.2.0 packages are under development and are <strong>not yet in Julia&#39;s General registry</strong>. The shared setup installs sibling source checkouts and the dependencies used by these examples.</p>
+<p>Run these commands from a directory where you want to keep the project:</p>
+<pre><code class="language-bash">mkdir network-analysis
+cd network-analysis
+git clone https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io
+julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl &quot;&#36;PWD&quot; --clone
+julia --project&#61;.snippet-env</code></pre>
+<p>The last command opens Julia in the prepared environment. The first setup needs network access. Already have the sibling repositories? Run the preparation command from their parent directory; it preserves existing checkouts. Keep the repository directory names intact because local dependencies use these paths.</p>
+<p>This recipe installs revisions currently available on GitHub. Local fixes that have not been pushed are available only in the workspace containing them. See the <a href="https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/tree/main/tools/workspace">workspace recipe</a> for environment details.</p>
+<h2 id="ol_start2_describe_a_real_network"><a href="#ol_start2_describe_a_real_network" class="header-anchor"><ol start="2">
+<li><p>Describe a real network</p>
+</li>
+</ol>
+</a></h2>
+<p>Paste this into Julia. The Florentine marriage dataset records ties among 16 Renaissance families.</p>
+<pre><code class="language-julia">using Networks, SNA
+
+net &#61; load_dataset&#40;:florentine_marriage&#41;
+families &#61; vertex_attribute_vector&#40;net, :name, String&#41;
+centrality &#61; degree_centrality&#40;net&#41;
+most_connected &#61; argmax&#40;centrality&#41;
+
+println&#40;&quot;Density: &quot;, gden&#40;net&#41;&#41;
+println&#40;&quot;Most connected family: &quot;, families&#91;most_connected&#93;&#41;
+println&#40;&quot;Degree: &quot;, centrality&#91;most_connected&#93;&#41;</code></pre>
+<p>The density is approximately <strong>0.167</strong>. The Medici have the highest degree, with <strong>six</strong> marriage ties. These are descriptive properties of the observed network; they do not establish why the ties formed.</p>
+<p>Continue with <a href="/examples/describing-network-structure/">the full structural analysis</a> to explore centrality, compare marriage and business ties, and use QAP inference.</p>
+<h2 id="ol_start3_choose_your_next_step"><a href="#ol_start3_choose_your_next_step" class="header-anchor"><ol start="3">
+<li><p>Choose your next step</p>
+</li>
+</ol>
+</a></h2>
+<table><tr><th align="right">Your question or data</th><th align="right">Start here</th></tr><tr><td align="right">How do I create networks or import attributes?</td><td align="right"><a href="/Networks.jl/dev/getting_started/">Networks.jl</a></td></tr><tr><td align="right">What patterns characterize an observed network?</td><td align="right"><a href="/SNA.jl/dev/getting_started/">SNA.jl</a></td></tr><tr><td align="right">Which configurations are associated with binary ties?</td><td align="right"><a href="/examples/modelling-cross-sectional-data/">The ERGM example</a></td></tr><tr><td align="right">How do ties change across observed waves?</td><td align="right"><a href="/examples/modelling-network-change/">The network-change example</a></td></tr><tr><td align="right">Who interacts next, given the interaction history?</td><td align="right"><a href="/examples/modelling-interaction-events/">The event-model example</a></td></tr><tr><td align="right">Do I have counts, rankings, egocentric or multilayer data?</td><td align="right"><a href="/packages/?group&#61;ergm">The package directory</a></td></tr><tr><td align="right">How do I handle activity spells, paths or animations?</td><td align="right"><a href="/packages/?group&#61;dynamics">Packages for networks over time</a></td></tr></table>
+<p>Coming from statnet or RSiena? The <a href="/migration/">R migration guide</a> maps familiar functions to supported Julia workflows and lists important differences.</p>
+<h2 id="ol_start4_make_the_analysis_reproducible"><a href="#ol_start4_make_the_analysis_reproducible" class="header-anchor"><ol start="4">
+<li><p>Make the analysis reproducible</p>
+</li>
+</ol>
+</a></h2>
+<p>Keep your analysis scripts, the environment&#39;s <code>Project.toml</code> and <code>Manifest.toml</code>, and the revision of each package checkout. Source files in developed packages can change independently of the Manifest: record commits with <code>git rev-parse HEAD</code> and preserve any uncommitted changes used in the analysis.</p>
+<p>Pass an explicit RNG to stochastic routines, for example <code>rng&#61;Xoshiro&#40;42&#41;</code> after <code>using Random</code>. Before interpreting coefficients, inspect convergence, estimator metadata and the package&#39;s missing-data and observation-window policies. <a href="/capabilities/">Capabilities and limitations</a> distinguishes implemented methods, uncertainty conventions and validated R comparisons.</p>
+<h2 id="troubleshooting"><a href="#troubleshooting" class="header-anchor">Troubleshooting</a></h2>
+<ul>
+<li><p><strong>Package not found:</strong> start Julia from the workspace directory with <code>julia --project&#61;.snippet-env</code>; a different active environment will not see these developed packages.</p>
+</li>
+<li><p><strong>A sibling path does not exist:</strong> keep names such as <code>Networks.jl</code> intact and rerun the preparation command with <code>--clone</code> to fetch missing repositories.</p>
+</li>
+<li><p><strong>A fitting call refuses the data or fails to converge:</strong> read the reported diagnostic and the estimator&#39;s guide. More iterations cannot resolve a mathematically unidentified or separated model.</p>
+</li>
+</ul>
+</main>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
+  </div>
+</footer>
+ <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
+<script>hljs.highlightAll();</script>
+ 
+<script src="/assets/site.js" defer></script>
+</body>
+</html>

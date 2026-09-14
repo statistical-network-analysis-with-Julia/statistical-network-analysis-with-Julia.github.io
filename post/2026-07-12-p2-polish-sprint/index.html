@@ -2,54 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta content="index, follow" name="robots">
-  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="RSS Feed for StatNet for Julia">
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/juliamono@0.1.7/index.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
+  <meta name="theme-color" content="#123d32">
+  <link rel="icon" href="/assets/img/logo.png">
+  <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/post/2026-07-12-p2-polish-sprint/">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
   
-
   <link rel="stylesheet" href="/css/style.css">
-
-  
-  
-    <title>Feature-surface completion, naming harmonization, and a polish sprint · StatNet for Julia</title>
-  
+  <title>Feature-surface completion, naming harmonization, and a polish sprint · StatNet for Julia</title>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-  <div class="container">
-    <a class="navbar-brand" href="/"><img src="/assets/img/logo.png" alt="" height="30" class="me-2">StatNet for Julia</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link nav-red " href="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-green " href="/models/">Families of Models</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-purple " href="/examples/">Examples</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-green " href="/migration/">Coming from R</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-purple " href="/capabilities/">Capabilities</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-red active" href="/post/">News</a>
-        </li>
-      </ul>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <nav class="nav-inner" aria-label="Main navigation">
+    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
+    <div class="site-navigation" id="site-navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
     </div>
-  </div>
-</nav>
-<div class="page-content">
+  </nav>
+</header>
+<main class="page-content" id="main-content" tabindex="-1">
 <p>The polish sprint that followed the <a href="/post/2026-07-07-ecosystem-correctness-pass/">correctness pass</a> has landed. Highlights:</p>
 <ul>
 <li><p><strong>The R feature surface is &#40;nearly&#41; complete.</strong> ERGM.jl gains the degree-count terms &#40;<code>Degree&#40;0:2&#41;</code>, <code>IDegree</code>, <code>ODegree</code>&#41;, <code>GWIDegree</code>/<code>GWODegree</code>, <code>GWDSP</code> with statnet&#39;s directed shared-partner types, and <code>NodeMix</code>; <code>NodeFactor</code> now expands into per-level statistics with the first level dropped, exactly like R&#39;s <code>nodefactor</code>. SNA.jl adds QAP inference &#40;<code>qaptest</code>, <code>netlm</code>, <code>netlogit</code> with Dekker double-semi-partialing&#41; and Freeman <code>centralization</code>. Relevent.jl adds the 13 Gibson participation shifts &#40;<code>PShift&#40;:AB_BA&#41;</code>&#41; and the <code>CovSnd</code>/<code>CovRec</code>/<code>CovInt</code> covariate blocks, plus a <code>t0</code> observation-onset keyword for left-truncated interval likelihoods. Siena.jl wires up conditional estimation &#40;RSiena&#39;s <code>cond&#61;TRUE</code>&#41; and composition change &#40;<code>sienaCompositionChange</code>&#41;.</p>
@@ -64,43 +44,15 @@
 </li>
 </ul>
 <p>The <a href="/migration/">migration guide</a> and the <a href="/examples/">examples</a> have been updated to match, including the new coefficient-table output everywhere a fit is printed.</p>
-</div><!-- .page-content -->
-<footer class="mt-auto text-center text-muted py-4 border-top">
-  <div class="container">
-    <p class="mb-1">
-      <a href="https://github.com/statistical-network-analysis-with-Julia" class="text-muted">GitHub Organization</a>
-      &middot; MIT License
-    </p>
-    <p class="small">Made with <a href="https://franklinjl.org">Franklin.jl</a> and <a href="https://julialang.org">the Julia programming language</a>.</p>
+</main>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-(function() {
-  var sidebar = document.querySelector('.sidebar');
-  if (!sidebar) return;
-  var links = sidebar.querySelectorAll('a[href^="#"]');
-  if (!links.length) return;
-  var sections = [];
-  links.forEach(function(link) {
-    var id = link.getAttribute('href').slice(1);
-    var el = document.getElementById(id);
-    if (el) sections.push({ el: el, link: link });
-  });
-  function update() {
-    var scrollY = window.scrollY + 80;
-    var current = null;
-    for (var i = sections.length - 1; i >= 0; i--) {
-      if (sections[i].el.offsetTop <= scrollY) { current = sections[i]; break; }
-    }
-    links.forEach(function(l) { l.classList.remove('active'); });
-    if (current) current.link.classList.add('active');
-  }
-  window.addEventListener('scroll', update, { passive: true });
-  update();
-})();
-</script>
+<script src="/assets/site.js" defer></script>
 </body>
 </html>
