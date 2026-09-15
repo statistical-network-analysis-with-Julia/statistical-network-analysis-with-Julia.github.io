@@ -34,8 +34,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends --yes ffmpeg imagemagick librsvg2-bin
           # ImageMagick delegates SVG input to rsvg-convert on Ubuntu.
-          printf '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>' |
-            convert svg:- gif:- > /dev/null
+          printf '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>' > "$RUNNER_TEMP/animation-check.svg"
+          convert "$RUNNER_TEMP/animation-check.svg" "$RUNNER_TEMP/animation-check.gif"
       - name: Prepare sibling packages and documentation dependencies
         run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone
       - name: Test the tooling gates
