@@ -33,6 +33,10 @@ run in order, with REPL soft scope. File-writing examples use temporary scratch
 directories. Full sweeps include real fitting, simulation, and animation, so
 allow several minutes.
 
+The NDTV movie-export examples require `ffmpeg` on `PATH` (including SVG input
+support). On Ubuntu, install it with `sudo apt-get install ffmpeg`; the executable
+documentation workflow installs it before running the examples.
+
 A malformed or failing Julia block fails the command. Only explicit
 `julia-repl` transcripts, `<!-- skip-check -->` blocks, environment-mutating
 installation instructions, and labeled output are skipped. Use these markers

@@ -29,6 +29,10 @@ jobs:
         with:
           version: '1.12'
       - uses: julia-actions/cache@v2
+      - name: Install movie export dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes ffmpeg
       - name: Prepare sibling packages and documentation dependencies
         run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone
       - name: Test the tooling gates
