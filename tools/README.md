@@ -153,8 +153,9 @@ Run the routing, isolation and build-command checks with:
 python3 -m unittest discover -s tools/test -p 'test_preview_docs.py'
 ```
 
-The package sites load their own checked-in theme assets. Synchronize or check
-those copies from the [canonical theme](docs-theme/README.md):
+The package sites use Documenter's default themes and their own checked-in SVG
+logos and favicons. Synchronize or check the [canonical icons](docs-theme/README.md)
+with the existing command (which also detects retired custom-theme assets):
 
 ```bash
 julia tools/sync_documentation_theme.jl

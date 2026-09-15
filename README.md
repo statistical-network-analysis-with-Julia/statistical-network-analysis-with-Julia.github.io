@@ -16,7 +16,7 @@ python3 tools/preview_docs.py --build
 ```
 
 Open <http://localhost:8001/>. The package directory links to the local package
-sites, for example <http://localhost:8001/Networks.jl/dev/>. Their ecosystem bars
+sites, for example <http://localhost:8001/Networks.jl/dev/>. Their ecosystem footers
 link back to the same umbrella preview. Both `/dev/` and `/stable/` show the
 current local build; they are not separate release versions.
 
@@ -51,10 +51,10 @@ The homepage lives in `index.md`; the package directory in `packages/index.md`;
 installation guidance in `getting-started/index.md`. Shared umbrella styles and
 behavior live in `_css/style.css`, `_assets/site.js` and `_layout/`.
 
-## Maintain the package theme
+## Maintain the package icons
 
-The [canonical theme](tools/docs-theme/README.md) is copied into each package so
-it can build independently. After editing the canonical assets:
+Package sites use Documenter's default themes. The [canonical package icons](tools/docs-theme/README.md)
+are copied into each package so it can build independently. After editing the icons:
 
 ```bash
 julia tools/sync_documentation_theme.jl

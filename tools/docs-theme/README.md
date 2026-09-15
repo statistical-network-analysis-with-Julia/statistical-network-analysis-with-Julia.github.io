@@ -1,54 +1,66 @@
-# Package documentation theme
+# Package documentation appearance
 
-`snwj-docs.css` and `snwj-docs.js` are the canonical assets for the 15 Documenter
-sites. Each package checks in a local copy under `docs/src/assets/`, so building
-one package never needs this site repository or a theme service.
+All 15 package sites use Documenter.jl's built-in themes without custom CSS or
+JavaScript. Documenter owns the typography, colors, sidebar, search, theme chooser
+and docstring controls. The native footer contains links back to the ecosystem.
 
-From the site checkout, synchronize or verify the copies with Julia 1.12+:
+Each package checks in `docs/src/assets/logo.svg` and `favicon.ico`. Documenter
+discovers the SVG automatically; `Documenter.HTML(assets = ["assets/favicon.ico"])`
+adds the browser-tab icon. No theme or icon download is needed during a build.
+Keep the canonical URL, `DOCS_PRETTY_URLS` support, `warnonly=false` and
+`checkdocs=:exports` in each `docs/make.jl`.
+
+## Icon family
+
+The original vector symbols use only the four colors in the
+[official Julia logo palette](https://github.com/JuliaLang/julia-logo-graphics#color-definitions):
+blue `#4063D8`, green `#389826`, red `#CB3C33`, and purple `#9558B2`.
+Transparent backgrounds work with Documenter's light and dark themes. Rounded
+strokes and simple silhouettes keep the symbols legible at small sizes; package
+names are rendered as text by Documenter rather than baked into the icons.
+
+| Icon | Package | Meaning |
+| --- | --- | --- |
+| <img src="icons/Networks.svg" width="56" alt="Connected vertices"> | Networks.jl | Connected vertices: the shared network-data foundation. |
+| <img src="icons/SNA.svg" width="56" alt="Network under a magnifying glass"> | SNA.jl | Examining network structure, centrality and cohesion. |
+| <img src="icons/ERGM.svg" width="56" alt="Network inside a probability curve"> | ERGM.jl | A probability distribution over network configurations. |
+| <img src="icons/ERGMCount.svg" width="56" alt="Count beads"> | ERGMCount.jl | One, two and three beads: integer-valued ties. |
+| <img src="icons/ERGMEgo.svg" width="56" alt="Focal ego and alters"> | ERGMEgo.jl | A focal ego and its sampled local neighborhood. |
+| <img src="icons/ERGMMulti.svg" width="56" alt="Stacked network layers"> | ERGMMulti.jl | Multiple relational layers over common actors. |
+| <img src="icons/ERGMRank.svg" width="56" alt="Ordered alters"> | ERGMRank.jl | An ego's ordering of alters, with rank strokes. |
+| <img src="icons/ERGMUserterms.svg" width="56" alt="Network in code brackets"> | ERGMUserterms.jl | Writing custom network statistics in code. |
+| <img src="icons/TERGM.svg" width="56" alt="Tie formation and dissolution"> | TERGM.jl | Ties forming and dissolving across network waves. |
+| <img src="icons/Siena.svg" width="56" alt="Actor choosing a tie"> | Siena.jl | Actor-oriented choices in network micro-steps. |
+| <img src="icons/REM.svg" width="56" alt="Directed interaction pulse"> | REM.jl | A directed interaction occurring as an event. |
+| <img src="icons/Relevent.svg" width="56" alt="Decaying event history"> | Relevent.jl | Interaction history with decaying memory weights. |
+| <img src="icons/NetworkDynamic.svg" width="56" alt="Activity intervals"> | NetworkDynamic.jl | Activity spells with closed onsets and open termini. |
+| <img src="icons/TSNA.svg" width="56" alt="Temporal path and clock"> | TSNA.jl | Time-respecting paths and temporal reachability. |
+| <img src="icons/NDTV.svg" width="56" alt="Network film frame"> | NDTV.jl | A network play symbol inside an animation frame. |
+
+## Maintain the assets
+
+Edit the canonical SVGs in `icons/`. To regenerate a favicon after editing its
+SVG, use librsvg and ImageMagick (asset-authoring tools, not build dependencies):
+
+```bash
+rsvg-convert -w 256 -h 256 tools/docs-theme/icons/Networks.svg |
+    magick png:- -define icon:auto-resize=64,48,32,16 tools/docs-theme/icons/Networks.ico
+```
+
+The historically named sync command now copies each package's icon and favicon,
+removes the retired `snwj-docs.css` and `snwj-docs.js` files, and checks the
+Documenter asset configuration. From the site checkout, with Julia 1.12+:
 
 ```bash
 julia tools/sync_documentation_theme.jl
 julia tools/sync_documentation_theme.jl --check
 ```
 
-An optional first argument identifies a different sibling workspace. The package
-list comes from `tools/workspace/Project.toml`; no second package list is maintained.
-The sync command updates only these two assets, preserving package logos and pages.
+An optional first argument selects a different sibling workspace. The package
+list comes from `tools/workspace/Project.toml`. Each package builds independently
+using its checked-in assets. The umbrella package directory displays those same
+icons from `/Package.jl/dev/assets/logo.svg`.
 
-Each `docs/make.jl` loads the local assets through `Documenter.HTML(assets=...)`,
-sets its canonical base to `https://statistical-network-analysis-with-Julia.github.io/<Package>.jl/dev/`,
-and uses `DOCS_PRETTY_URLS=true` to allow production-style paths without enabling CI.
-Keep `warnonly=false` and `checkdocs=:exports`. The theme makes no deployment calls.
-
-The ecosystem bar links to `/`, `/packages/`, `/getting-started/`, and `/capabilities/`.
-These share the organization site's origin; use the combined site preview when
-checking them locally. A standalone package build still works, but does not serve
-the umbrella destinations itself. The static footer supplies the same links when
-JavaScript is unavailable. Native Documenter search, sidebar, version selector,
-theme selection, code copying, and docstring expansion remain in place.
-
-The browser enhancement gives the version selector an accessible name and makes
-actual overflowing code/table containers keyboard focusable, updating after syntax
-highlighting, font loading, resizing, and docstring expansion. Non-overflowing
-examples do not acquire extra tab stops. Native docstring summaries retain their
-IDs and disclosure behavior; their nested binding link is moved into a visible
-"Permalink" row inside the expanded body so a link is no longer nested in a button.
-Source links are preserved. Light syntax colors and dark admonition headings have
-readable contrast. These DOM enhancements run with JavaScript; disabling it retains
-Documenter's original markup and the static ecosystem footer.
-
-The primary light palette uses warm off-white, forest green, and a restrained
-violet accent. The primary dark palette has corresponding dark surfaces and light
-text. Alternate Catppuccin choices retain their native document/sidebar colors.
-Typography and spacing are shared across all themes. No remote fonts or script
-dependencies are added by this layer; Documenter's own assets are unchanged.
-
-Standard Markdown is the preferred content format. Optional HTML hooks are
-`.snwj-lead`, `.snwj-kicker`, and `.snwj-card-grid` containing `.snwj-card` elements.
-Use descriptive link text and real headings inside cards. Do not duplicate the
-global ecosystem bar in page content.
-
-Absolute links to the ecosystem’s own GitHub Pages host are normalized to
-host-relative paths in the browser, so older cross-package references stay in
-the combined preview. Hash-only API permalinks and external scholarly/source
-links retain their original targets.
+Build and inspect the sites in the combined preview before publishing. Check the
+icons in light and dark mode and the favicons at 16, 32, 48 and 64 pixels. Commit
+package changes separately; the sync command itself never publishes anything.

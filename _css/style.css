@@ -854,3 +854,6 @@ details[open] > summary {
         overflow: visible;
     }
 }
+
+/* Package identities are shared with their Documenter sites. */
+.package-icon { display: block; margin-bottom: 0.85rem; }

@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# Copy the canonical theme into independent package documentation sites.
+# Sync package icons. Documenter supplies the documentation themes unchanged.
 using TOML
 
 function main(args)
@@ -11,26 +11,43 @@ function main(args)
     check = "--check" in args
     project = TOML.parsefile(joinpath(@__DIR__, "workspace", "Project.toml"))
     names = sort!(collect(keys(project["sources"])))
-    files = ("snwj-docs.css", "snwj-docs.js")
+    files = ("svg" => "logo.svg", "ico" => "favicon.ico")
+    retired = ("snwj-docs.css", "snwj-docs.js")
     # Validate all destinations before copying so a missing sibling fails cleanly.
     for name in names
         isdir(joinpath(root, "$name.jl", "docs", "src")) || error("Missing documentation source: $name.jl")
-    end
-    mismatches = String[]
-    for name in names, file in files
-        source = joinpath(@__DIR__, "docs-theme", file)
-        target = joinpath(root, "$name.jl", "docs", "src", "assets", file)
-        if check
-            if !isfile(target) || read(source) != read(target)
-                push!(mismatches, relpath(target, root))
-            end
-        else
-            mkpath(dirname(target))
-            cp(source, target; force=true)
+        for (extension, _) in files
+            isfile(joinpath(@__DIR__, "docs-theme", "icons", "$name.$extension")) || error("Missing icon: $name.$extension")
         end
     end
-    isempty(mismatches) || error("Theme copies differ; run sync_documentation_theme.jl:\n" * join(mismatches, '\n'))
-    println(check ? "Theme copies match in all $(length(names)) packages." : "Theme assets synced to $(length(names)) independent package sites.")
+    mismatches = String[]
+    for name in names
+        assets = joinpath(root, "$name.jl", "docs", "src", "assets")
+        for (extension, file) in files
+            source = joinpath(@__DIR__, "docs-theme", "icons", "$name.$extension")
+            target = joinpath(assets, file)
+            if check
+                if !isfile(target) || read(source) != read(target)
+                    push!(mismatches, relpath(target, root))
+                end
+            else
+                mkpath(assets)
+                cp(source, target; force=true)
+            end
+        end
+        for file in retired
+            target = joinpath(assets, file)
+            isfile(target) || continue
+            check ? push!(mismatches, "Retired theme asset: $(relpath(target, root))") : rm(target)
+        end
+        makefile = joinpath(root, "$name.jl", "docs", "make.jl")
+        config = read(makefile, String)
+        if any(file -> occursin(file, config), retired) || !occursin("assets/favicon.ico", config)
+            push!(mismatches, "$(relpath(makefile, root)): use assets = [\"assets/favicon.ico\"] with the native Documenter themes")
+        end
+    end
+    isempty(mismatches) || error("Documentation assets need updating:\n" * join(mismatches, '\n'))
+    println(check ? "Icons match and retired theme assets are absent in all $(length(names)) packages." : "Icons synced to $(length(names)) independent package sites using native Documenter themes.")
 end
 
 if abspath(PROGRAM_FILE) == abspath(@__FILE__)
