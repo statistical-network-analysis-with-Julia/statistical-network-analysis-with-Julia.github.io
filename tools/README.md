@@ -35,8 +35,10 @@ allow several minutes.
 
 The NDTV animation-export examples require `ffmpeg` for movies and ImageMagick
 (`magick` or `convert`) for GIFs on `PATH`, with SVG input support. On Ubuntu,
-install them with `sudo apt-get install ffmpeg imagemagick`; the executable
-documentation workflow installs both before running the examples.
+install them with `sudo apt-get install ffmpeg imagemagick librsvg2-bin`.
+The last package supplies ImageMagick's `rsvg-convert` SVG renderer. The executable
+documentation workflow installs these dependencies and checks SVG-to-GIF
+conversion before running the examples.
 
 A malformed or failing Julia block fails the command. Only explicit
 `julia-repl` transcripts, `<!-- skip-check -->` blocks, environment-mutating
