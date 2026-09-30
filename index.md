@@ -63,7 +63,7 @@
   <div class="workflow-grid">
     <a class="workflow-card" href="/examples/describing-network-structure/"><span class="card-number">01 / NETWORK SNAPSHOTS</span><h3>Relationships and structure</h3><p>Explore density, centrality and cohesion. Then model observed ties with an ERGM.</p><span class="card-action">Networks · SNA · ERGM <span aria-hidden="true">→</span></span></a>
     <a class="workflow-card" href="/examples/modelling-network-change/"><span class="card-number">02 / NETWORK PANELS</span><h3>Networks observed over time</h3><p>Study tie formation and persistence, or model actors' opportunities to change their ties.</p><span class="card-action">TERGM · Siena <span aria-hidden="true">→</span></span></a>
-    <a class="workflow-card" href="/examples/modelling-interaction-events/"><span class="card-number">03 / INTERACTION SEQUENCES</span><h3>Who interacts with whom, next?</h3><p>Model ordered interactions or event timing, with explicit risk sets and observation windows.</p><span class="card-action">REM · Relevent <span aria-hidden="true">→</span></span></a>
+    <a class="workflow-card" href="/examples/modelling-interaction-events/"><span class="card-number">03 / INTERACTION SEQUENCES</span><h3>Who interacts with whom, next?</h3><p>Model ordered interactions or event timing, with explicit risk sets and observation windows.</p><span class="card-action">REM · Revel <span aria-hidden="true">→</span></span></a>
   </div>
 </section>
 <section class="home-section analysis-feature" aria-labelledby="first-analysis-title">

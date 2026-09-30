@@ -58,8 +58,10 @@ of it has been checked against R.</p>
 | ERGMRank | `fit_ergm_rank`, swap-MPLE, `se=:bootstrap` | `rank_ergm` | `pseudolikelihood` | no | `bootstrap` | `none` | n/a |
 | ERGMRank | `fit_ergm_rank`, MCMC-MLE | `rank_ergm` | `likelihood` | no | `fisher` | `none` | n/a |
 | REM | `fit_rem`, case-control conditional logit | `relational_event` | `partial_likelihood` | no | `hessian` | `none` | `none` |
-| Relevent | `fit_obpm`, ordinal B-P model | `relational_event` | `likelihood` | **yes** | `hessian` | `none` | `none` |
-| Relevent | `fit_timing`, exact-time hazard model | `relational_event_timing` | `likelihood` | **yes** | `hessian` | `none` | `none` |
+| Revel | `fit_revel`, ordinal model, full risk set | `relational_event` | `likelihood` | **yes** | `hessian` | `none` | `none` |
+| Revel | `fit_revel`, receiver choice (`riskset=:sender`) | `relational_event` | `partial_likelihood` | **yes** | `hessian` | `none` | `none` |
+| Revel | `fit_revel`, `model=:timing`, exact-time hazard model | `relational_event_timing` | `likelihood` | **yes** | `hessian` | `none` | `none` |
+| Revel | `fit_rhem`, hyperevents, sampled non-events | `relational_event` | `partial_likelihood` | no | `hessian` | `none` | `none` |
 | Siena | `siena07`, SAOM by method of moments | `saom` | `moment` | no | `sandwich` | `rejected` | n/a |
 
 Two rows are worth a second look, because they are exactly what a hand-written table
@@ -164,6 +166,11 @@ and reproduced here verbatim.
 - case-control sampling of the risk set (each non-case dyad entered its stratum with probability 0.1724): the partial likelihood is an approximation to the full-risk-set ordinal likelihood, and if the model is misspecified the estimates depend on the control draw — refit with a larger `n_controls` or the full risk set, or measure the draw-to-draw spread with `control_draw_cov`
 - the inverse-Hessian standard errors (`se=:hessian`) are the observed information of the sampled partial likelihood — a consistent variance estimator under nested case-control sampling (the information lost by sampling is already in it)
 
+#### Revel — `fit_rhem`, hyperevents, sampled non-events
+
+- case-control sampling of the risk set (each non-case dyad entered its stratum with probability 0.2632–0.3571): the partial likelihood is an approximation to the full-risk-set ordinal likelihood, and if the model is misspecified the estimates depend on the control draw — refit with a larger `n_controls` or the full risk set, or measure the draw-to-draw spread with `control_draw_cov`
+- the inverse-Hessian standard errors (`se=:hessian`) are the observed information of the sampled partial likelihood — a consistent variance estimator under nested case-control sampling (the information lost by sampling is already in it)
+
 #### Siena — `siena07`, SAOM by method of moments
 
 - Method of Moments by stochastic approximation: the moments are Monte-Carlo estimates from simulated trajectories, so the estimates carry Monte-Carlo error
@@ -176,8 +183,9 @@ and reproduced here verbatim.
 | ERGM | `mple`, **dyad-independent** formula (`edges`) | the objective **is** the exact likelihood of this model |
 | TERGM | `stergm`/CMPLE, **dyad-independent** formula | the objective **is** the exact likelihood of this model |
 | ERGMMulti | `ergm_multi`, **dyad-independent** (per-layer edges) | the objective **is** the exact likelihood of this model |
-| Relevent | `fit_obpm`, ordinal B-P model | the objective **is** the exact likelihood of this model |
-| Relevent | `fit_timing`, exact-time hazard model | the objective **is** the exact likelihood of this model |
+| Revel | `fit_revel`, ordinal model, full risk set | the objective **is** the exact likelihood of this model |
+| Revel | `fit_revel`, receiver choice (`riskset=:sender`) | the objective **is** the exact likelihood of this model |
+| Revel | `fit_revel`, `model=:timing`, exact-time hazard model | the objective **is** the exact likelihood of this model |
 
 ## Validation against the reference implementations
 
@@ -208,8 +216,7 @@ code will run at.
 | REM | `rem_eventnet` | `survival` 3.8.6 | 4.6.1 | the rem_clogit.R sequence (10 actors, 80 events |
 | REM | `rem_relevent_wtc` | `relevent` 1.2.1 | 4.6.1 | WTC police radio calls (Butts, Petrescu-Prahova & Cross 2007): Networks.jl/data/wtc_police_calls_{events,actors}.tsv, read by R and by Networks.load_dataset(:wtc_police_calls) |
 | REM | `rem_ties` | `survival` 3.8.6 | 4.6.1 | simulated relational event sequence (8 actors, 90 events) observed on a coarse clock (resolution 0.03), which is what makes the ties |
-| Relevent | `relevent_catalogue` | `relevent` 1.2.1 | 4.6.1 | 14 fixed directed events, 5 actors |
-| Relevent | `relevent_rem_dyad` | `relevent` 1.2.1 | 4.6.1 | simulated dyadic event sequence (8 actors, 100 events) |
+| Revel | `revel_remstats` | `remify` 4.1.0, `remstats` 4.1.0 | 4.6.1 | 36 fixed directed events on a 0.25 time grid, 6 actors |
 | Siena | `s50_siena07` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50 (van Duijn): 50 actors, 3 friendship waves, smoke1 covariate |
 | Siena | `s50_targets.toml` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50: three friendship/alcohol waves, centered smoke1 |
 
@@ -241,8 +248,10 @@ a returned AIC/BIC is not evidence that ordinary likelihood comparisons are just
 | ERGMRank | `fit_ergm_rank`, swap-MPLE, `se=:bootstrap` | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
 | ERGMRank | `fit_ergm_rank`, MCMC-MLE | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
 | REM | `fit_rem`, case-control conditional logit | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Relevent | `fit_obpm`, ordinal B-P model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Relevent | `fit_timing`, exact-time hazard model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_revel`, ordinal model, full risk set | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_revel`, receiver choice (`riskset=:sender`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_revel`, `model=:timing`, exact-time hazard model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_rhem`, hyperevents, sampled non-events | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
 | Siena | `siena07`, SAOM by method of moments | yes | yes | yes | yes | — | — | — | — | — | yes |
 
 ## Missing-data support
@@ -272,8 +281,8 @@ inspect convergence and Monte Carlo diagnostics for that fit.
 | ERGMMulti | `ergm_multi` | `false` | `:error` |
 | ERGMRank | `fit_ergm_rank` | `false` | `:error` |
 | REM | `fit_rem` | `false` | `:error` |
-| Relevent | `fit_obpm` | `false` | `:error` |
-| Relevent | `fit_timing` | `false` | `:error` |
+| Revel | `fit_revel` | `false` | `:error` |
+| Revel | `fit_rhem` | `false` | `:error` |
 | Siena | `siena07` | `false` | `:error` |
 
 ## Scientific limitations
@@ -308,21 +317,30 @@ arbitrary dependence between events. REM rejects `se=:bootstrap`. `control_draw_
 measures sensitivity to control redraws and must not be added to the fitted covariance
 as a supposed missing variance component.
 
-### Relevent timing and effect coverage
+### Revel timing, effects and diagnostics
 
-Ordinal models condition on event order; timing models assume piecewise exponential
-waiting times and require statistics constant between events. `fit_timing` rejects
-finite-half-life decay statistics because their integrated hazard is not implemented;
-these statistics remain available for ordinal/conditional fits. Cumulative-history
-variants with `halflife=Inf` are interval-constant. For timing fits, `coef`,
-`stderror`, `vcov` and `coeftable` include the
-log-baseline first, followed by the effects. The legacy `.coefficients` and
-`.std_errors` fields contain effects only. Choose tie handling explicitly where times
-coincide. Time-varying covariate arrays and Bayesian fitting are unsupported.
+Ordinal models condition on event order; the timing model assumes piecewise
+exponential waiting times and requires statistics constant between events. It
+therefore refuses decaying memory kernels, elapsed-time effects and time-varying
+covariates, which remain available for ordinal fits, and it needs the full directed
+risk set. For timing fits, `coef`, `stderror`, `vcov` and `coeftable` include the
+log-baseline first, followed by the effects. Choose tie handling explicitly where
+times coincide.
 
-Both fitters reject a verified separating direction: the likelihood keeps improving
-toward an infinite coefficient, so no finite maximum-likelihood estimate exists.
-This check does not detect every boundary case; inspect convergence and uncertainty.
+The same configuration has a different default measurement in each R package, so an
+effect name alone does not fix a number: `effect_catalogue()` gives the call that
+reproduces relevent, remstats, rem, goldfish and eventnet. Only the remstats and
+relevent columns are checked numerically. Under decaying memory Revel evaluates the
+decay at the event being explained, where remstats 4.1.0 uses the previous event.
+
+Product terms, filtered statistics, type splits and separate fits are different
+models of moderation, not interchangeable ones. Random effects, smooth non-linear
+effects, a dyad-by-type risk set, events with duration and the sender-rate step of
+actor-oriented models are unavailable; unobserved actor heterogeneity can therefore
+inflate closure and popularity effects. Score-process and score tests apply to
+ordinal fits on the full risk set. Hyperevent fits sample non-events of the observed
+size, so their estimates vary with the control draw, and have no goodness-of-fit
+routine.
 
 ### Count support and egocentric survey designs
 

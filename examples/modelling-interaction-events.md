@@ -10,7 +10,7 @@ endpoints. The bundled time column is an **event number**, not elapsed clock
 time: use an ordinal model, not a waiting-time likelihood.
 
 ```julia
-using Networks, REM, Relevent, Random
+using Networks, REM, Revel, Random
 
 calls = load_dataset(:wtc_police_calls)
 events = [Event(row[2], row[3], Float64(row[1])) for row in eachrow(calls.events)]
@@ -24,17 +24,33 @@ result = REM.fit_rem(seq, [Repetition(), Reciprocity()];
 println(result)
 println(fit_metadata(result))
 
-# Full-risk-set ordinal model with two R relevent effects.
-full = fit_obpm(events, [PShift(:AB_BA), CovSnd(Float64.(calls.is_icr))], calls.n_actors)
+# Full-risk-set ordinal model: immediate replies and the coordinator role.
+coordinator = SendEffect(Float64.(calls.is_icr); name="coordinator")
+full = fit_revel(events, [PShift(:AB_BA), coordinator], calls.n_actors)
 println(full)
+
+# Which effects might be missing? Score tests screen candidates without refitting.
+candidates = [Inertia(transform=:log1p), RecencyRank(:send), OTP(transform=:log1p)]
+println(score_test(full, candidates))
+
+# How highly did the model rank the calls that happened?
+println(prediction_summary(full).recall)
 ```
 
-The REM fit relates past interaction to the next selected dyad. Relevent's
-`PShift(:AB_BA)` measures immediate turn reversal; `CovSnd` compares senders
-in institutional coordinator roles with other senders. The two examples
-have different statistics and cannot be compared as two estimates of the
-same specification. Positive coefficients indicate greater relative event
-propensity, conditional on the chosen risk set and history.
+The REM fit relates past interaction to the next selected dyad. In the Revel
+fit, `PShift(:AB_BA)` measures immediate turn reversal and `SendEffect`
+compares senders in institutional coordinator roles with other senders. The
+two examples have different statistics and cannot be compared as two estimates
+of the same specification. Positive coefficients indicate greater relative
+event propensity, conditional on the chosen risk set and history.
+
+The score test asks, for each candidate, whether adding it would improve the
+fitted model. It tests candidates one at a time and says nothing about effects
+that were not proposed. `prediction_summary` reports the share of calls the
+model ranked first, in its top five and in its top ten among the 1332 dyads
+that could have acted; it compares specifications and does not show that any
+of them is adequate. Revel's [goodness-of-fit guide](/Revel.jl/dev/guide/gof/)
+covers residual and simulation checks.
 
 Declaring all eligible actors matters: deriving the universe from endpoints
 would exclude legitimate non-events. Under a correctly specified sampled

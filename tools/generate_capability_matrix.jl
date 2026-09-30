@@ -46,7 +46,7 @@
 
 using Networks
 using SNA, ERGM, ERGMCount, ERGMEgo, ERGMMulti, ERGMRank
-using REM, Relevent, Siena, TERGM, TSNA
+using REM, Revel, Siena, TERGM, TSNA
 using Random
 
 const SITE = normpath(joinpath(@__DIR__, ".."))
@@ -156,7 +156,7 @@ end
 
 const RANK_TERMS = [RankDeference(), RankNonconformity()]
 
-# --- REM / Relevent: one simulated event stream with a reciprocity signal,
+# --- REM / Revel: one simulated event stream with a reciprocity signal,
 #     with the actor universe DECLARED (REM#1: inferring it from the observed
 #     endpoints silently changes the estimand)
 function event_stream(n, T; seed)
@@ -197,6 +197,14 @@ function siena_fit()
 end
 
 # (package, description of the fit, thunk producing a fitted result)
+# --- Revel hyperevents: meetings of two or three among six actors, with a
+#     tendency to repeat pairs
+function hyper_fit()
+    stats = [SubsetRepetition(2; transform=:log1p)]
+    meetings = simulate_hyperevents(stats, [1.0], 6, 60; sizes=[2, 3], rng=Xoshiro(21))
+    return fit_rhem(meetings, stats, 6; n_controls=5, rng=Xoshiro(22))
+end
+
 const PROBES = [
     ("SNA", "`netlm`, dyadic OLS, classical inference", () -> netlm(sna_net(), [SNA_X]; nullhyp=:classical)),
     ("SNA", "`netlogit`, dyadic logit, classical inference", () -> netlogit(sna_net(), [SNA_X]; nullhyp=:classical)),
@@ -215,8 +223,10 @@ const PROBES = [
     ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, `se=:bootstrap`", () -> fit_ergm_rank(rank_net(), RANK_TERMS; se=:bootstrap, n_boot=40, rng=Xoshiro(3))),
     ("ERGMRank", "`fit_ergm_rank`, MCMC-MLE", () -> fit_ergm_rank(rank_net(), RANK_TERMS; method=:mcmle, n_samples=1000, maxiter=40, rng=Xoshiro(17))),
     ("REM", "`fit_rem`, case-control conditional logit", rem_fit),
-    ("Relevent", "`fit_obpm`, ordinal B-P model", () -> fit_obpm(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5)),
-    ("Relevent", "`fit_timing`, exact-time hazard model", () -> fit_timing(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5)),
+    ("Revel", "`fit_revel`, ordinal model, full risk set", () -> fit_revel(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5)),
+    ("Revel", "`fit_revel`, receiver choice (`riskset=:sender`)", () -> fit_revel(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5; riskset=:sender)),
+    ("Revel", "`fit_revel`, `model=:timing`, exact-time hazard model", () -> fit_revel(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5; model=:timing)),
+    ("Revel", "`fit_rhem`, hyperevents, sampled non-events", hyper_fit),
     ("Siena", "`siena07`, SAOM by method of moments", siena_fit),
 ]
 
@@ -237,13 +247,13 @@ const ROUTINES = [
     ("ERGMMulti", "`ergm_multi`", ergm_multi),
     ("ERGMRank", "`fit_ergm_rank`", fit_ergm_rank),
     ("REM", "`fit_rem`", REM.fit_rem),
-    ("Relevent", "`fit_obpm`", fit_obpm),
-    ("Relevent", "`fit_timing`", fit_timing),
+    ("Revel", "`fit_revel`", fit_revel),
+    ("Revel", "`fit_rhem`", fit_rhem),
     ("Siena", "`siena07`", siena07),
 ]
 
 const PACKAGES = ["Networks", "SNA", "ERGM", "TERGM", "ERGMCount", "ERGMEgo",
-                  "ERGMMulti", "ERGMRank", "REM", "Relevent", "Siena"]
+                  "ERGMMulti", "ERGMRank", "REM", "Revel", "Siena"]
 
 # ---------------------------------------------------------------------------
 # Golden fixtures actually present on disk, with the reference they pin against
@@ -532,21 +542,30 @@ function render(io::IO, rows::Vector{ProbeRow})
     measures sensitivity to control redraws and must not be added to the fitted covariance
     as a supposed missing variance component.
 
-    ### Relevent timing and effect coverage
+    ### Revel timing, effects and diagnostics
 
-    Ordinal models condition on event order; timing models assume piecewise exponential
-    waiting times and require statistics constant between events. `fit_timing` rejects
-    finite-half-life decay statistics because their integrated hazard is not implemented;
-    these statistics remain available for ordinal/conditional fits. Cumulative-history
-    variants with `halflife=Inf` are interval-constant. For timing fits, `coef`,
-    `stderror`, `vcov` and `coeftable` include the
-    log-baseline first, followed by the effects. The legacy `.coefficients` and
-    `.std_errors` fields contain effects only. Choose tie handling explicitly where times
-    coincide. Time-varying covariate arrays and Bayesian fitting are unsupported.
+    Ordinal models condition on event order; the timing model assumes piecewise
+    exponential waiting times and requires statistics constant between events. It
+    therefore refuses decaying memory kernels, elapsed-time effects and time-varying
+    covariates, which remain available for ordinal fits, and it needs the full directed
+    risk set. For timing fits, `coef`, `stderror`, `vcov` and `coeftable` include the
+    log-baseline first, followed by the effects. Choose tie handling explicitly where
+    times coincide.
 
-    Both fitters reject a verified separating direction: the likelihood keeps improving
-    toward an infinite coefficient, so no finite maximum-likelihood estimate exists.
-    This check does not detect every boundary case; inspect convergence and uncertainty.
+    The same configuration has a different default measurement in each R package, so an
+    effect name alone does not fix a number: `effect_catalogue()` gives the call that
+    reproduces relevent, remstats, rem, goldfish and eventnet. Only the remstats and
+    relevent columns are checked numerically. Under decaying memory Revel evaluates the
+    decay at the event being explained, where remstats 4.1.0 uses the previous event.
+
+    Product terms, filtered statistics, type splits and separate fits are different
+    models of moderation, not interchangeable ones. Random effects, smooth non-linear
+    effects, a dyad-by-type risk set, events with duration and the sender-rate step of
+    actor-oriented models are unavailable; unobserved actor heterogeneity can therefore
+    inflate closure and popularity effects. Score-process and score tests apply to
+    ordinal fits on the full risk set. Hyperevent fits sample non-events of the observed
+    size, so their estimates vary with the control draw, and have no goodness-of-fit
+    routine.
 
     ### Count support and egocentric survey designs
 

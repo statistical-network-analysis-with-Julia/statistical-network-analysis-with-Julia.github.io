@@ -25,7 +25,7 @@
 # otherwise it defaults to the parent directory of this repo.
 #
 # Registration order (dependents strictly after their dependencies):
-#   Networks → NetworkDynamic / SNA / ERGM / Siena → REM → Relevent,
+#   Networks → NetworkDynamic / SNA / ERGM / Siena → REM → Relevent → Revel,
 #   NDTV / TSNA, and the ERGM satellite packages (ERGMCount, ERGMEgo,
 #   ERGMMulti, ERGMRank, ERGMUserterms, TERGM).
 #
@@ -52,6 +52,7 @@ const REGISTRATION_ORDER = [
     "Siena.jl",           # ← Networks (hard dependency)
     "REM.jl",             # ← Networks (+ NetworkDynamic weakdep)
     "Relevent.jl",        # ← Networks, REM
+    "Revel.jl",           # ← Networks, REM, Relevent
     "NDTV.jl",            # ← Networks, NetworkDynamic
     "TSNA.jl",            # ← Networks, NetworkDynamic, SNA
     "TERGM.jl",           # ← Networks, ERGM

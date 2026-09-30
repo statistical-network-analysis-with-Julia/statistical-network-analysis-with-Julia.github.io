@@ -1,6 +1,6 @@
 # Package documentation appearance
 
-All 15 package sites use Documenter.jl's built-in themes without custom CSS or
+All 16 package sites use Documenter.jl's built-in themes without custom CSS or
 JavaScript. Documenter owns the typography, colors, sidebar, search, theme chooser
 and docstring controls. The native footer contains links back to the ecosystem.
 
@@ -33,6 +33,7 @@ names are rendered as text by Documenter rather than baked into the icons.
 | <img src="icons/Siena.svg" width="56" alt="Actor choosing a tie"> | Siena.jl | Actor-oriented choices in network micro-steps. |
 | <img src="icons/REM.svg" width="56" alt="Directed interaction pulse"> | REM.jl | A directed interaction occurring as an event. |
 | <img src="icons/Relevent.svg" width="56" alt="Decaying event history"> | Relevent.jl | Interaction history with decaying memory weights. |
+| <img src="icons/Revel.svg" width="56" alt="Two-path closed by an event"> | Revel.jl | An event closing a two-path: effects built from the event history. |
 | <img src="icons/NetworkDynamic.svg" width="56" alt="Activity intervals"> | NetworkDynamic.jl | Activity spells with closed onsets and open termini. |
 | <img src="icons/TSNA.svg" width="56" alt="Temporal path and clock"> | TSNA.jl | Time-respecting paths and temporal reachability. |
 | <img src="icons/NDTV.svg" width="56" alt="Network film frame"> | NDTV.jl | A network play symbol inside an animation frame. |

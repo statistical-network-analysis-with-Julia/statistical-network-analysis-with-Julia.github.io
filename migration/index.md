@@ -42,7 +42,7 @@ Three conventions carry most of the translation:
 | `ergm.userterms` | [ERGMUserterms.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl) | `@ergm_term`, `validate_term`, `test_term` |
 | `tergm` | [TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl) | `stergm`, `gof`, `simulate_network_sequence` |
 | `RSiena` | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl) | `siena_data`, `get_effects`, `fit_siena` / `siena07`, `gof` |
-| `relevent` | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl) + [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl) | `fit_rem`; `fit_relevent` / `rem_dyad` |
+| `relevent`, `remstats` | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl) + [Revel.jl](https://github.com/statistical-network-analysis-with-Julia/Revel.jl) | `fit_rem`; `fit_revel` / `revel`, `effect_catalogue` |
 | `networkDynamic` | [NetworkDynamic.jl](https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl) | `DynamicNetwork`, `activate!`, `network_extract` |
 | `tsna` | [TSNA.jl](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl) | `t_sna_stats`, `earliest_arrival`, `forward_reachable_set` |
 | `ndtv` | [NDTV.jl](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl) | `render_animation`, `filmstrip`, `timeline_plot` |
@@ -290,42 +290,48 @@ fixed ridge. Structural codes 10/11 describe determined ties, not missing ties.
 Live-behavior selection effects, maximum likelihood and Bayesian estimation
 remain outside the built-in supported workflow.
 
-## Relational events: `relevent` → REM.jl / Relevent.jl
+## Relational events: `relevent` and `remstats` → REM.jl / Revel.jl
 
-Two packages split R `relevent`'s territory. REM.jl holds the event
-types, 25+ statistics, and a case-control-sampled estimator for long
-event streams; Relevent.jl adds `rem.dyad`'s two exact full-risk-set
-likelihoods (ordinal and interval timing) plus decay-weighted history
-statistics.
+Two packages cover this territory. REM.jl holds the event types, eventnet's
+statistics, and a case-control-sampled estimator for long event streams.
+Revel.jl adds the effects, covariates and interactions of `relevent`,
+`remstats` and the wider literature, fits `rem.dyad`'s two exact full-risk-set
+likelihoods (ordinal and interval timing), and supplies goodness-of-fit checks.
 
-| R (`relevent`) | Julia |
+| R | Julia |
 |:---|:---|
 | event list `(time, sender, receiver)` | `Event(sender, receiver, time)`; `EventSequence(events)` |
-| `rem.dyad(el, n, effects=..., ordinal=TRUE)` | `fit_relevent(events, stats, n)` (= `fit_obpm`) — exact ordinal likelihood; `rem_dyad` is an alias |
-| `rem.dyad(el, n, effects=..., ordinal=FALSE)` | `fit_relevent(events, stats, n; ordinal=false)` (= `fit_timing`) — exponential-baseline interval timing, `t0` sets the observation onset |
-| large-stream approximate fit (eventnet-style) | `fit_rem(seq, stats; n_controls=100)` — case-control conditional logit |
-| `"FESnd"`, `"FERec"`, `"FEInt"` | `FESnd(actor)`, `FERec(actor)`, `FEInt(actor)` (one contrast per selected actor) |
-| `"RRecSnd"`, `"RSndSnd"` (inverse recency ranks) | `RRecSnd(n_actors)`, `RSndSnd(n_actors)` |
-| reciprocity effects | `Reciprocity()`, `PriorInteraction(halflife; direction=:incoming)` |
+| `rem.dyad(el, n, effects=..., ordinal=TRUE)` | `fit_revel(events, stats, n)` — exact ordinal likelihood over the full risk set; `revel` is an alias |
+| `rem.dyad(el, n, effects=..., ordinal=FALSE)` | `fit_revel(events, stats, n; model=:timing)` — exponential-baseline interval timing; `t0` and `t_end` set the observation window |
+| large-stream approximate fit (eventnet-style) | `fit_revel(events, stats, n; n_controls=100)` or `fit_rem(seq, stats; n_controls=100)` — case-control conditional logit |
+| `"FrPSndSnd"`, `"FrRecSnd"`; remstats `inertia(scaling="prop")` | `Inertia(scaling=:prop, empty=1/(n-1))`, `Reciprocation(scaling=:prop, empty=1/(n-1))` |
+| remstats `inertia()`, `reciprocity()` | `Inertia()`, `Reciprocation()` |
+| `"RRecSnd"`, `"RSndSnd"` (inverse recency ranks) | `RecencyRank(:receive)`, `RecencyRank(:send)` |
 | `"PSAB-BA"` p-shifts | `PShift(:AB_BA)` or `PShift("PSAB-BA")` — all 13 Gibson shifts (`pshift_types()`) |
-| `covar=list(CovSnd=z, ...)` | `CovSnd(z)`, `CovRec(z)`, `CovInt(z)` |
-| `covar=list(CovEvent=x)` | `CovEvent(dyad_matrix)` (one static sender-by-receiver matrix) |
-| `"OTPSnd"`, `"ITPSnd"`, `"ISPSnd"` | `OTPSnd(n_actors)`, `ITPSnd(n_actors)`, `ISPSnd(n_actors)` (R weighted-history definitions) |
-| normalized degree effects | `NIDSnd(n_actors)`, `NIDRec(n_actors)`, `NODSnd(n_actors)`, `NODRec(n_actors)`, `NTDegSnd(n_actors)`, `NTDegRec(n_actors)` |
+| `covar=list(CovSnd=z, ...)` | `SendEffect(z)`, `ReceiveEffect(z)`, `SumEffect(z)` (`CovInt` is a sum, not an interaction) |
+| `covar=list(CovEvent=x)` | `TieEffect(dyad_matrix)` |
+| `"OTPSnd"`, `"ITPSnd"`, `"OSPSnd"`, `"ISPSnd"` | `OTP()`, `ITP()`, `OSP()`, `ISP()` |
+| normalized degree effects (`"NIDSnd"`, …) | `IndegreeSender(scaling=:prop, empty=1/(n-1))` and the five other sender/receiver degree effects |
+| remstats `memory = "decay"`, `"window"`, `"interval"` | `memory=HalfLife(h)`, `Window(w)`, `Interval(lo, hi)` on any effect |
+| remstats `a:b` | `Interaction(a, b)` |
 | `coef(fit)`, `summary(fit)` | `coef(fit)`, `stderror(fit)`, `println(fit)` |
 
 ```julia
-using Networks, REM, Relevent
+using Networks, Revel
 calls = load_dataset(:wtc_police_calls)
 events = [Event(row[2], row[3], Float64(row[1])) for row in eachrow(calls.events)]
 n_actors = calls.n_actors
-# Catalogue constructors take the eligible universe, including nonparticipants.
-recency = [RRecSnd(n_actors), RSndSnd(n_actors)]
-normalized_degrees = [NIDSnd(n_actors), NIDRec(n_actors), NODSnd(n_actors),
-                      NODRec(n_actors), NTDegSnd(n_actors), NTDegRec(n_actors)]
-weighted_paths = [OTPSnd(n_actors), ITPSnd(n_actors), ISPSnd(n_actors)]
-fit = fit_obpm(events, [PShift(:AB_BA), CovSnd(Float64.(calls.is_icr))], calls.n_actors)
+# relevent's zero-history value for a proportion is 1/(n-1); in Revel it is a keyword.
+recency = [RecencyRank(:receive), RecencyRank(:send)]
+normalized_degrees = [IndegreeSender(scaling=:prop, empty=1 / (n_actors - 1)),
+                      OutdegreeReceiver(scaling=:prop, empty=1 / (n_actors - 1))]
+weighted_paths = [OTP(), ITP(), OSP(), ISP()]
+coordinator = SendEffect(Float64.(calls.is_icr); name="coordinator")
+fit = fit_revel(events, [PShift(:AB_BA), coordinator], n_actors)
 println(fit)
+# The name each effect has in relevent, remstats, rem, goldfish and eventnet.
+catalogue = effect_catalogue()
+println(catalogue[catalogue.relevent .== "FrPSndSnd", [:revel, :remstats]])
 ```
 
 The data contain 481 ordered calls and 37 eligible actors, including actors who
@@ -334,21 +340,27 @@ ordinal model; it cannot justify a waiting-time likelihood. The
 [worked REM example](/examples/modelling-interaction-events/) explains the risk
 set and compares distinct specifications without implying causal effects.
 
-For genuine elapsed-time data, `fit_timing` exposes the log-baseline first in
-`coef`, `stderror`, `vcov`, and `coeftable`; legacy `.coefficients` and
-`.std_errors` contain effects only. Timing likelihoods require statistics that
-are constant between events: p-shifts, catalogue effects, and static covariates
-qualify. Finite-half-life decay statistics vary inside the waiting interval and
-are rejected by `fit_timing`; they remain available for ordinal/conditional
-fits. Cumulative-history variants with `halflife=Inf` can be used for timing.
-Tied events require an explicit supported
-policy; default exact-order/time fits reject them. The R-named effects have
-provenanced design fixtures. `FrPSndSnd`, `FrRecSnd`, `OSPSnd`, event-indexed
-covariate arrays, and Bayesian fitting remain unsupported.
+For genuine elapsed-time data, `fit_revel(...; model=:timing)` exposes the
+log-baseline first in `coef`, `stderror`, `vcov`, and `coeftable`. Timing
+likelihoods require statistics that are constant between events: p-shifts,
+full-memory effects, recency ranks and static covariates qualify. Decaying
+memory kernels, elapsed-time effects and time-varying covariates change inside
+the waiting interval and are rejected for timing fits; they remain available
+for ordinal fits. Tied events require an explicit supported policy; default
+exact-order/time fits reject them.
 
-Both Relevent fitters reject a verified separating direction when no finite
-maximum-likelihood estimate exists. This check does not detect every boundary
-case; inspect convergence and uncertainty before interpreting coefficients.
+The same effect name does not mean the same number across R packages.
+`effect_catalogue()` lists the Revel call that reproduces each one. Its
+`remstats` column is pinned by a golden fixture against remstats 4.1.0 and its
+`relevent` column against statistics validated on `rem.dyad`; the `rem`,
+`goldfish` and `eventnet` columns follow those packages' documentation. Under
+`memory = "decay"` remstats evaluates the decay at the previous event, Revel at
+the event being explained. Random effects, a dyad-by-type risk set
+(`consider_type = "interact"`), events with duration, the actor-oriented rate
+step and Bayesian fitting remain unsupported.
+
+Revel builds on Relevent.jl, whose R-named constructors (`FESnd`, `RRecSnd`,
+`CovSnd`, …) can be mixed into the same model.
 
 REM's sampled likelihood uses a declared actor universe. Its Hessian reflects
 the information lost through control sampling under correct specification;
@@ -424,7 +436,7 @@ The following differences reflect the September continuation:
 - **TERGM:** CMPLE, exact for dyad-independent formulas; dependent CMLE and
   EGMME are unavailable. Dissolution-model coefficients describe persistence;
   prefer the `persistence_coef` and `persistence_se` accessors.
-- **Relevent:** the effect and time-data limitations above still apply. No
+- **Revel:** the effect and time-data limitations above still apply. No
   implementation should be treated as complete R feature parity merely
   because selected golden fixtures pass.
 
