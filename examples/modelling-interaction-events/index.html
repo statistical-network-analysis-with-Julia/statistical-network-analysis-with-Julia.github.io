@@ -33,7 +33,7 @@
 <main class="page-content" id="main-content" tabindex="-1">
 <h1 id="modelling_interaction_events"><a href="#modelling_interaction_events" class="header-anchor">Modelling Interaction Events</a></h1>
 <p>Model the bundled World Trade Center police radio-call sequence from Butts, Petrescu-Prahova and Cross &#40;2007&#41;. It contains 481 ordered events and an eligible universe of 37 actors, including two actors absent from the event endpoints. The bundled time column is an <strong>event number</strong>, not elapsed clock time: use an ordinal model, not a waiting-time likelihood.</p>
-<pre><code class="language-julia">using Networks, REM, Relevent, Random
+<pre><code class="language-julia">using Networks, REM, Revel, Random
 
 calls &#61; load_dataset&#40;:wtc_police_calls&#41;
 events &#61; &#91;Event&#40;row&#91;2&#93;, row&#91;3&#93;, Float64&#40;row&#91;1&#93;&#41;&#41; for row in eachrow&#40;calls.events&#41;&#93;
@@ -47,10 +47,19 @@ result &#61; REM.fit_rem&#40;seq, &#91;Repetition&#40;&#41;, Reciprocity&#40;&#4
 println&#40;result&#41;
 println&#40;fit_metadata&#40;result&#41;&#41;
 
-# Full-risk-set ordinal model with two R relevent effects.
-full &#61; fit_obpm&#40;events, &#91;PShift&#40;:AB_BA&#41;, CovSnd&#40;Float64.&#40;calls.is_icr&#41;&#41;&#93;, calls.n_actors&#41;
-println&#40;full&#41;</code></pre>
-<p>The REM fit relates past interaction to the next selected dyad. Relevent&#39;s <code>PShift&#40;:AB_BA&#41;</code> measures immediate turn reversal; <code>CovSnd</code> compares senders in institutional coordinator roles with other senders. The two examples have different statistics and cannot be compared as two estimates of the same specification. Positive coefficients indicate greater relative event propensity, conditional on the chosen risk set and history.</p>
+# Full-risk-set ordinal model: immediate replies and the coordinator role.
+coordinator &#61; SendEffect&#40;Float64.&#40;calls.is_icr&#41;; name&#61;&quot;coordinator&quot;&#41;
+full &#61; fit_revel&#40;events, &#91;PShift&#40;:AB_BA&#41;, coordinator&#93;, calls.n_actors&#41;
+println&#40;full&#41;
+
+# Which effects might be missing? Score tests screen candidates without refitting.
+candidates &#61; &#91;Inertia&#40;transform&#61;:log1p&#41;, RecencyRank&#40;:send&#41;, OTP&#40;transform&#61;:log1p&#41;&#93;
+println&#40;score_test&#40;full, candidates&#41;&#41;
+
+# How highly did the model rank the calls that happened?
+println&#40;prediction_summary&#40;full&#41;.recall&#41;</code></pre>
+<p>The REM fit relates past interaction to the next selected dyad. In the Revel fit, <code>PShift&#40;:AB_BA&#41;</code> measures immediate turn reversal and <code>SendEffect</code> compares senders in institutional coordinator roles with other senders. The two examples have different statistics and cannot be compared as two estimates of the same specification. Positive coefficients indicate greater relative event propensity, conditional on the chosen risk set and history.</p>
+<p>The score test asks, for each candidate, whether adding it would improve the fitted model. It tests candidates one at a time and says nothing about effects that were not proposed. <code>prediction_summary</code> reports the share of calls the model ranked first, in its top five and in its top ten among the 1332 dyads that could have acted; it compares specifications and does not show that any of them is adequate. Revel&#39;s <a href="/Revel.jl/dev/guide/gof/">goodness-of-fit guide</a> covers residual and simulation checks.</p>
 <p>Declaring all eligible actors matters: deriving the universe from endpoints would exclude legitimate non-events. Under a correctly specified sampled conditional likelihood, Hessian uncertainty already reflects the loss of information from control sampling. <code>se&#61;:sandwich</code> provides an event-clustered alternative for within-stratum misspecification. <code>control_draw_cov</code> measures sensitivity to control redraws; it is not an extra variance term, and REM rejects <code>se&#61;:bootstrap</code>.</p>
 <p>These are observational radio communications during one emergency. Role coefficients need not be causal, and repeated events may reflect omitted coordination processes. Inspect fit diagnostics and compare substantive specifications. The <a href="https://github.com/statistical-network-analysis-with-Julia/Networks.jl/tree/main/data">data provenance</a> and <a href="/migration/">migration guide</a> document the source and effect conventions.</p>
 </main>
