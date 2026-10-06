@@ -1388,3 +1388,12 @@ details[open] > summary {
         overflow: visible;
     }
 }
+
+/* Phones: the site name is long; let it wrap beside the menu button. */
+@media (max-width: 560px) {
+    .site-brand {
+        white-space: normal;
+        line-height: 1.25;
+        max-width: calc(100% - 90px);
+    }
+}

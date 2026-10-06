@@ -4,7 +4,7 @@
   xmlns:dc="http://purl.org/dc/elements/1.1/"
   xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-  <title>StatNet for Julia</title>
+  <title>Statistical analysis of networks in Julia</title>
   <link>https://statistical-network-analysis-with-julia.github.io</link>
   <description>A Julia ecosystem implementing a selection of families of models for the statistical analysis of networks.</description>
   <generator>Franklin.jl</generator>
