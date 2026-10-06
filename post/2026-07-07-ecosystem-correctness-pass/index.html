@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
   <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
-  <meta name="theme-color" content="#123d32">
+  <meta name="theme-color" content="#edf5e2">
   <link rel="icon" href="/assets/img/logo.png">
   <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/post/2026-07-07-ecosystem-correctness-pass/">
   <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
@@ -13,23 +13,37 @@
   <link rel="stylesheet" href="/css/style.css">
   <title>Ecosystem-wide correctness pass and R validation · StatNet for Julia</title>
 </head>
-<body>
+<body id="page-top">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <nav class="nav-inner" aria-label="Main navigation">
-    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
-    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
-    <div class="site-navigation" id="site-navigation">
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <span class="current-section-label" aria-hidden="true"></span>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
+  <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
       <a href="/getting-started/">Get started</a>
       <a href="/packages/">Packages</a>
       <a href="/examples/">Examples</a>
       <a href="/models/">Methods</a>
       <a href="/migration/">Coming from R</a>
       <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
-    </div>
+
   </nav>
 </header>
+<aside class="scroll-navigation" hidden aria-label="Site sections">
+  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <nav aria-label="Section navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+
+  </nav>
+  <a class="back-to-top" href="#page-top">Back to top <span aria-hidden="true">↑</span></a>
+</aside>
 <main class="page-content" id="main-content" tabindex="-1">
+<div class="article-layout wrap"><aside class="article-nav" aria-label="On this page"><strong>On this page</strong></aside><article class="article">
 <p>A coordinated correctness pass has landed across every package in the ecosystem. Highlights:</p>
 <ul>
 <li><p><strong>Validation against the R reference implementations.</strong> ERGM.jl now reproduces R <code>ergm</code> 4.12 MPLE coefficients to six decimals on the Florentine and Sampson benchmarks; SNA.jl matches <code>sna</code> 2.8 on the full battery of graph-level indices and centralities &#40;including the 16-class triad census&#41;; ERGMRank.jl matches <code>ergm.rank</code> 4.1.2 statistics exactly; and Siena.jl reproduces RSiena target statistics and <code>siena07</code> estimates on the classic <code>s50</code> data.</p>
@@ -40,11 +54,12 @@
 </li>
 </ul>
 <p>The <a href="/examples/">Examples</a> have been rewritten to be fully runnable, with real data, printed output, and interpretation.</p>
+</article></div>
 </main>
 <footer class="site-footer">
   <div class="footer-inner">
     <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
-    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/citing/">How to cite</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
     <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>

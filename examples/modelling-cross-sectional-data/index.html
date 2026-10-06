@@ -5,35 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
   <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
-  <meta name="theme-color" content="#123d32">
+  <meta name="theme-color" content="#edf5e2">
   <link rel="icon" href="/assets/img/logo.png">
   <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/examples/modelling-cross-sectional-data/">
   <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+   <!-- Syntax colours for highlight.js are defined in /css/style.css (ef-elea-light palette). -->
  
   <link rel="stylesheet" href="/css/style.css">
   <title>Modelling Cross-Sectional Data · StatNet for Julia</title>
 </head>
-<body>
+<body id="page-top">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <nav class="nav-inner" aria-label="Main navigation">
-    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
-    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
-    <div class="site-navigation" id="site-navigation">
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <span class="current-section-label" aria-hidden="true"></span>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
+  <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
       <a href="/getting-started/">Get started</a>
       <a href="/packages/">Packages</a>
       <a href="/examples/">Examples</a>
       <a href="/models/">Methods</a>
       <a href="/migration/">Coming from R</a>
       <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
-    </div>
+
   </nav>
 </header>
+<aside class="scroll-navigation" hidden aria-label="Site sections">
+  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <nav aria-label="Section navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+
+  </nav>
+  <a class="back-to-top" href="#page-top">Back to top <span aria-hidden="true">↑</span></a>
+</aside>
 <main class="page-content" id="main-content" tabindex="-1">
+<div class="article-layout wrap"><aside class="article-nav" aria-label="On this page"><strong>On this page</strong></aside><article class="article">
 <h1 id="modelling_cross-sectional_data"><a href="#modelling_cross-sectional_data" class="header-anchor">Modelling Cross-Sectional Data</a></h1>
 <p>Fit an ERGM to the bundled Florentine marriage network: 16 families, 20 marriage ties, and family wealth recorded in thousands of lira. The specification asks whether wealth and shared partners are associated with marriage ties, conditional on each other.</p>
-<pre><code class="language-julia">using Networks, ERGM, Random
+<pre><code class="language-julia">using NetworkCore, ERGM, Random
 
 net &#61; load_dataset&#40;:florentine_marriage&#41;
 terms &#61; &#91;Edges&#40;&#41;, NodeCov&#40;:wealth&#41;, GWESP&#40;0.5&#41;&#93;
@@ -41,7 +55,7 @@ result &#61; fit_ergm&#40;net, terms; method&#61;:mcmle, rng&#61;Xoshiro&#40;42&
 println&#40;result&#41;
 println&#40;fit_metadata&#40;result&#41;&#41;</code></pre>
 <p>The <code>edges</code> coefficient captures baseline sparsity. <code>NodeCov&#40;:wealth&#41;</code> adds the wealth of both endpoints; its coefficient gives the conditional change in tie log-odds per additional thousand lira of combined wealth. <code>GWESP&#40;0.5&#41;</code> represents shared-partner configurations with diminishing increments. Its interpretation depends on the rest of the specification.</p>
-<p><code>GWESP</code> makes this model dyad-dependent, so this example explicitly asks for MCMC maximum likelihood. The default <code>method&#61;:mple</code> instead maximizes a pseudo-likelihood and warns that its Hessian standard errors may be too small. A successful optimizer or a convenient term choice alone does not establish adequate mixing, convergence, or model fit.</p>
+<p><code>GWESP</code> makes this model dyad-dependent, so the default <code>method&#61;:auto</code> would fit it by MCMC maximum likelihood anyway, as R&#39;s <code>ergm&#40;&#41;</code> does; the example names <code>method&#61;:mcmle</code> to make the choice visible. For a formula with no dyad-dependent term, <code>:auto</code> fits the MPLE, which is then the exact MLE. <code>method&#61;:mple</code> on this formula maximizes a pseudo-likelihood instead: it reports estimates and standard errors but withholds z values, p-values and intervals unless you ask for <code>se&#61;:bootstrap</code>. A successful optimizer or a convenient term choice alone does not establish adequate mixing, convergence, or model fit.</p>
 <pre><code class="language-julia">println&#40;&quot;converged &#61; &quot;, result.converged&#41;
 diagnostics &#61; gof&#40;result; n_sim&#61;100, rng&#61;Xoshiro&#40;1&#41;&#41;
 println&#40;diagnostics&#41;
@@ -49,11 +63,12 @@ sims &#61; simulate_ergm&#40;result; n_sim&#61;3, rng&#61;Xoshiro&#40;2&#41;&#41
 println&#40;&quot;simulated densities &#61; &quot;, network_density.&#40;sims&#41;&#41;</code></pre>
 <p>Check convergence and simulated distributions before interpreting Wald intervals. An apparently small shared-partner coefficient is not evidence that social closure is absent; this is one small observational network. Wealth associations likewise do not identify the causal effect of wealth. Geometrically weighted terms can reduce some degeneracy problems compared with raw triangle terms, but they do not guarantee a well-behaved model.</p>
 <p>For panels observed at several times, see the <a href="/examples/modelling-network-change/">temporal ERGM example</a>.</p>
+</article></div>
 </main>
 <footer class="site-footer">
   <div class="footer-inner">
     <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
-    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/citing/">How to cite</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
     <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>

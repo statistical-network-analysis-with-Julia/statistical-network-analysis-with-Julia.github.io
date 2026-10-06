@@ -40,7 +40,12 @@
                 menu.focus();
             }
         });
-        navigation.querySelectorAll("a").forEach((link) => {
+    }
+
+    // Mark the current section in the header and in the wide-screen rail.
+    document
+        .querySelectorAll(".site-navigation a, .scroll-navigation nav a")
+        .forEach((link) => {
             if (
                 link.origin === location.origin &&
                 location.pathname.startsWith(link.pathname)
@@ -48,9 +53,43 @@
                 link.setAttribute("aria-current", "page");
             }
         });
+    const sectionLabel = document.querySelector(".current-section-label");
+    const currentSection = document.querySelector(
+        ".site-navigation a[aria-current]",
+    );
+    if (sectionLabel && currentSection)
+        sectionLabel.textContent = currentSection.textContent.trim();
+
+    // On wide screens the navigation moves into the left margin once the
+    // header has scrolled out of view.
+    const siteHeader = document.querySelector(".site-header");
+    const rail = document.querySelector(".scroll-navigation");
+    if (siteHeader && rail && "IntersectionObserver" in window) {
+        const wide = window.matchMedia("(min-width: 1400px)");
+        const updateRail = () => {
+            const show =
+                wide.matches && siteHeader.getBoundingClientRect().bottom <= 0;
+            if (!show && rail.contains(document.activeElement)) {
+                const focused = document.activeElement.closest("a");
+                const match = [...siteHeader.querySelectorAll("a")].find(
+                    (a) => a.href === focused?.href,
+                );
+                (match || siteHeader.querySelector("a")).focus({
+                    preventScroll: true,
+                });
+            }
+            rail.hidden = !show;
+        };
+        new IntersectionObserver(updateRail, { threshold: 0 }).observe(
+            siteHeader,
+        );
+        wide.addEventListener("change", updateRail);
+        updateRail();
     }
 
-    const sectionLinks = [...document.querySelectorAll('.sidebar a[href^="#"]')]
+    const sectionLinks = [...document.querySelectorAll(
+        '.sidebar a[href^="#"], .article-nav a[href^="#"]',
+    )]
         .map((link) => ({
             link,
             section: document.getElementById(link.hash.slice(1)),

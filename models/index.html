@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
   <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
-  <meta name="theme-color" content="#123d32">
+  <meta name="theme-color" content="#edf5e2">
   <link rel="icon" href="/assets/img/logo.png">
   <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/models/">
   <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
@@ -13,23 +13,37 @@
   <link rel="stylesheet" href="/css/style.css">
   <title>Families of Models · StatNet for Julia</title>
 </head>
-<body>
+<body id="page-top">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <nav class="nav-inner" aria-label="Main navigation">
-    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
-    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
-    <div class="site-navigation" id="site-navigation">
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <span class="current-section-label" aria-hidden="true"></span>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
+  <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
       <a href="/getting-started/">Get started</a>
       <a href="/packages/">Packages</a>
       <a href="/examples/">Examples</a>
       <a href="/models/">Methods</a>
       <a href="/migration/">Coming from R</a>
       <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
-    </div>
+
   </nav>
 </header>
+<aside class="scroll-navigation" hidden aria-label="Site sections">
+  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <nav aria-label="Section navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+
+  </nav>
+  <a class="back-to-top" href="#page-top">Back to top <span aria-hidden="true">↑</span></a>
+</aside>
 <main class="page-content" id="main-content" tabindex="-1">
+<div class="page-wide wrap">
 
 <div class="sidebar-layout">
   <nav class="sidebar">
@@ -50,7 +64,7 @@
       <p>Stochastic Actor-Oriented Models, introduced by Snijders <a href="#ref-snijders2001">[1]</a>, model the co-evolution of networks and behavior over time. The core idea is that actors make sequential, myopic decisions to change their outgoing ties or behavior, guided by an objective function that encodes preferences for particular local network configurations.</p>
       <p>The model distinguishes three components: a <strong>rate function</strong> governing how often actors get opportunities to change, an <strong>objective function</strong> determining which changes are attractive, and a <strong>behavior function</strong> when co-evolving behavior is included. Estimation uses a Method of Moments procedure (Robbins-Monro stochastic approximation), matching simulated network statistics to observed ones across two or more time points <a href="#ref-snijders2010">[2]</a>.</p>
       <p>SAOMs are particularly suited to panel data where the same network is observed at discrete time points and the researcher is interested in disentangling selection from influence processes.</p>
-      <p><strong>Julia implementation:</strong> <a href="/Siena.jl/dev/">Siena.jl</a> implements a subset of this framework. Inspect the fresh final simulation batch and convergence diagnostics. Selection based on evolving behavior and broad R effect parity remain incomplete; see <a href="/capabilities/">current coverage</a>.</p>
+      <p><strong>Julia implementation:</strong> <a href="/Siena.jl/dev/">Siena.jl</a> implements the Method of Moments estimator of this framework for one-mode, undirected and two-mode networks and co-evolving behaviour, with interactions, score-type tests and time-heterogeneity tests. Every effect it offers under an RSiena name is checked against RSiena. Maximum-likelihood and Bayesian estimation, multi-group data and RSiena’s other model types are not implemented; see <a href="/capabilities/">current coverage</a>.</p>
     </details>
 
     <details open>
@@ -69,7 +83,7 @@
       <p>Estimation relies on either <strong>Maximum Pseudolikelihood Estimation (MPLE)</strong> <a href="#ref-strauss1990">[5]</a>, which multiplies each dyad’s conditional probability given the remaining dyads, or <strong>Monte Carlo Maximum Likelihood Estimation (MCMLE)</strong> <a href="#ref-hunter2006">[6]</a>, which uses MCMC sampling to approximate the ratio of normalizing constants. Goodness of fit is assessed by simulating networks from the fitted model and comparing their properties to the observed network <a href="#ref-hunter2008">[7]</a>.</p>
       <p>The ERGM framework has been extended in several directions: temporal ERGMs (TERGMs) for longitudinal network data <a href="#ref-hanneke2010">[8]</a>, valued ERGMs for count or rank data <a href="#ref-krivitsky2012">[9]</a>, ego-centric ERGMs for inference from sampled ego-network data <a href="#ref-krivitsky2023">[10]</a>, and multilayer ERGMs for networks with multiple relation types <a href="#ref-krivitsky2020">[11]</a>.</p>
       <p><strong>Implemented in:</strong> <a href="/ERGM.jl/dev/">ERGM.jl</a> and extensions (<a href="/TERGM.jl/dev/">TERGM.jl</a>, <a href="/ERGMCount.jl/dev/">ERGMCount.jl</a>, <a href="/ERGMEgo.jl/dev/">ERGMEgo.jl</a>, <a href="/ERGMMulti.jl/dev/">ERGMMulti.jl</a>, <a href="/ERGMRank.jl/dev/">ERGMRank.jl</a>, <a href="/ERGMUserterms.jl/dev/">ERGMUserterms.jl</a>)</p>
-    <p>Implementation scope differs across these packages. Count models currently use MPLE; rank models also offer rank MCMC-MLE; TERGM supports conditional MPLE. A method family described here does not imply that every variant is implemented. Consult <a href="/capabilities/">estimator capabilities</a> before selecting a model.</p>
+    <p>Implementation scope differs across these packages. ERGM.jl, ERGMCount.jl and ERGMMulti.jl follow R’s default: the MPLE, which is then the exact MLE, when no term is dyad-dependent, and MCMLE otherwise. Rank models are fitted by rank MCMC-MLE, with a swap pseudo-likelihood as an option. TERGM.jl fits the conditional MLE by MCMC for dyad-dependent formulas, as tergm does, and the exact conditional MPLE otherwise; EGMME is not implemented. A method family described here does not imply that every variant is implemented. Consult <a href="/capabilities/">estimator capabilities</a> before selecting a model.</p>
     </details>
 
     <details open>
@@ -92,11 +106,12 @@
   </div>
 </div>
 
+</div>
 </main>
 <footer class="site-footer">
   <div class="footer-inner">
     <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
-    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/citing/">How to cite</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
     <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>

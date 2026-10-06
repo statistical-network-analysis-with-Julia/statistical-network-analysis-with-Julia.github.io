@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
+  <meta name="theme-color" content="#edf5e2">
+  <link rel="icon" href="/assets/img/logo.png">
+  <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/citing/">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
+   <!-- Syntax colours for highlight.js are defined in /css/style.css (ef-elea-light palette). -->
+ 
+  <link rel="stylesheet" href="/css/style.css">
+  <title>How to cite · StatNet for Julia</title>
+</head>
+<body id="page-top">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <span class="current-section-label" aria-hidden="true"></span>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
+  <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+
+  </nav>
+</header>
+<aside class="scroll-navigation" hidden aria-label="Site sections">
+  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <nav aria-label="Section navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+
+  </nav>
+  <a class="back-to-top" href="#page-top">Back to top <span aria-hidden="true">↑</span></a>
+</aside>
+<main class="page-content" id="main-content" tabindex="-1">
+<div class="article-layout wrap"><aside class="article-nav" aria-label="On this page"><strong>On this page</strong><div class="franklin-toc"><ol><li><a href="#the_julia_packages">The Julia packages</a></li><li><a href="#what_else_to_cite_package_by_package">What else to cite, package by package</a></li><li><a href="#references">References</a></li><li><a href="#the_r_packages">The R packages</a></li></ol></div></aside><article class="article">
+<h1 id="how_to_cite"><a href="#how_to_cite" class="header-anchor">How to cite</a></h1>
+<p>These packages port methods that other people designed, published and first implemented in R. When you publish results obtained with them, please cite three things:</p>
+<ol>
+<li><p><strong>the Julia package you used</strong>, so readers can find and rerun the code;</p>
+</li>
+<li><p><strong>the R package it ports</strong>, whose authors ask to be cited and whose design the Julia package follows;</p>
+</li>
+<li><p><strong>the papers that introduced the method</strong>, which your analysis relies on.</p>
+</li>
+</ol>
+<p>The statnet packages and RSiena state this request in their own citation files &#40;<code>citation&#40;&quot;ergm&quot;&#41;</code>, <code>citation&#40;&quot;RSiena&quot;&#41;</code> in R&#41;.</p>
+<h2 id="the_julia_packages"><a href="#the_julia_packages" class="header-anchor">The Julia packages</a></h2>
+<p>Every package repository has a <code>CITATION.bib</code> with its BibTeX entry, also shown in its README. The packages are unreleased &#40;version 0.2.0, Revel.jl 0.1.0&#41;, so cite the commit you used. Record it with <code>git rev-parse HEAD</code> in each checkout, and add it to the entry&#39;s <code>note</code>, for example <code>note &#61; &#123;Version 0.2.0, commit 1590e6d&#125;</code>.</p>
+<h2 id="what_else_to_cite_package_by_package"><a href="#what_else_to_cite_package_by_package" class="header-anchor">What else to cite, package by package</a></h2>
+<table><tr><th align="left">Julia package</th><th align="left">R package to cite</th><th align="left">Method papers</th></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/NetworkCore.jl">NetworkCore.jl</a></td><td align="left"><code>network</code> &#40;Butts&#41;</td><td align="left">Butts &#40;2008a&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl">SNA.jl</a></td><td align="left"><code>sna</code> &#40;Butts&#41;</td><td align="left">Butts &#40;2008b&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGM.jl">ERGM.jl</a></td><td align="left"><code>ergm</code> &#40;Handcock et al.&#41;</td><td align="left">Hunter et al. &#40;2008&#41;; Krivitsky et al. &#40;2023&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl">ERGMCount.jl</a></td><td align="left"><code>ergm.count</code> &#40;Krivitsky&#41;</td><td align="left">Krivitsky &#40;2012&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl">ERGMEgo.jl</a></td><td align="left"><code>ergm.ego</code> &#40;Krivitsky&#41;</td><td align="left">Krivitsky and Morris &#40;2017&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl">ERGMMulti.jl</a></td><td align="left"><code>ergm.multi</code> &#40;Krivitsky&#41;</td><td align="left">Krivitsky, Koehly and Marcum &#40;2020&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl">ERGMRank.jl</a></td><td align="left"><code>ergm.rank</code> &#40;Krivitsky&#41;</td><td align="left">Krivitsky and Butts &#40;2017&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl">ERGMUserterms.jl</a></td><td align="left"><code>ergm.userterms</code></td><td align="left">Hunter, Goodreau and Handcock &#40;2013&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/TERGM.jl">TERGM.jl</a></td><td align="left"><code>tergm</code> &#40;Krivitsky and Handcock&#41;</td><td align="left">Krivitsky and Handcock &#40;2014&#41;; for the block bootstrap over transitions &#40;<code>se&#61;:block_bootstrap</code>, btergm&#39;s scheme&#41;, Leifeld, Cranmer and Desmarais &#40;2018&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Siena.jl">Siena.jl</a></td><td align="left"><code>RSiena</code> &#40;Snijders et al.&#41;</td><td align="left">Snijders &#40;2001&#41;; Snijders, van de Bunt and Steglich &#40;2010&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/REM.jl">REM.jl</a></td><td align="left">— &#40;case-control sampling follows eventnet&#41;</td><td align="left">Butts &#40;2008c&#41;; Lerner and Lomi &#40;2020&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Relevent.jl">Relevent.jl</a> &#40;the engine underneath Revel.jl&#41;</td><td align="left"><code>relevent</code> &#40;Butts&#41;</td><td align="left">Butts &#40;2008c&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/Revel.jl">Revel.jl</a></td><td align="left"><code>relevent</code> &#40;Butts&#41;; <code>remstats</code> &#40;Arena et al.&#41;</td><td align="left">Butts &#40;2008c&#41;; Meijerink-Bosman et al. &#40;2023&#41;</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/DynamicNetworks.jl">DynamicNetworks.jl</a></td><td align="left"><code>networkDynamic</code> &#40;Butts, Leslie-Cook, Krivitsky and Bender-deMoll&#41;</td><td align="left">—</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/TSNA.jl">TSNA.jl</a></td><td align="left"><code>tsna</code> &#40;Bender-deMoll and Morris&#41;</td><td align="left">—</td></tr><tr><td align="left"><a href="https://github.com/statistical-network-analysis-with-Julia/NDTV.jl">NDTV.jl</a></td><td align="left"><code>ndtv</code> &#40;Bender-deMoll&#41;</td><td align="left">Bender-deMoll and McFarland &#40;2006&#41;</td></tr></table>
+<p>Most analyses use more than one package. A fitted ERGM, for example, uses NetworkCore.jl and ERGM.jl: cite both, with <code>network</code> and <code>ergm</code> and their papers. Revel.jl&#39;s effects come from a wider literature; its documentation lists the source of each effect in <code>docs/references.bib</code>.</p>
+<h2 id="references"><a href="#references" class="header-anchor">References</a></h2>
+<ul>
+<li><p>Bender-deMoll, S. and McFarland, D. A. &#40;2006&#41;. The art and science of dynamic network visualization. <em>Journal of Social Structure</em>, 7&#40;2&#41;.</p>
+</li>
+<li><p>Butts, C. T. &#40;2008a&#41;. network: A package for managing relational data in R. <em>Journal of Statistical Software</em>, 24&#40;2&#41;. <a href="https://doi.org/10.18637/jss.v024.i02">doi:10.18637/jss.v024.i02</a></p>
+</li>
+<li><p>Butts, C. T. &#40;2008b&#41;. Social network analysis with sna. <em>Journal of Statistical Software</em>, 24&#40;6&#41;. <a href="https://doi.org/10.18637/jss.v024.i06">doi:10.18637/jss.v024.i06</a></p>
+</li>
+<li><p>Butts, C. T. &#40;2008c&#41;. A relational event framework for social action. <em>Sociological Methodology</em>, 38&#40;1&#41;, 155–200. <a href="https://doi.org/10.1111/j.1467-9531.2008.00203.x">doi:10.1111/j.1467-9531.2008.00203.x</a></p>
+</li>
+<li><p>Hunter, D. R., Goodreau, S. M. and Handcock, M. S. &#40;2013&#41;. ergm.userterms: A template package for extending statnet. <em>Journal of Statistical Software</em>, 52&#40;2&#41;. <a href="https://doi.org/10.18637/jss.v052.i02">doi:10.18637/jss.v052.i02</a></p>
+</li>
+<li><p>Hunter, D. R., Handcock, M. S., Butts, C. T., Goodreau, S. M. and Morris, M. &#40;2008&#41;. ergm: A package to fit, simulate and diagnose exponential-family models for networks. <em>Journal of Statistical Software</em>, 24&#40;3&#41;, 1–29. <a href="https://doi.org/10.18637/jss.v024.i03">doi:10.18637/jss.v024.i03</a></p>
+</li>
+<li><p>Krivitsky, P. N. &#40;2012&#41;. Exponential-family random graph models for valued networks. <em>Electronic Journal of Statistics</em>, 6, 1100–1128. <a href="https://doi.org/10.1214/12-EJS696">doi:10.1214/12-EJS696</a></p>
+</li>
+<li><p>Krivitsky, P. N. and Butts, C. T. &#40;2017&#41;. Exponential-family random graph models for rank-order relational data. <em>Sociological Methodology</em>, 47&#40;1&#41;, 68–112. <a href="https://doi.org/10.1177/0081175017692623">doi:10.1177/0081175017692623</a></p>
+</li>
+<li><p>Krivitsky, P. N. and Handcock, M. S. &#40;2014&#41;. A separable model for dynamic networks. <em>Journal of the Royal Statistical Society, Series B</em>, 76&#40;1&#41;, 29–46. <a href="https://doi.org/10.1111/rssb.12014">doi:10.1111/rssb.12014</a></p>
+</li>
+<li><p>Krivitsky, P. N., Hunter, D. R., Morris, M. and Klumb, C. &#40;2023&#41;. ergm 4: New features for analyzing exponential-family random graph models. <em>Journal of Statistical Software</em>, 105&#40;6&#41;, 1–44. <a href="https://doi.org/10.18637/jss.v105.i06">doi:10.18637/jss.v105.i06</a></p>
+</li>
+<li><p>Krivitsky, P. N., Koehly, L. M. and Marcum, C. S. &#40;2020&#41;. Exponential-family random graph models for multi-layer networks. <em>Psychometrika</em>, 85&#40;3&#41;, 630–659. <a href="https://doi.org/10.1007/s11336-020-09720-7">doi:10.1007/s11336-020-09720-7</a></p>
+</li>
+<li><p>Krivitsky, P. N. and Morris, M. &#40;2017&#41;. Inference for social network models from egocentrically sampled data, with application to understanding persistent racial disparities in HIV prevalence in the US. <em>Annals of Applied Statistics</em>, 11&#40;1&#41;, 427–455. <a href="https://doi.org/10.1214/16-AOAS1010">doi:10.1214/16-AOAS1010</a></p>
+</li>
+<li><p>Leifeld, P., Cranmer, S. J. and Desmarais, B. A. &#40;2018&#41;. Temporal exponential random graph models with btergm: Estimation and bootstrap confidence intervals. <em>Journal of Statistical Software</em>, 83&#40;6&#41;. <a href="https://doi.org/10.18637/jss.v083.i06">doi:10.18637/jss.v083.i06</a></p>
+</li>
+<li><p>Lerner, J. and Lomi, A. &#40;2020&#41;. Reliability of relational event model estimates under sampling: How to fit a relational event model to 360 million dyadic events. <em>Network Science</em>, 8&#40;1&#41;, 97–135. <a href="https://doi.org/10.1017/nws.2019.57">doi:10.1017/nws.2019.57</a></p>
+</li>
+<li><p>Meijerink-Bosman, M., Back, M., Geukes, K., Leenders, R. and Mulder, J. &#40;2023&#41;. Discovering trends of social interaction behavior over time: An introduction to relational event modeling. <em>Behavior Research Methods</em>, 55&#40;3&#41;, 997–1023. <a href="https://doi.org/10.3758/s13428-022-01821-8">doi:10.3758/s13428-022-01821-8</a></p>
+</li>
+<li><p>Snijders, T. A. B. &#40;2001&#41;. The statistical evaluation of social network dynamics. <em>Sociological Methodology</em>, 31&#40;1&#41;, 361–395. <a href="https://doi.org/10.1111/0081-1750.00099">doi:10.1111/0081-1750.00099</a></p>
+</li>
+<li><p>Snijders, T. A. B., van de Bunt, G. G. and Steglich, C. E. G. &#40;2010&#41;. Introduction to stochastic actor-based models for network dynamics. <em>Social Networks</em>, 32&#40;1&#41;, 44–60. <a href="https://doi.org/10.1016/j.socnet.2009.02.004">doi:10.1016/j.socnet.2009.02.004</a></p>
+</li>
+</ul>
+<h2 id="the_r_packages"><a href="#the_r_packages" class="header-anchor">The R packages</a></h2>
+<p>For the R packages, use the entry that R itself prints, because it carries the version you compared against:</p>
+<pre><code class="language-r">citation&#40;&quot;ergm&quot;&#41;             # also &quot;network&quot;, &quot;sna&quot;, &quot;tergm&quot;, &quot;ergm.count&quot;, ...
+toBibtex&#40;citation&#40;&quot;RSiena&quot;&#41;&#41;</code></pre>
+<p>Each package is on CRAN &#40;<code>https://CRAN.R-project.org/package&#61;&lt;name&gt;</code>&#41;. The golden fixtures in each Julia package&#39;s <code>test/fixtures/</code> record the R package versions the Julia results were compared with.</p>
+</article></div>
+</main>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/citing/">How to cite</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
+  </div>
+</footer>
+ <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/julia-repl.min.js"></script>
+<script>hljs.highlightAll();</script>
+ 
+<script src="/assets/site.js" defer></script>
+</body>
+</html>

@@ -5,35 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
   <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
-  <meta name="theme-color" content="#123d32">
+  <meta name="theme-color" content="#edf5e2">
   <link rel="icon" href="/assets/img/logo.png">
   <link rel="canonical" href="https://statistical-network-analysis-with-julia.github.io/examples/describing-network-structure/">
   <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+   <!-- Syntax colours for highlight.js are defined in /css/style.css (ef-elea-light palette). -->
  
   <link rel="stylesheet" href="/css/style.css">
   <title>Describing Network Structure · StatNet for Julia</title>
 </head>
-<body>
+<body id="page-top">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <nav class="nav-inner" aria-label="Main navigation">
-    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
-    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
-    <div class="site-navigation" id="site-navigation">
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <span class="current-section-label" aria-hidden="true"></span>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
+  <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
       <a href="/getting-started/">Get started</a>
       <a href="/packages/">Packages</a>
       <a href="/examples/">Examples</a>
       <a href="/models/">Methods</a>
       <a href="/migration/">Coming from R</a>
       <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
-    </div>
+
   </nav>
 </header>
+<aside class="scroll-navigation" hidden aria-label="Site sections">
+  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <nav aria-label="Section navigation">
+      <a href="/getting-started/">Get started</a>
+      <a href="/packages/">Packages</a>
+      <a href="/examples/">Examples</a>
+      <a href="/models/">Methods</a>
+      <a href="/migration/">Coming from R</a>
+      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
+
+  </nav>
+  <a class="back-to-top" href="#page-top">Back to top <span aria-hidden="true">↑</span></a>
+</aside>
 <main class="page-content" id="main-content" tabindex="-1">
+<div class="article-layout wrap"><aside class="article-nav" aria-label="On this page"><strong>On this page</strong><div class="franklin-toc"><ol><li><a href="#centralization_and_comparing_two_relations">Centralization and comparing two relations</a></li></ol></div></aside><article class="article">
 <h1 id="describing_network_structure"><a href="#describing_network_structure" class="header-anchor">Describing Network Structure</a></h1>
 <p>Compute density, transitivity, the triad census, and centrality scores with <a href="https://github.com/statistical-network-analysis-with-Julia/SNA.jl">SNA.jl</a>, using a classic dataset: Padgett&#39;s network of marriage ties among 16 Renaissance Florentine families. Every measure below matches R <code>sna</code> on the same data &#40;the package&#39;s test suite pins these values&#41;.</p>
-<pre><code class="language-julia">using Networks, SNA
+<pre><code class="language-julia">using NetworkCore, SNA
 
 net &#61; load_dataset&#40;:florentine_marriage&#41;
 families &#61; vertex_attribute_vector&#40;net, :name, String&#41;
@@ -44,15 +58,15 @@ println&#40;&quot;transitivity &#61; &quot;, gtrans&#40;net&#41;&#41;
 println&#40;&quot;triad census &#61; &quot;, triad_census&#40;net&#41;&#41;
 
 # Vertex-level centrality
-deg &#61; degree_centrality&#40;net&#41;
-bet &#61; betweenness_centrality&#40;net&#41;
+deg &#61; degreecent&#40;net&#41;
+bet &#61; betweenness&#40;net&#41;
 for v in sortperm&#40;bet; rev&#61;true&#41;&#91;1:3&#93;
     println&#40;families&#91;v&#93;, &quot;: degree &#61; &quot;, deg&#91;v&#93;, &quot;, betweenness &#61; &quot;, bet&#91;v&#93;&#41;
 end</code></pre>
 <p><strong>Interpretation.</strong> Only 16.7&#37; of possible marriage ties exist, and just 19&#37; of open two-paths close into triangles — marriage alliances spread across families rather than clustering. The centrality ranking recovers the famous result: the <strong>Medici</strong> dominate both degree &#40;6 marriage ties&#41; and betweenness &#40;47.5, twice the runner-up Guadagni&#41;. They sit <em>between</em> the other families, brokering alliances that never form directly — a structural pattern discussed by Padgett &amp; Ansell in their account of the rise of the Medici. These descriptive statistics alone do not establish a causal explanation.</p>
 <h2 id="centralization_and_comparing_two_relations"><a href="#centralization_and_comparing_two_relations" class="header-anchor">Centralization and comparing two relations</a></h2>
 <p>How concentrated is the network on its most central family, and is the marriage relation associated with the <em>business</em> relation among the same families? Freeman centralization and QAP inference &#40;both new in the 0.2 series, following R <code>sna</code>&#41; answer these:</p>
-<pre><code class="language-julia">using Statistics, Random
+<pre><code class="language-julia">using Random
 
 flo &#61; load_dataset&#40;:florentine_marriage&#41;   # same network, bundled
 biz &#61; load_dataset&#40;:florentine_business&#41;   # business ties, same families
@@ -62,24 +76,25 @@ centralization&#40;flo, :degree&#41;        # 0.2667
 centralization&#40;flo, :betweenness&#41;   # 0.3835
 
 # QAP test: is the graph correlation between the two relations larger
-# than expected under random relabelling of the families?
-gcor&#40;a, b&#41; &#61; cor&#40;vec&#40;a&#41;, vec&#40;b&#41;&#41;
-qt &#61; qaptest&#40;gcor, flo, biz; reps&#61;1000, rng&#61;Xoshiro&#40;1&#41;&#41;
+# than expected under random relabelling of the families? &#96;gcor&#96; is
+# R sna&#39;s graph correlation &#40;the diagonal is excluded, as in R&#41;.
+qt &#61; qaptest&#40;gcor, flo, biz; n_sim&#61;1000, rng&#61;Xoshiro&#40;1&#41;&#41;
 
 # A separate model: business ties versus absolute family wealth difference
 wealth &#61; vertex_attribute_vector&#40;flo, :wealth, Float64&#41;
 wealth_difference &#61; abs.&#40;wealth .- wealth&#39;&#41;
-fit &#61; netlogit&#40;biz, wealth_difference; reps&#61;1000, rng&#61;Xoshiro&#40;2&#41;&#41;
+fit &#61; netlogit&#40;biz, wealth_difference; n_sim&#61;1000, rng&#61;Xoshiro&#40;2&#41;&#41;
 println&#40;fit&#41;</code></pre>
 <p>The QAP correlation test evaluates whether marriage and business relations are associated. Inspect <code>qt.pgreq</code> for its upper-tail permutation proportion. Zero exceedances in 1000 draws means resolution below 0.001, not a zero population probability; the display reports that limit.</p>
-<p>The separate logistic model asks whether families with more similar wealth are more likely to have a business tie. Its slope is approximately −0.0032 per thousand lira of absolute wealth difference, with QAP p ≈ 0.806 for this seeded run. These data provide little evidence for that particular wealth similarity association. It is a different question from the correlation between the two observed relations.</p>
+<p>The separate logistic model asks whether families with more similar wealth are more likely to have a business tie. Its slope is approximately −0.0032 per thousand lira of absolute wealth difference, with QAP p ≈ 0.80 for this seeded run. These data provide little evidence for that particular wealth similarity association. It is a different question from the correlation between the two observed relations.</p>
 <p>QAP simultaneously relabels actors to preserve each matrix&#39;s structure. Inference depends on the permutation null and exchangeability of labels; it does not adjust for arbitrary unobserved confounding or establish causation. Measures are binary by default, including networks that carry edge weights. Directed components use strong connectivity by default; directed clique symmetrization requires mutual arcs. These are distinct conventions, matching R <code>sna</code>; request weak components or either-direction symmetrization explicitly. Masked dyads are rejected unless <code>missing&#61;:face</code> is supplied.</p>
 <p><strong>Next steps:</strong> model patterns of tie formation with an <a href="/examples/modelling-cross-sectional-data/">ERGM</a>, or read about the model families on the <a href="/models/">theory page</a>.</p>
+</article></div>
 </main>
 <footer class="site-footer">
   <div class="footer-inner">
     <div><a class="footer-brand" href="/">Statistical Network Analysis with Julia</a><p>Open tools for studying connected social worlds.</p></div>
-    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
+    <nav aria-label="Footer navigation"><a href="/capabilities/">Capabilities &amp; limitations</a><a href="/citing/">How to cite</a><a href="/post/">Project news</a><a href="https://github.com/statistical-network-analysis-with-Julia">Source code</a></nav>
     <p class="footer-note">MIT licensed · Built with <a href="https://franklinjl.org/">Franklin.jl</a> · Julia 1.12+</p>
   </div>
 </footer>
