@@ -10,7 +10,7 @@ Renaissance Florentine families. Every measure below matches R `sna` on
 the same data (the package's test suite pins these values).
 
 ```julia
-using Networks, SNA
+using NetworkCore, SNA
 
 net = load_dataset(:florentine_marriage)
 families = vertex_attribute_vector(net, :name, String)
@@ -21,8 +21,8 @@ println("transitivity = ", gtrans(net))
 println("triad census = ", triad_census(net))
 
 # Vertex-level centrality
-deg = degree_centrality(net)
-bet = betweenness_centrality(net)
+deg = degreecent(net)
+bet = betweenness(net)
 for v in sortperm(bet; rev=true)[1:3]
     println(families[v], ": degree = ", deg[v], ", betweenness = ", bet[v])
 end
@@ -45,7 +45,7 @@ families? Freeman centralization and QAP inference (both new in the 0.2
 series, following R `sna`) answer these:
 
 ```julia
-using Statistics, Random
+using Random
 
 flo = load_dataset(:florentine_marriage)   # same network, bundled
 biz = load_dataset(:florentine_business)   # business ties, same families
@@ -55,14 +55,14 @@ centralization(flo, :degree)        # 0.2667
 centralization(flo, :betweenness)   # 0.3835
 
 # QAP test: is the graph correlation between the two relations larger
-# than expected under random relabelling of the families?
-gcor(a, b) = cor(vec(a), vec(b))
-qt = qaptest(gcor, flo, biz; reps=1000, rng=Xoshiro(1))
+# than expected under random relabelling of the families? `gcor` is
+# R sna's graph correlation (the diagonal is excluded, as in R).
+qt = qaptest(gcor, flo, biz; n_sim=1000, rng=Xoshiro(1))
 
 # A separate model: business ties versus absolute family wealth difference
 wealth = vertex_attribute_vector(flo, :wealth, Float64)
 wealth_difference = abs.(wealth .- wealth')
-fit = netlogit(biz, wealth_difference; reps=1000, rng=Xoshiro(2))
+fit = netlogit(biz, wealth_difference; n_sim=1000, rng=Xoshiro(2))
 println(fit)
 ```
 
@@ -73,7 +73,7 @@ population probability; the display reports that limit.
 
 The separate logistic model asks whether families with more similar wealth
 are more likely to have a business tie. Its slope is approximately −0.0032
-per thousand lira of absolute wealth difference, with QAP p ≈ 0.806 for this
+per thousand lira of absolute wealth difference, with QAP p ≈ 0.80 for this
 seeded run. These data provide little evidence for that particular wealth
 similarity association. It is a different question from the correlation
 between the two observed relations.

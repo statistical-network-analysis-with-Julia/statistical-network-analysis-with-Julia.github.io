@@ -57,25 +57,25 @@
     <figcaption class="figure-caption"><span>Describe · fit · simulate · diagnose</span><span>Illustrative network</span></figcaption>
   </figure>
 </section>
-<div class="fact-strip"><span><strong>15</strong> interoperable packages</span><span><strong>Julia 1.12+</strong></span><span><strong>MIT</strong> licensed</span><span>Development documentation · v0.2.0 unreleased</span></div>
+<div class="fact-strip"><span><strong>16</strong> interoperable packages</span><span><strong>Julia 1.12+</strong></span><span><strong>MIT</strong> licensed</span><span>Development documentation · v0.2.0 unreleased</span></div>
 <section class="home-section" aria-labelledby="workflow-title">
   <div class="section-heading"><div><span class="kicker">Start with your data</span><h2 id="workflow-title">What are you studying?</h2></div><a href="/models/">Compare model families →</a></div>
   <div class="workflow-grid">
-    <a class="workflow-card" href="/examples/describing-network-structure/"><span class="card-number">01 / NETWORK SNAPSHOTS</span><h3>Relationships and structure</h3><p>Explore density, centrality and cohesion. Then model observed ties with an ERGM.</p><span class="card-action">Networks · SNA · ERGM <span aria-hidden="true">→</span></span></a>
+    <a class="workflow-card" href="/examples/describing-network-structure/"><span class="card-number">01 / NETWORK SNAPSHOTS</span><h3>Relationships and structure</h3><p>Explore density, centrality and cohesion. Then model observed ties with an ERGM.</p><span class="card-action">NetworkCore · SNA · ERGM <span aria-hidden="true">→</span></span></a>
     <a class="workflow-card" href="/examples/modelling-network-change/"><span class="card-number">02 / NETWORK PANELS</span><h3>Networks observed over time</h3><p>Study tie formation and persistence, or model actors' opportunities to change their ties.</p><span class="card-action">TERGM · Siena <span aria-hidden="true">→</span></span></a>
     <a class="workflow-card" href="/examples/modelling-interaction-events/"><span class="card-number">03 / INTERACTION SEQUENCES</span><h3>Who interacts with whom, next?</h3><p>Model ordered interactions or event timing, with explicit risk sets and observation windows.</p><span class="card-action">REM · Revel <span aria-hidden="true">→</span></span></a>
   </div>
 </section>
 <section class="home-section analysis-feature" aria-labelledby="first-analysis-title">
-  <div><span class="kicker">A first look at real data</span><h2 id="first-analysis-title">Sixteen families.<br>A network of alliances.</h2><p>Load the bundled Florentine marriage network and calculate its density and centrality. Follow the example to interpret the measures and compare relationships.</p><a href="/examples/describing-network-structure/">Walk through the analysis →</a></div><div>
+  <div><span class="kicker">A first look at real data</span><h2 id="first-analysis-title">Sixteen Florentine families.<br>A network of alliances.</h2><p>Load the bundled Florentine marriage network and calculate its density and centrality. Follow the example to interpret the measures and compare relationships.</p><a href="/examples/describing-network-structure/">Walk through the analysis →</a></div><div>
 ~~~
 
 ```julia
-using Networks, SNA
+using NetworkCore, SNA
 
 net = load_dataset(:florentine_marriage)
 gden(net)
-degree_centrality(net)
+degreecent(net)
 ```
 
 ~~~
@@ -83,7 +83,7 @@ degree_centrality(net)
 </section>
 <section class="home-section project-note" aria-label="About this ecosystem">
   <div><h3>Familiar methods, explicit scope</h3><p>The packages draw on R's statnet ecosystem and RSiena. Coverage varies by package and estimator. Read the capability notes for supported data, uncertainty estimates and remaining limitations.</p><a href="/capabilities/">Check capabilities and limitations →</a></div>
-  <div><h3>A shared foundation for your workflow</h3><p>Networks.jl connects data structures, missing-data policies and result conventions across the ecosystem. Explore the package documentation for the next step in your analysis.</p><a href="/packages/">Browse all 15 packages →</a></div>
+  <div><h3>A shared foundation for your workflow</h3><p>NetworkCore.jl connects data structures, missing-data policies and result conventions across the ecosystem. Explore the package documentation for the next step in your analysis.</p><a href="/packages/">Browse the package directory →</a></div>
 </section>
 </div>
 ~~~

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-  <title id="title">NetworkDynamic.jl</title>
+  <title id="title">DynamicNetworks.jl</title>
   <desc id="desc">Three activity spells with closed onsets and open termini: networks active over time.</desc>
   <path d="M32 218H226M210 204 226 218 210 232" fill="none" stroke="#4063D8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M42 52H165" fill="none" stroke="#389826" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>

@@ -10,7 +10,7 @@ endpoints. The bundled time column is an **event number**, not elapsed clock
 time: use an ordinal model, not a waiting-time likelihood.
 
 ```julia
-using Networks, REM, Revel, Random
+using NetworkCore, REM, Revel, Random
 
 calls = load_dataset(:wtc_police_calls)
 events = [Event(row[2], row[3], Float64(row[1])) for row in eachrow(calls.events)]
@@ -63,5 +63,5 @@ rejects `se=:bootstrap`.
 These are observational radio communications during one emergency. Role
 coefficients need not be causal, and repeated events may reflect omitted
 coordination processes. Inspect fit diagnostics and compare substantive
-specifications. The [data provenance](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/tree/main/data)
+specifications. The [data provenance](https://github.com/statistical-network-analysis-with-Julia/NetworkCore.jl/tree/main/data)
 and [migration guide](/migration/) document the source and effect conventions.

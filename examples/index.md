@@ -12,7 +12,7 @@ first. Read [the method comparison](/models/) when choosing a model, or use
 
 ~~~
 <div class="example-grid">
-  <a class="example-card" href="/examples/describing-network-structure/"><span class="kicker">Networks · SNA / Florentine families</span><h2>Describe network structure</h2><p>Measure density and centrality, compare marriage and business ties, and interpret a QAP association test.</p></a>
+  <a class="example-card" href="/examples/describing-network-structure/"><span class="kicker">NetworkCore · SNA / Florentine families</span><h2>Describe network structure</h2><p>Measure density and centrality, compare marriage and business ties, and interpret a QAP association test.</p></a>
   <a class="example-card" href="/examples/modelling-cross-sectional-data/"><span class="kicker">ERGM / Florentine marriage ties</span><h2>Model an observed network</h2><p>Choose binary-network statistics, fit an ERGM, and distinguish pseudolikelihood from MCMC likelihood inference.</p></a>
   <a class="example-card" href="/examples/modelling-interaction-events/"><span class="kicker">REM · Revel / WTC radio events</span><h2>Model interaction sequences</h2><p>Compare risk-set approaches using ordered radio interactions. Keep event order distinct from elapsed time.</p></a>
   <a class="example-card" href="/examples/modelling-network-change/"><span class="kicker">TERGM · Siena / s50 friendship panels</span><h2>Study networks over time</h2><p>Fit formation and persistence, inspect estimation diagnostics, then continue to the actor-oriented workflow.</p></a>

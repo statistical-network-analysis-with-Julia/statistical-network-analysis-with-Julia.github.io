@@ -4,6 +4,8 @@
 @def rss_title = "Feature-surface completion, naming harmonization, and a polish sprint"
 @def rss_pubdate = Date(2026, 7, 12)
 
+*Editor's note (October 2026): Networks.jl has since been renamed NetworkCore.jl.*
+
 The polish sprint that followed the
 [correctness pass](/post/2026-07-07-ecosystem-correctness-pass/) has
 landed. Highlights:

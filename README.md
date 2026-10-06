@@ -1,7 +1,8 @@
 # Statistical Network Analysis with Julia — website
 
-The umbrella website connects 15 Julia packages, their documentation and worked
-network analyses. Built with Franklin.jl; individual package sites use Documenter.
+The umbrella website connects the ecosystem's 16 Julia packages, their documentation
+and worked network analyses. The package directory lists 15: Relevent.jl, the
+event-model engine underneath Revel.jl, is reached through Revel.jl. Built with Franklin.jl; individual package sites use Documenter.
 
 **Published site:** <https://statistical-network-analysis-with-julia.github.io/>
 
@@ -16,7 +17,7 @@ python3 tools/preview_docs.py --build
 ```
 
 Open <http://localhost:8001/>. The package directory links to the local package
-sites, for example <http://localhost:8001/Networks.jl/dev/>. Their ecosystem footers
+sites, for example <http://localhost:8001/NetworkCore.jl/dev/>. Their ecosystem footers
 link back to the same umbrella preview. Both `/dev/` and `/stable/` show the
 current local build; they are not separate release versions.
 
@@ -43,13 +44,22 @@ port 8001 to browse package links while Franklin updates `__site/`. Rebuild
 package documentation after editing package pages:
 
 ```bash
-cd ../Networks.jl
+cd ../NetworkCore.jl
 DOCS_PRETTY_URLS=true julia --project=docs docs/make.jl
 ```
 
 The homepage lives in `index.md`; the package directory in `packages/index.md`;
 installation guidance in `getting-started/index.md`. Shared umbrella styles and
 behavior live in `_css/style.css`, `_assets/site.js` and `_layout/`.
+
+The layout follows the [Science as Data website](https://github.com/science-as-data/website)
+(MIT). Headings and code use JuliaMono, served from `_assets/fonts/` under the
+SIL Open Font License (`_assets/fonts/JuliaMono-LICENSE.txt`); body text uses
+system sans-serif fonts. Colours come from the ef-elea-light Emacs theme by
+Protesilaos Stavrou, defined once as the custom properties at the top of
+`_css/style.css`, including the highlight.js syntax colours. There is no dark mode.
+Pages other than the homepage, the package directory and the methods page get an
+"On this page" column built from their `##` headings.
 
 ## Maintain the package icons
 

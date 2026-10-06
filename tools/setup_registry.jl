@@ -20,14 +20,17 @@
 # package, not the working tree.  Commit (and ideally tag) every package
 # before running with --register; the dry run flags dirty trees for you.
 #
-# The monorepo root (the directory that contains Networks.jl, ERGM.jl, ...,
+# The monorepo root (the directory that contains NetworkCore.jl, ERGM.jl, ...,
 # and this site repo side by side) is taken from ENV["SNWJ_ROOT"] if set,
 # otherwise it defaults to the parent directory of this repo.
 #
-# Registration order (dependents strictly after their dependencies):
-#   Networks → NetworkDynamic / SNA / ERGM / Siena → REM → Relevent → Revel,
-#   NDTV / TSNA, and the ERGM satellite packages (ERGMCount, ERGMEgo,
-#   ERGMMulti, ERGMRank, ERGMUserterms, TERGM).
+# Registration order (dependents strictly after their dependencies) is
+# derived from the packages' Project.toml files, never kept by hand: the
+# packages are those of tools/workspace/Project.toml, and a package follows
+# every sibling its `[sources]` table names (hard, weak and test-only
+# dependencies alike, since a package's tests must resolve once registered).
+# Today that puts NetworkCore first, then DynamicNetworks, SNA, ERGM and Siena,
+# REM, Relevent and Revel, NDTV and TSNA, and the ERGM satellite packages.
 #
 # In --register mode the script installs LocalRegistry into a temporary
 # environment, creates the registry if it does not exist yet, and calls
@@ -43,25 +46,46 @@ using TOML
 const SITE_DIR = realpath(joinpath(@__DIR__, ".."))
 const ROOT = get(ENV, "SNWJ_ROOT", dirname(SITE_DIR))
 
-# Topological order: every package appears after all of its local deps.
-const REGISTRATION_ORDER = [
-    "Networks.jl",         # foundation: no local deps
-    "NetworkDynamic.jl",  # ← Networks
-    "SNA.jl",             # ← Networks
-    "ERGM.jl",            # ← Networks
-    "Siena.jl",           # ← Networks (hard dependency)
-    "REM.jl",             # ← Networks (+ NetworkDynamic weakdep)
-    "Relevent.jl",        # ← Networks, REM
-    "Revel.jl",           # ← Networks, REM, Relevent
-    "NDTV.jl",            # ← Networks, NetworkDynamic
-    "TSNA.jl",            # ← Networks, NetworkDynamic, SNA
-    "TERGM.jl",           # ← Networks, ERGM
-    "ERGMCount.jl",       # ← Networks, ERGM
-    "ERGMEgo.jl",         # ← Networks, ERGM
-    "ERGMMulti.jl",       # ← Networks, ERGM
-    "ERGMRank.jl",        # ← Networks, ERGM
-    "ERGMUserterms.jl",   # ← Networks, ERGM
-]
+"""The ecosystem's packages: those the shared workspace sources."""
+workspace_packages() =
+    sort!(collect(keys(TOML.parsefile(joinpath(@__DIR__, "workspace", "Project.toml"))["sources"])))
+
+"""
+    registration_order(root, packages=workspace_packages()) -> Vector{String}
+
+`"<Name>.jl"` for every package, each after every sibling its `[sources]`
+table names (a topological order of the `Project.toml` graph; ties broken
+alphabetically, so the order is reproducible). A missing checkout, a sibling
+outside `packages` or a dependency cycle is an error.
+"""
+function registration_order(root, packages=workspace_packages())
+    wanted = Set(packages)
+    deps = Dict{String,Vector{String}}()
+    for name in packages
+        file = joinpath(root, "$name.jl", "Project.toml")
+        isfile(file) || error("registration_order: no checkout of $name at $(dirname(file))")
+        project = TOML.parsefile(file)
+        get(project, "name", name) == name || error("registration_order: $file is not $name")
+        named = [dep for dep in keys(get(project, "sources", Dict{String,Any}())) if dep != name]
+        outside = filter(dep -> !(dep in wanted), named)
+        isempty(outside) ||
+            error("registration_order: $name sources $(join(sort(outside), ", ")), which is not an ecosystem package")
+        deps[name] = sort(named)
+    end
+    order = String[]
+    visiting = Set{String}()
+    function visit(name)
+        name in order && return
+        name in visiting && error("registration_order: local dependency cycle at $name")
+        push!(visiting, name)
+        foreach(visit, deps[name])
+        delete!(visiting, name)
+        push!(order, name)
+    end
+    # Visit packages with fewer local dependencies first, so the foundation leads.
+    foreach(visit, sort(collect(packages); by=n -> (length(deps[n]), n)))
+    return [name * ".jl" for name in order]
+end
 
 # ---------------------------------------------------------------------------
 # CLI parsing
@@ -179,7 +203,7 @@ function main(args)
     ready = true
     infos = PkgInfo[]
     seen = Set{String}()
-    for (k, repo) in enumerate(REGISTRATION_ORDER)
+    for (k, repo) in enumerate(registration_order(ROOT))
         dir = joinpath(ROOT, repo)
         if !isdir(dir)
             println("$(lpad(k, 2)). $repo  —  MISSING checkout at $dir")
@@ -252,4 +276,4 @@ function main(args)
     return 0
 end
 
-exit(main(ARGS))
+abspath(PROGRAM_FILE) == abspath(@__FILE__) && exit(main(ARGS))

@@ -6,7 +6,7 @@ unreleased development. From an empty directory:
 ```bash
 git clone https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io
 julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$PWD" --clone
-julia --project=.snippet-env -e 'using Networks, SNA, ERGM, Siena, REM, Revel'
+julia --project=.snippet-env -e 'using NetworkCore, SNA, ERGM, Siena, REM, Revel'
 ```
 
 The preparation script reads the package list from the adjacent `Project.toml`,

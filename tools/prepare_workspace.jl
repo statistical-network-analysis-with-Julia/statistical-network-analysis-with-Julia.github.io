@@ -4,9 +4,13 @@ using Pkg
 using TOML
 
 function main(args)
-    length(args) in (1, 2) || error("Usage: julia tools/prepare_workspace.jl ROOT [--clone]")
-    clone = length(args) == 2 && args[2] == "--clone"
-    length(args) == 1 || clone || error("Unknown option: $(args[2])")
+    usage = "Usage: julia tools/prepare_workspace.jl ROOT [--clone | --clone-only]"
+    length(args) in (1, 2) || error(usage)
+    option = length(args) == 2 ? args[2] : ""
+    option in ("", "--clone", "--clone-only") || error("Unknown option: $option\n$usage")
+    # --clone-only fetches the checkouts and stops before building .snippet-env,
+    # for checks that read the repositories rather than load the packages.
+    clone = option in ("--clone", "--clone-only")
     root = abspath(args[1])
     mkpath(root)
     template = TOML.parsefile(joinpath(@__DIR__, "workspace", "Project.toml"))
@@ -32,11 +36,19 @@ function main(args)
             haskey(paths, dep) || push!(queue, dep)
         end
     end
+    if option == "--clone-only"
+        println("Checkouts ready: ", join(sort!(collect(keys(paths))), ", "))
+        return
+    end
     Pkg.activate(joinpath(root, ".snippet-env"))
     # Resolve all unregistered siblings together; alphabetical one-by-one develop fails
     # when a package refers to a sibling not yet known to the resolver.
     Pkg.develop([Pkg.PackageSpec(path=paths[name]) for name in sort!(collect(keys(paths)))])
     Pkg.add(["CSV", "DataFrames", "Distributions", "Graphs", "StatsAPI", "StatsBase"])
+    # Re-read every developed package's Project.toml: a checkout that gained a
+    # dependency since the last run would otherwise fail to precompile against
+    # the old Manifest.
+    Pkg.resolve()
     Pkg.instantiate()
     println("Workspace ready: julia --project=$(joinpath(root, ".snippet-env"))")
 end

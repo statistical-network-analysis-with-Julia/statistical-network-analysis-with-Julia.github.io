@@ -6,12 +6,14 @@
 Set up the Julia workspace, load a bundled dataset, and choose the next step
 for your research question. No data download is needed for the first example.
 
-## 1. Set up the workspace
+## Step 1: set up the workspace
 
 Use **Julia 1.12 or newer**, Git, and a terminal. The current 0.2.0 packages
 are under development and are **not yet in Julia's General registry**. The
-shared setup installs sibling source checkouts and the dependencies used by
-these examples.
+shared setup below is the one recipe every package's documentation assumes. It
+clones all the packages side by side, develops them together in one
+environment, and adds the packages the examples also use: CSV, DataFrames,
+Distributions, Graphs, StatsAPI and StatsBase.
 
 Run these commands from a directory where you want to keep the project:
 
@@ -33,17 +35,17 @@ that have not been pushed are available only in the workspace containing them.
 See the [workspace recipe](https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/tree/main/tools/workspace)
 for environment details.
 
-## 2. Describe a real network
+## Step 2: describe a real network
 
 Paste this into Julia. The Florentine marriage dataset records ties among
 16 Renaissance families.
 
 ```julia
-using Networks, SNA
+using NetworkCore, SNA
 
 net = load_dataset(:florentine_marriage)
 families = vertex_attribute_vector(net, :name, String)
-centrality = degree_centrality(net)
+centrality = degreecent(net)
 most_connected = argmax(centrality)
 
 println("Density: ", gden(net))
@@ -58,11 +60,11 @@ network; they do not establish why the ties formed.
 Continue with [the full structural analysis](/examples/describing-network-structure/)
 to explore centrality, compare marriage and business ties, and use QAP inference.
 
-## 3. Choose your next step
+## Step 3: choose your next step
 
 | Your question or data | Start here |
 |---|---|
-| How do I create networks or import attributes? | [Networks.jl](/Networks.jl/dev/getting_started/) |
+| How do I create networks or import attributes? | [NetworkCore.jl](/NetworkCore.jl/dev/getting_started/) |
 | What patterns characterize an observed network? | [SNA.jl](/SNA.jl/dev/getting_started/) |
 | Which configurations are associated with binary ties? | [The ERGM example](/examples/modelling-cross-sectional-data/) |
 | How do ties change across observed waves? | [The network-change example](/examples/modelling-network-change/) |
@@ -73,7 +75,7 @@ to explore centrality, compare marriage and business ties, and use QAP inference
 Coming from statnet or RSiena? The [R migration guide](/migration/) maps familiar
 functions to supported Julia workflows and lists important differences.
 
-## 4. Make the analysis reproducible
+## Step 4: make the analysis reproducible
 
 Keep your analysis scripts, the environment's `Project.toml` and `Manifest.toml`,
 and the revision of each package checkout. Source files in developed packages
@@ -84,14 +86,16 @@ Pass an explicit RNG to stochastic routines, for example `rng=Xoshiro(42)` after
 `using Random`. Before interpreting coefficients, inspect convergence, estimator
 metadata and the package's missing-data and observation-window policies.
 [Capabilities and limitations](/capabilities/) distinguishes implemented methods,
-uncertainty conventions and validated R comparisons.
+uncertainty conventions and validated R comparisons. When you publish, cite the
+Julia packages, the R packages they port and the method papers; see
+[How to cite](/citing/).
 
 ## Troubleshooting
 
 - **Package not found:** start Julia from the workspace directory with
   `julia --project=.snippet-env`; a different active environment will not see
   these developed packages.
-- **A sibling path does not exist:** keep names such as `Networks.jl` intact and
+- **A sibling path does not exist:** keep names such as `NetworkCore.jl` intact and
   rerun the preparation command with `--clone` to fetch missing repositories.
 - **A fitting call refuses the data or fails to converge:** read the reported
   diagnostic and the estimator's guide. More iterations cannot resolve a

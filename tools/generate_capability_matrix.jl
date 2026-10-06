@@ -10,7 +10,7 @@
 # is read out of the code itself:
 #
 #   estimand / objective / is_exact / se_method / missing_method / tie_method
-#       -- from the shared result-metadata protocol (Networks.jl `src/results.jl`),
+#       -- from the shared result-metadata protocol (NetworkCore.jl `src/results.jl`),
 #          by actually FITTING a small model of each family and asking the result
 #          what it did. A capability table that is written by hand drifts away
 #          from the code within one release; one that is produced by running the
@@ -18,13 +18,13 @@
 #
 #   tested against R / tested scale
 #       -- from the golden fixtures on disk (`*/test/fixtures/*.toml`), read
-#          through `Networks.load_golden`, so the reference package, its version
+#          through `NetworkCore.load_golden`, so the reference package, its version
 #          and the size of the validated dataset come from the fixture's own
 #          [provenance] block rather than from somebody's memory. No fixture,
 #          no claim.
 #
 #   missing-data support
-#       -- from the `Networks.supports_missing` trait, queried on the actual
+#       -- from the `NetworkCore.supports_missing` trait, queried on the actual
 #          fitting functions. The trait defaults to `false`, so a routine that
 #          has never thought about missingness is reported as not handling it.
 #
@@ -32,6 +32,9 @@
 # point of the protocol. MPLE of a dyad-independent formula IS maximum
 # likelihood; of a dyad-dependent one it is not. So the ERGM-family probes below
 # come in pairs, dyad-independent and dyad-dependent, and both rows are shown.
+# The model packages follow R's default (`method=:auto`): the exact MPLE (CMPLE
+# for TERGM) when no term is dyad-dependent, MCMLE (CMLE) otherwise. A probe of
+# the pseudo-likelihood on a dyad-dependent formula therefore names its method.
 #
 # Usage (from the monorepo root, with the root workspace project active):
 #
@@ -44,7 +47,7 @@
 #   # or send it somewhere else
 #   julia --project=. .../tools/generate_capability_matrix.jl --out=/tmp/cap.md
 
-using Networks
+using NetworkCore
 using SNA, ERGM, ERGMCount, ERGMEgo, ERGMMulti, ERGMRank
 using REM, Revel, Siena, TERGM, TSNA
 using Random
@@ -57,8 +60,6 @@ const ROOT = normpath(get(ENV, "SNWJ_ROOT", joinpath(SITE, "..")))
 const PAGE = joinpath(SITE, "capabilities.md")
 const ORG = "statistical-network-analysis-with-Julia"
 
-issue(pkg, n) = "[$pkg#$n](https://github.com/$ORG/$pkg.jl/issues/$n)"
-site_issue(n) = "[site#$n](https://github.com/$ORG/$ORG.github.io/issues/$n)"
 
 # ---------------------------------------------------------------------------
 # The canonical small fits, one per model family (two where the dyad-dependence
@@ -87,8 +88,7 @@ function ergm_net(n=10)
     return net
 end
 small_ergm(; dependent::Bool) =
-    mple(ERGMModel(ERGMFormula(dependent ? [Edges(), GWESP(0.5)] : [Edges()]),
-                   ergm_net()))
+    ergm(ergm_net(), dependent ? [Edges(), GWESP(0.5)] : [Edges()]; method=:mple)
 
 function tergm_panels()
     t0 = network(5)
@@ -101,6 +101,12 @@ function tergm_panels()
     end
     return [t0, t1]
 end
+
+# A dyad-dependent STERGM needs a panel on which no statistic sits at its
+# boundary (the CMLE refuses one, since no finite MLE exists): the first two
+# waves of the bundled s50 friendship panels, with reciprocity in formation.
+tergm_s50() = load_dataset(:s50).friendship[1:2]
+const TERGM_DEPENDENT = ([Edges(), Mutual()], [Edges()])
 
 function count_net(n=6; seed=11)
     rng = Xoshiro(seed)
@@ -137,8 +143,7 @@ function ego_fit()
         rand(rng) < 0.15 && add_edge!(net, i, j)
     end
     ed = simulate_ego_sample(net, n; rng=rng)
-    return fit_ergm_ego(ed, [EgoEdges()]; ppopsize=n, n_samples=100,
-                        burnin=200, interval=5, rng=rng)
+    return fit_ergm_ego(ed, [EgoEdges()]; ppopsize=n, rng=rng)
 end
 
 # --- ERGMRank: the same swap-MPLE under its two standard-error options, which
@@ -187,11 +192,13 @@ function siena_fit()
     for i in 1:5
         after[i, mod1(i + 2, n)] = 1
     end
+    after[n, 1] = 0   # one tie lost too: an up-only period would restrict the simulation
     data = siena_data()
     add_nodeset!(data, NodeSet(n))
     add_dependent!(data, DependentNetwork(:net, [before, after]))
-    effects = get_effects(data)
-    include_effects!(effects, :net, [:outdegree])
+    effects = get_effects(data)   # RSiena's defaults: rate, outdegree, recip
+    # The data have no reciprocated tie, so `recip` would not be identified.
+    include_effects!(effects, :net, [:recip]; include=false)
     return fit_siena(data, effects; rng=MersenneTwister(1),
         algorithm=SienaAlgorithm(verbose=false, phase3_iterations=2000))
 end
@@ -208,19 +215,21 @@ end
 const PROBES = [
     ("SNA", "`netlm`, dyadic OLS, classical inference", () -> netlm(sna_net(), [SNA_X]; nullhyp=:classical)),
     ("SNA", "`netlogit`, dyadic logit, classical inference", () -> netlogit(sna_net(), [SNA_X]; nullhyp=:classical)),
-    ("ERGM", "`mple`, **dyad-independent** formula (`edges`)", () -> small_ergm(dependent=false)),
-    ("ERGM", "`mple`, **dyad-dependent** formula (`edges + gwesp`)", () -> small_ergm(dependent=true)),
-    ("ERGM", "`mcmle`, dyad-dependent formula", () -> mcmle(ERGMModel(ERGMFormula([Edges(), GWESP(0.5)]), ergm_net());
+    ("ERGM", "`ergm`, default `method=:auto` (MPLE), **dyad-independent** formula (`edges`)", () -> ergm(ergm_net(), [Edges()])),
+    ("ERGM", "`ergm(...; method=:mple)`, **dyad-dependent** formula (`edges + gwesp`)", () -> small_ergm(dependent=true)),
+    ("ERGM", "`ergm`, default `method=:auto` (MCMLE), dyad-dependent formula", () -> ergm(ergm_net(), [Edges(), GWESP(0.5)];
                                                             n_samples=400, maxiter=40, rng=Xoshiro(10))),
-    ("TERGM", "`stergm`/CMPLE, **dyad-independent** formula", () -> stergm(tergm_panels(), [Edges()], [Edges()])),
-    ("TERGM", "`stergm`/CMPLE, **dyad-dependent** formula", () -> stergm(tergm_panels(), [Edges(), GWESP(0.5)], [Edges()])),
-    ("ERGMCount", "`fit_ergm_count`, **dyad-independent** (`sum + nonzero`)", () -> fit_ergm_count(count_net(), [SumTerm(), NonzeroTerm()])),
-    ("ERGMCount", "`fit_ergm_count`, **dyad-dependent** (`sum + mutual`)", () -> fit_ergm_count(count_net(), [SumTerm(), CountMutualTerm()])),
-    ("ERGMMulti", "`ergm_multi`, **dyad-independent** (per-layer edges)", () -> ergm_multi(multi_net(), [LayerEdges(1), LayerEdges(2)])),
-    ("ERGMMulti", "`ergm_multi`, **dyad-dependent** (interlayer dependence)", () -> ergm_multi(multi_net(), [LayerEdges(), InterlayerDependence(1, 2)])),
+    ("TERGM", "`stergm`, default `method=:auto` (CMPLE), **dyad-independent** formula", () -> stergm(tergm_panels(), [Edges()], [Edges()])),
+    ("TERGM", "`stergm(...; method=:cmple)`, **dyad-dependent** formula (`edges + mutual`)", () -> stergm(tergm_s50(), TERGM_DEPENDENT...; method=:cmple)),
+    ("TERGM", "`stergm(...; method=:cmle)` (the default here), dyad-dependent formula (`edges + mutual`)", () -> stergm(tergm_s50(), TERGM_DEPENDENT...;
+                                                            method=:cmle, rng=Xoshiro(12))),
+    ("ERGMCount", "`fit_ergm_count`, default `method=:auto` (MPLE), **dyad-independent** (`sum + nonzero`)", () -> fit_ergm_count(count_net(), [SumTerm(), NonzeroTerm()])),
+    ("ERGMCount", "`fit_ergm_count(...; method=:mple)`, **dyad-dependent** (`sum + mutual`)", () -> fit_ergm_count(count_net(), [SumTerm(), CountMutualTerm()]; method=:mple)),
+    ("ERGMMulti", "`ergm_multi`, default `method=:auto` (MPLE), **dyad-independent** (per-layer edges)", () -> ergm_multi(multi_net(), [LayerEdges(1), LayerEdges(2)])),
+    ("ERGMMulti", "`ergm_multi(...; method=:mple)`, **dyad-dependent** (interlayer dependence)", () -> ergm_multi(multi_net(), [LayerEdges(), InterlayerDependence(1, 2)]; method=:mple)),
     ("ERGMEgo", "`fit_ergm_ego`, MCMC method of moments", ego_fit),
-    ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, default SEs", () -> fit_ergm_rank(rank_net(), RANK_TERMS)),
-    ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, `se=:bootstrap`", () -> fit_ergm_rank(rank_net(), RANK_TERMS; se=:bootstrap, n_boot=40, rng=Xoshiro(3))),
+    ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, default SEs", () -> fit_ergm_rank(rank_net(), RANK_TERMS; method=:mple)),
+    ("ERGMRank", "`fit_ergm_rank`, swap-MPLE, `se=:bootstrap`", () -> fit_ergm_rank(rank_net(), RANK_TERMS; method=:mple, se=:bootstrap, n_boot=40, rng=Xoshiro(3))),
     ("ERGMRank", "`fit_ergm_rank`, MCMC-MLE", () -> fit_ergm_rank(rank_net(), RANK_TERMS; method=:mcmle, n_samples=1000, maxiter=40, rng=Xoshiro(17))),
     ("REM", "`fit_rem`, case-control conditional logit", rem_fit),
     ("Revel", "`fit_revel`, ordinal model, full risk set", () -> fit_revel(event_stream(5, 30; seed=9), [PShift(:AB_BA)], 5)),
@@ -233,8 +242,8 @@ const PROBES = [
 # The fitting functions whose missing-data trait we report. `supports_missing`
 # defaults to `false`, so this is an honest census, not an allowlist.
 const ROUTINES = [
-    ("Networks", "`network_density`", network_density),
-    ("SNA", "`degree_centrality`", degree_centrality),
+    ("NetworkCore", "`network_density`", network_density),
+    ("SNA", "`degreecent`", degreecent),
     ("TSNA", "`t_density`", t_density),
     ("TSNA", "`t_reciprocity`", t_reciprocity),
     ("ERGM", "`mple`", mple),
@@ -252,7 +261,7 @@ const ROUTINES = [
     ("Siena", "`siena07`", siena07),
 ]
 
-const PACKAGES = ["Networks", "SNA", "ERGM", "TERGM", "ERGMCount", "ERGMEgo",
+const PACKAGES = ["NetworkCore", "SNA", "ERGM", "TERGM", "ERGMCount", "ERGMEgo",
                   "ERGMMulti", "ERGMRank", "REM", "Revel", "Siena"]
 
 # ---------------------------------------------------------------------------
@@ -300,7 +309,7 @@ end
 struct ProbeRow
     pkg::String
     what::String
-    md::Union{Networks.ResultMetadata, Nothing}
+    md::Union{NetworkCore.ResultMetadata, Nothing}
     fit::Any
 end
 
@@ -338,10 +347,10 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     > **This page is generated, not written.** `tools/generate_capability_matrix.jl` fits a
     > small model of every family and asks the fitted result what it did, through the shared
-    > result-metadata protocol (`Networks.fit_metadata`); it reads the "validated against R"
+    > result-metadata protocol (`NetworkCore.fit_metadata`); it reads the "validated against R"
     > rows out of the `[provenance]` block of the golden fixtures committed in the package
-    > repositories; and it reads the `Networks.supports_missing` and
-    > `Networks.missing_policies` traits. The StatsAPI table executes the accessors on those
+    > repositories; and it reads the `NetworkCore.supports_missing` and
+    > `NetworkCore.missing_policies` traits. The StatsAPI table executes the accessors on those
     > same fits. CI rejects failed probes and checks the page for drift. These small probes
     > establish the reported API behavior, not general scientific validity or scalability.
 
@@ -383,17 +392,18 @@ function render(io::IO, rows::Vector{ProbeRow})
     - **`ERGMCount`'s dyad-independent fit is still not exact.** Dyad independence is not
       enough here: the Poisson reference has unbounded support and the fit enumerates a
       truncated one, so it reports `exact? = no` and tells you the boundary mass it is
-      leaning on ($(issue("ERGMCount", 1))).
-    - **`ERGMRank` offers two estimators.** The default swap-MPLE multiplies overlapping
-      comparisons and is not an exact likelihood. `method=:mcmle` fits the ranking ERGM
-      by Monte Carlo likelihood; its simulation and convergence caveats remain relevant.
+      leaning on.
+    - **`ERGMRank` offers two estimators.** The default, `method=:mcmle`, fits the ranking
+      ERGM by Monte Carlo likelihood; its simulation and convergence caveats remain
+      relevant. The swap-MPLE (`method=:mple`) multiplies overlapping comparisons and is
+      not an exact likelihood.
 
     You can ask the same question of your own fit:
 
     ```julia
-    using Networks, ERGM
+    using NetworkCore, ERGM
     net = load_dataset(:florentine_marriage)
-    fit = ergm(net, [Edges(), GWESP(0.5)])
+    fit = ergm(net, [Edges(), GWESP(0.5)]; method=:mple)
     md = fit_metadata(fit)
     md.objective      # :pseudolikelihood
     md.is_exact       # false — the formula is dyad-dependent
@@ -475,7 +485,7 @@ function render(io::IO, rows::Vector{ProbeRow})
     for r in rows
         cells = String[]
         for key in accessors
-            f = getproperty(Networks.StatsAPI, key)
+            f = getproperty(NetworkCore.StatsAPI, key)
             status = try
                 value = f(r.fit)
                 value isa Real && isnan(value) ? "NaN" : "yes"
@@ -504,8 +514,8 @@ function render(io::IO, rows::Vector{ProbeRow})
     println(io, "| package | routine | `supports_missing` | accepted `missing` policies |")
     println(io, "|:---|:---|:---:|:---|")
     for (pkg, name, f) in ROUTINES
-        policies = join(["`:$p`" for p in Networks.missing_policies(f)], ", ")
-        println(io, "| $pkg | $name | `$(Networks.supports_missing(f))` | $policies |")
+        policies = join(["`:$p`" for p in NetworkCore.missing_policies(f)], ", ")
+        println(io, "| $pkg | $name | `$(NetworkCore.supports_missing(f))` | $policies |")
     end
 
     println(io, """
@@ -514,9 +524,12 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     ### Siena convergence and inference
 
-    `siena07` uses simulated method of moments. It rejects an unconverged fit by default;
-    `siena_algorithm(allow_unconverged=true)` explicitly returns a diagnostic fit with a
-    warning. Inspect `converged`, every t-ratio, `tconv_max`, `derivative_matrix`, and
+    `siena07` uses simulated method of moments, conditional on the observed amount of
+    change when one dependent variable is simulated, as RSiena's default. An unconverged
+    fit is returned with a warning and `converged == false`, as RSiena returns it;
+    `siena_algorithm(allow_unconverged=false)` raises `SienaConvergenceError` instead.
+    `get_effects` includes RSiena's default effects. Inspect `converged`, every t-ratio,
+    `tconv_max`, `derivative_matrix`, and
     `phase3_cov`; repeat independent seeds and assess goodness of fit before inference.
     Convergence requires every absolute t-ratio below 0.1 and `tconv_max` below 0.25.
     Newton refinement improves convergence, but a passing diagnostic does not establish
@@ -525,9 +538,10 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     ### Rank and other pseudo-likelihood estimators
 
-    ERGMRank's default swap-MPLE is a different objective from ranking MCMC-MLE. Use
-    `method=:mcmle` for the latter and inspect convergence and Monte Carlo diagnostics.
-    Dependent ERGM-family pseudo-likelihood Hessian errors can underestimate uncertainty.
+    ERGMRank's swap-MPLE (`method=:mple`) is a different objective from the ranking
+    MCMC-MLE, its default; inspect convergence and Monte Carlo diagnostics for the latter.
+    Dependent ERGM-family pseudo-likelihood Hessian errors can underestimate uncertainty,
+    so a dyad-dependent MPLE or CMPLE reports no z values or p-values by default.
     Where offered, `se=:bootstrap` changes the covariance, not the objective or consistency
     properties. Check each routine's documentation; this option is not universal.
 
@@ -546,26 +560,31 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     Ordinal models condition on event order; the timing model assumes piecewise
     exponential waiting times and requires statistics constant between events. It
-    therefore refuses decaying memory kernels, elapsed-time effects and time-varying
-    covariates, which remain available for ordinal fits, and it needs the full directed
-    risk set. For timing fits, `coef`, `stderror`, `vcov` and `coeftable` include the
-    log-baseline first, followed by the effects. Choose tie handling explicitly where
-    times coincide.
+    therefore refuses decaying memory kernels on the time clock, elapsed-time effects,
+    global and time-varying covariates, which remain available for ordinal fits, and it
+    needs the full directed risk set. For timing fits, `coef`, `stderror`, `vcov` and
+    `coeftable` include the log-baseline first, followed by the effects. Choose tie
+    handling explicitly where times coincide.
 
     The same configuration has a different default measurement in each R package, so an
     effect name alone does not fix a number: `effect_catalogue()` gives the call that
     reproduces relevent, remstats, rem, goldfish and eventnet. Only the remstats and
-    relevent columns are checked numerically. Under decaying memory Revel evaluates the
-    decay at the event being explained, where remstats 4.1.0 uses the previous event.
+    relevent columns are checked numerically, and three relevent names (`FrPSndSnd`,
+    `FrRecSnd`, `OSPSnd`) follow relevent's documentation, from which relevent 1.2.1's
+    output departs. Under decaying memory Revel evaluates the decay at the event being
+    explained, where remstats 4.1.0 uses the previous event.
 
     Product terms, filtered statistics, type splits and separate fits are different
     models of moderation, not interchangeable ones. Random effects, smooth non-linear
     effects, a dyad-by-type risk set, events with duration and the sender-rate step of
     actor-oriented models are unavailable; unobserved actor heterogeneity can therefore
     inflate closure and popularity effects. Score-process and score tests apply to
-    ordinal fits on the full risk set. Hyperevent fits sample non-events of the observed
-    size, so their estimates vary with the control draw, and have no goodness-of-fit
-    routine.
+    converged ordinal fits whose risk sets were enumerated, not to timing fits or fits
+    with sampled controls; a score-process rejection says the specification drifts, not
+    which effect does. Simulation-based `gof` is a plug-in check with conservative,
+    pointwise p-values and one joint Mahalanobis test. Hyperevent fits sample non-events
+    of the observed size, so their estimates vary with the control draw, and have no
+    goodness-of-fit routine.
 
     ### Count support and egocentric survey designs
 
@@ -578,8 +597,11 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     ### Temporal models and observation
 
-    TERGM fits formation and persistence by CMPLE, exact for dyad-independent formulas.
-    `method=:cmle` and `TERGM.egmme` throw; dependent CMLE and EGMME are unavailable.
+    TERGM fits formation and persistence by the conditional MLE: by MCMC (`method=:cmle`)
+    when a formula is dyad-dependent, and exactly by its CMPLE otherwise. The CMPLE of a
+    dyad-dependent formula (`method=:cmple`) is a pseudo-likelihood; `se=:bootstrap` is
+    its parametric bootstrap and `se=:block_bootstrap` resamples transitions (btergm's
+    scheme, refused below 10 transitions). EGMME is unavailable (`method=:egmme` throws).
     TSNA uses active-vertex density and dyadic reciprocity by default. Its temporal
     analyses reject masks unless `missing=:face` is explicit; face values cannot recover
     unobserved histories. Conversions preserve representable masks and reject incompatible

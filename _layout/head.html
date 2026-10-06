@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
   <meta name="description" content="Julia tools for network data, descriptive analysis, relational events and statistical network models. Explore packages, runnable examples and documented limitations.">
-  <meta name="theme-color" content="#123d32">
+  <meta name="theme-color" content="#edf5e2">
   <link rel="icon" href="/assets/img/logo.png">
   <link rel="canonical" href="{{canonical_url}}">
   <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
@@ -13,20 +13,22 @@
   <link rel="stylesheet" href="/css/style.css">
   <title>{{title}} · StatNet for Julia</title>
 </head>
-<body>
+<body id="page-top">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <nav class="nav-inner" aria-label="Main navigation">
-    <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="38" height="38"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
-    <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
-    <div class="site-navigation" id="site-navigation">
-      <a href="/getting-started/">Get started</a>
-      <a href="/packages/">Packages</a>
-      <a href="/examples/">Examples</a>
-      <a href="/models/">Methods</a>
-      <a href="/migration/">Coming from R</a>
-      <a class="nav-source" href="https://github.com/statistical-network-analysis-with-Julia">GitHub <span aria-hidden="true">↗</span></a>
-    </div>
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <span class="current-section-label" aria-hidden="true"></span>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
+  <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
+{{insert navigation-links.html}}
   </nav>
 </header>
+<aside class="scroll-navigation" hidden aria-label="Site sections">
+  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <nav aria-label="Section navigation">
+{{insert navigation-links.html}}
+  </nav>
+  <a class="back-to-top" href="#page-top">Back to top <span aria-hidden="true">↑</span></a>
+</aside>
 <main class="page-content" id="main-content" tabindex="-1">
+{{ispage index packages/* models/*}}<div class="page-wide wrap">{{else}}<div class="article-layout wrap"><aside class="article-nav" aria-label="On this page"><strong>On this page</strong>{{toc 2 2}}</aside><article class="article">{{end}}

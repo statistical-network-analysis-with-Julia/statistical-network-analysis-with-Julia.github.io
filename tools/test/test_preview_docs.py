@@ -47,7 +47,7 @@ class PreviewTests(unittest.TestCase):
         (cls.build / "escape-dir").symlink_to(cls.root, target_is_directory=True)
         (cls.build / "source-index").mkdir()
         (cls.build / "source-index/index.html").symlink_to(cls.build / "Project.toml")
-        docs = cls.workspace.mounts["Networks.jl"]
+        docs = cls.workspace.mounts["NetworkCore.jl"]
         (docs / "guide").mkdir()
         (docs / "guide/topic").mkdir()
         (docs / "guide/topic/index.html").write_text("<html>pretty topic</html>")
@@ -77,7 +77,7 @@ class PreviewTests(unittest.TestCase):
             connection.close()
 
     def test_all_package_mounts_and_site(self):
-        self.assertEqual(len(self.workspace.packages), 15)
+        self.assertEqual(len(self.workspace.packages), 16)
         self.assertEqual(self.request("/")[2], b"<html>ecosystem</html>")
         for package in self.workspace.packages:
             for version in ("dev", "stable"):
@@ -88,15 +88,15 @@ class PreviewTests(unittest.TestCase):
 
     def test_canonical_redirects_preserve_query_and_encoding(self):
         cases = {
-            "/Networks.jl?q=a%26b": "/Networks.jl/dev/?q=a%26b",
-            "/Networks.jl/": "/Networks.jl/dev/",
-            "/Networks.jl/dev?x=1": "/Networks.jl/dev/?x=1",
+            "/NetworkCore.jl?q=a%26b": "/NetworkCore.jl/dev/?q=a%26b",
+            "/NetworkCore.jl/": "/NetworkCore.jl/dev/",
+            "/NetworkCore.jl/dev?x=1": "/NetworkCore.jl/dev/?x=1",
             "/packages?x=%2f..": "/packages/?x=%2f..",
             "/packages.html?q=1": "/packages/?q=1",
-            "/Networks.jl/dev/guide/topic.html": "/Networks.jl/dev/guide/topic/",
-            "/Networks.jl/stable/guide/topic": "/Networks.jl/stable/guide/topic/",
-            "/Networks.jl/dev/flat/": "/Networks.jl/dev/flat.html",
-            "/Networks.jl/dev/flat": "/Networks.jl/dev/flat.html",
+            "/NetworkCore.jl/dev/guide/topic.html": "/NetworkCore.jl/dev/guide/topic/",
+            "/NetworkCore.jl/stable/guide/topic": "/NetworkCore.jl/stable/guide/topic/",
+            "/NetworkCore.jl/dev/flat/": "/NetworkCore.jl/dev/flat.html",
+            "/NetworkCore.jl/dev/flat": "/NetworkCore.jl/dev/flat.html",
         }
         for target, expected in cases.items():
             with self.subTest(target=target):
@@ -110,9 +110,9 @@ class PreviewTests(unittest.TestCase):
         for target, content, mime in (
             ("/assets/style.css", b"body {color: navy}", "text/css"),
             ("/assets/a%20%3F%23%C3%A9.css?cache=a%2Fb", b"/* encoded asset */", "text/css"),
-            ("/Networks.jl/dev/guide/topic/", b"<html>pretty topic</html>", "text/html"),
-            ("/Networks.jl/stable/flat.html", b"<html>flat topic</html>", "text/html"),
-            ("/Networks.jl/dev/assets/app.js", b"window.preview = true;", "javascript"),
+            ("/NetworkCore.jl/dev/guide/topic/", b"<html>pretty topic</html>", "text/html"),
+            ("/NetworkCore.jl/stable/flat.html", b"<html>flat topic</html>", "text/html"),
+            ("/NetworkCore.jl/dev/assets/app.js", b"window.preview = true;", "javascript"),
         ):
             with self.subTest(target=target):
                 status, headers, body = self.request(target)
@@ -123,7 +123,7 @@ class PreviewTests(unittest.TestCase):
 
     def test_head_has_get_headers_without_body(self):
         for target in ("/", "/assets/style.css", "/packages.html", "/missing", "/%2e%2e/secret.html",
-                       "/Networks.jl/versions.js", "/Networks.jl/dev/siteinfo.js"):
+                       "/NetworkCore.jl/versions.js", "/NetworkCore.jl/dev/siteinfo.js"):
             with self.subTest(target=target):
                 get_status, get_headers, _ = self.request(target)
                 status, headers, body = self.request(target, "HEAD")
@@ -150,10 +150,10 @@ class PreviewTests(unittest.TestCase):
 
     def test_traversal_symlinks_and_source_files_are_not_served(self):
         attacks = (
-            "/../secret.html", "/%2e%2e/secret.html", "/Networks.jl/dev/../../secret.html",
-            "/Networks.jl/dev/%2e%2e%2f%2e%2e/secret.html", "/assets/%5c..%5csecret.html",
+            "/../secret.html", "/%2e%2e/secret.html", "/NetworkCore.jl/dev/../../secret.html",
+            "/NetworkCore.jl/dev/%2e%2e%2f%2e%2e/secret.html", "/assets/%5c..%5csecret.html",
             "/escape.html", "/escape-dir/secret.html", "/.hidden.html", "/%00.html",
-            "/Project.toml", "/example.jl", "/Networks.jl/src/Networks.jl", "/empty/", "/source-index/",
+            "/Project.toml", "/example.jl", "/NetworkCore.jl/src/NetworkCore.jl", "/empty/", "/source-index/",
             "//example.com/", "/assets/%FF.css", "/assets/%zz.css", "/a//b", "/a%0d%0aLocation:x",
         )
         for target in attacks:
@@ -202,7 +202,7 @@ class PreviewTests(unittest.TestCase):
         with patch.dict(os.environ, contaminated, clear=True), patch.object(preview.subprocess, "run") as run:
             with contextlib.redirect_stdout(io.StringIO()):
                 preview.build_docs(self.workspace)
-        self.assertEqual(run.call_count, 16)
+        self.assertEqual(run.call_count, 17)
         for index, call in enumerate(run.call_args_list):
             command = call.args[0]
             env = call.kwargs["env"]

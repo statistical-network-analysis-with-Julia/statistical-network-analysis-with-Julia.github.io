@@ -1,0 +1,9 @@
+# Keep the site's own workflow actions current. The package workflows are
+# generated from tools/workflows/; when Dependabot bumps an action here, bump
+# it in those templates too and run `julia tools/sync_workflows.jl`.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

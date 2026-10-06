@@ -4,6 +4,8 @@
 @def rss_title = "0.2.0 across the ecosystem: consolidated release notes"
 @def rss_pubdate = Date(2026, 7, 12)
 
+*Editor's note (October 2026): Networks.jl and NetworkDynamic.jl have since been renamed NetworkCore.jl and DynamicNetworks.jl; the links below point to the renamed repositories.*
+
 The three review-driven sprints — the
 [correctness pass](/post/2026-07-07-ecosystem-correctness-pass/) and the
 [polish sprint](/post/2026-07-12-p2-polish-sprint/) — are now documented
@@ -16,7 +18,7 @@ baseline, with every breaking change carrying a one-line migration hint.
 
 | Package | 0.2.0 in one line |
 |:---|:---|
-| [Networks.jl](https://github.com/statistical-network-analysis-with-Julia/Networks.jl/blob/main/CHANGELOG.md) | Compile-time directedness (`Network{T,D}`), attribute-preserving `copy`, missing-dyad masks, bundled datasets, shared result presentation |
+| [Networks.jl](https://github.com/statistical-network-analysis-with-Julia/NetworkCore.jl/blob/main/CHANGELOG.md) | Compile-time directedness (`Network{T,D}`), attribute-preserving `copy`, missing-dyad masks, bundled datasets, shared result presentation |
 | [SNA.jl](https://github.com/statistical-network-analysis-with-Julia/SNA.jl/blob/main/CHANGELOG.md) | cliques/clustering/degree bugs fixed, Graphs.jl generics extended (not shadowed), QAP inference and `centralization`, R-`sna` semantics |
 | [ERGM.jl](https://github.com/statistical-network-analysis-with-Julia/ERGM.jl/blob/main/CHANGELOG.md) | Attribute-preserving copies (the critical fix), statnet-grade MCMLE, directed `GWESP` → `:OTP`, `NodeMatch(diff=true)` → per-level homophily, new terms, O(deg) change stats |
 | [ERGMCount.jl](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl/blob/main/CHANGELOG.md) | ergm.count-faithful references, real pseudo-likelihood, Gibbs sampler actually uses change statistics |
@@ -28,7 +30,7 @@ baseline, with every breaking change carrying a one-line migration hint.
 | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl/blob/main/CHANGELOG.md) | RSiena-parity inference (score derivatives, Polyak–Ruppert, t < 0.1), conditional estimation, Networks.jl bridge, threaded phase 3 |
 | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl/blob/main/CHANGELOG.md) | `AttributeMatch`/`EventNetworkState` renames, lazy decay (O(1) updates), corrected control sampling |
 | [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl/blob/main/CHANGELOG.md) | 13 Gibson p-shifts, `CovSnd`/`CovRec`/`CovInt`, real MLE fitters, streaming statistics |
-| [NetworkDynamic.jl](https://github.com/statistical-network-analysis-with-Julia/NetworkDynamic.jl/blob/main/CHANGELOG.md) | R-faithful point-spell semantics, `deactivate!`, stable-ID extraction, mutation tracking |
+| [NetworkDynamic.jl](https://github.com/statistical-network-analysis-with-Julia/DynamicNetworks.jl/blob/main/CHANGELOG.md) | R-faithful point-spell semantics, `deactivate!`, stable-ID extraction, mutation tracking |
 | [TSNA.jl](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl/blob/main/CHANGELOG.md) | snake_case names (camelCase aliases kept), heap-based earliest arrival, R-`tsna`-aligned return types |
 | [NDTV.jl](https://github.com/statistical-network-analysis-with-Julia/NDTV.jl/blob/main/CHANGELOG.md) | Stable vertex identity across frames, real KK/MDS layout, working SVG/movie/HTML export |
 

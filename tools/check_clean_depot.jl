@@ -54,8 +54,13 @@ end
 
 function snapshot(repo, destination, mode)
     if mode == "committed"
-        run(`git clone --quiet --bare --no-hardlinks $repo $destination`)
-        return strip(read(`git -C $repo rev-parse HEAD`, String))
+        # A non-bare clone: Pkg refuses a local URL without a `.git` directory
+        # ("Did not find a git repository"), so a bare snapshot cannot be added.
+        # The clone holds the committed HEAD only; working-tree edits stay behind.
+        revision = strip(read(`git -C $repo rev-parse HEAD`, String))
+        run(`git clone --quiet --no-hardlinks $repo $destination`)
+        run(`git -C $destination checkout --quiet --detach $revision`)
+        return revision
     end
     mkpath(destination)
     # Include tracked modifications/deletions and nonignored new source files;

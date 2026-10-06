@@ -1,0 +1,85 @@
+name: Ecosystem integration
+
+# Checks that span the package repositories, run against every package's
+# current `main`:
+#   * the packages' workflows share one sibling-clone step (sync_workflows.jl);
+#   * all packages load together with no conflicting export and no method
+#     ambiguity across them (check_coload.jl);
+#   * every committed package installs and loads in an empty depot, in
+#     dependency order, from its own [compat] (check_clean_depot.jl).
+# Each package's own suite runs nightly in its CI workflow; this workflow runs
+# after those, daily.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - '.github/workflows/ecosystem.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - '.github/workflows/ecosystem.yml'
+  schedule:
+    - cron: '43 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  JULIA_NUM_THREADS: '4'
+  OPENBLAS_NUM_THREADS: '1'
+  SNWJ_ROOT: ${{ github.workspace }}
+
+jobs:
+  workflows:
+    name: One layout step in every package workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: statistical-network-analysis-with-Julia.github.io
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - name: Clone every package
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone-only
+      - name: Check the workflows against tools/workflows
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/sync_workflows.jl "$SNWJ_ROOT" --check
+
+  coload:
+    name: Load all packages together
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: statistical-network-analysis-with-Julia.github.io
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - name: Prepare sibling packages and documentation dependencies
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone
+      - name: Co-load every package and detect ambiguities across them
+        run: julia --project=.snippet-env statistical-network-analysis-with-Julia.github.io/tools/check_coload.jl
+
+  clean-install:
+    name: Install committed packages in an empty depot
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: statistical-network-analysis-with-Julia.github.io
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - name: Clone every package
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl "$SNWJ_ROOT" --clone-only
+      # No julia-actions/cache here: the check builds its own empty depot.
+      - name: Install every committed package in dependency order
+        run: julia statistical-network-analysis-with-Julia.github.io/tools/check_clean_depot.jl --source=committed

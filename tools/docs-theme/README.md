@@ -21,7 +21,7 @@ names are rendered as text by Documenter rather than baked into the icons.
 
 | Icon | Package | Meaning |
 | --- | --- | --- |
-| <img src="icons/Networks.svg" width="56" alt="Connected vertices"> | Networks.jl | Connected vertices: the shared network-data foundation. |
+| <img src="icons/NetworkCore.svg" width="56" alt="Connected vertices"> | NetworkCore.jl | Connected vertices: the shared network-data foundation. |
 | <img src="icons/SNA.svg" width="56" alt="Network under a magnifying glass"> | SNA.jl | Examining network structure, centrality and cohesion. |
 | <img src="icons/ERGM.svg" width="56" alt="Network inside a probability curve"> | ERGM.jl | A probability distribution over network configurations. |
 | <img src="icons/ERGMCount.svg" width="56" alt="Count beads"> | ERGMCount.jl | One, two and three beads: integer-valued ties. |
@@ -34,7 +34,7 @@ names are rendered as text by Documenter rather than baked into the icons.
 | <img src="icons/REM.svg" width="56" alt="Directed interaction pulse"> | REM.jl | A directed interaction occurring as an event. |
 | <img src="icons/Relevent.svg" width="56" alt="Decaying event history"> | Relevent.jl | Interaction history with decaying memory weights. |
 | <img src="icons/Revel.svg" width="56" alt="Two-path closed by an event"> | Revel.jl | An event closing a two-path: effects built from the event history. |
-| <img src="icons/NetworkDynamic.svg" width="56" alt="Activity intervals"> | NetworkDynamic.jl | Activity spells with closed onsets and open termini. |
+| <img src="icons/DynamicNetworks.svg" width="56" alt="Activity intervals"> | DynamicNetworks.jl | Activity spells with closed onsets and open termini. |
 | <img src="icons/TSNA.svg" width="56" alt="Temporal path and clock"> | TSNA.jl | Time-respecting paths and temporal reachability. |
 | <img src="icons/NDTV.svg" width="56" alt="Network film frame"> | NDTV.jl | A network play symbol inside an animation frame. |
 
@@ -44,8 +44,8 @@ Edit the canonical SVGs in `icons/`. To regenerate a favicon after editing its
 SVG, use librsvg and ImageMagick (asset-authoring tools, not build dependencies):
 
 ```bash
-rsvg-convert -w 256 -h 256 tools/docs-theme/icons/Networks.svg |
-    magick png:- -define icon:auto-resize=64,48,32,16 tools/docs-theme/icons/Networks.ico
+rsvg-convert -w 256 -h 256 tools/docs-theme/icons/NetworkCore.svg |
+    magick png:- -define icon:auto-resize=64,48,32,16 tools/docs-theme/icons/NetworkCore.ico
 ```
 
 The historically named sync command now copies each package's icon and favicon,
