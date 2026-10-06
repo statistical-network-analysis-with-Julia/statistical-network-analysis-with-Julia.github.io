@@ -1,4 +1,4 @@
-# Statistical Network Analysis with Julia — website
+# Statistical analysis of networks in Julia — website
 
 The umbrella website connects the ecosystem's 16 Julia packages, their documentation
 and worked network analyses. The package directory lists 15: Relevent.jl, the

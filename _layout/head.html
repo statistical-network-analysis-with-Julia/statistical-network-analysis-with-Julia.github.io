@@ -8,15 +8,15 @@
   <meta name="theme-color" content="#edf5e2">
   <link rel="icon" href="/assets/img/logo.png">
   <link rel="canonical" href="{{canonical_url}}">
-  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="StatNet for Julia news">
+  <link rel="alternate" type="application/rss+xml" href="/post/index.xml" title="Statistical analysis of networks in Julia: news">
   {{if hascode}} {{insert head_highlight.html}} {{end}}
   <link rel="stylesheet" href="/css/style.css">
-  <title>{{title}} · StatNet for Julia</title>
+  <title>{{ispage index.html}}{{title}}{{else}}{{title}} · Statistical analysis of networks in Julia{{end}}</title>
 </head>
 <body id="page-top">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>StatNet <span class="brand-detail">for Julia</span></span></a>
+  <a class="site-brand" href="/"><img src="/assets/img/logo.png" alt="" width="30" height="30"><span>Statistical analysis of networks <span class="brand-detail">in Julia</span></span></a>
   <span class="current-section-label" aria-hidden="true"></span>
   <button class="menu-toggle" aria-expanded="false" aria-controls="site-navigation" hidden>Menu <span aria-hidden="true">＋</span></button>
   <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
@@ -24,7 +24,7 @@
   </nav>
 </header>
 <aside class="scroll-navigation" hidden aria-label="Site sections">
-  <a class="scroll-navigation-brand" href="/">StatNet for Julia</a>
+  <a class="scroll-navigation-brand" href="/">Statistical analysis of networks in Julia</a>
   <nav aria-label="Section navigation">
 {{insert navigation-links.html}}
   </nav>

@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# setup_registry.jl — stand up a LocalRegistry for the StatNet-Julia ecosystem
+# setup_registry.jl — stand up a LocalRegistry for the statistical-network-analysis-with-Julia ecosystem
 # and register every package in dependency order, so released versions can
 # drop the [sources] path-dependency sections from their Project.toml files.
 #
@@ -252,11 +252,11 @@ function main(args)
             bare = regpath * ".git"
             run(`git init --bare --initial-branch=master $bare`)
             Base.invokelatest(LocalRegistry.create_registry, regpath, bare;
-                              description = "Local registry for the StatNet-Julia ecosystem",
+                              description = "Local registry for the statistical-network-analysis-with-Julia ecosystem",
                               push = true)
         else
             Base.invokelatest(LocalRegistry.create_registry, regpath, opts["registry-repo"];
-                              description = "Local registry for the StatNet-Julia ecosystem",
+                              description = "Local registry for the statistical-network-analysis-with-Julia ecosystem",
                               push = true)
         end
     end

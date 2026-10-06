@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 # check_snippets.jl — execute the fenced `julia` code blocks in every Markdown
-# page of the StatNet-Julia ecosystem and report pass/fail per file.
+# page of the statistical-network-analysis-with-Julia ecosystem and report pass/fail per file.
 #
 # Usage:
 #     julia tools/check_snippets.jl [filter...]

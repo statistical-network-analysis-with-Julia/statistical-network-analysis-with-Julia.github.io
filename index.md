@@ -1,4 +1,4 @@
-@def title = "Statistical Network Analysis with Julia"
+@def title = "Statistical analysis of networks in Julia"
 @def hascode = true
 
 ~~~
