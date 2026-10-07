@@ -77,7 +77,7 @@ class PreviewTests(unittest.TestCase):
             connection.close()
 
     def test_all_package_mounts_and_site(self):
-        self.assertEqual(len(self.workspace.packages), 16)
+        self.assertEqual(len(self.workspace.packages), 15)
         self.assertEqual(self.request("/")[2], b"<html>ecosystem</html>")
         for package in self.workspace.packages:
             for version in ("dev", "stable"):
@@ -202,7 +202,7 @@ class PreviewTests(unittest.TestCase):
         with patch.dict(os.environ, contaminated, clear=True), patch.object(preview.subprocess, "run") as run:
             with contextlib.redirect_stdout(io.StringIO()):
                 preview.build_docs(self.workspace)
-        self.assertEqual(run.call_count, 17)
+        self.assertEqual(run.call_count, len(self.workspace.packages) + 1)   # each package, then Franklin
         for index, call in enumerate(run.call_args_list):
             command = call.args[0]
             env = call.kwargs["env"]

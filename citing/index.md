@@ -37,7 +37,6 @@ and add it to the entry's `note`, for example
 | [TERGM.jl](https://github.com/statistical-network-analysis-with-Julia/TERGM.jl) | `tergm` (Krivitsky and Handcock) | Krivitsky and Handcock (2014); for the block bootstrap over transitions (`se=:block_bootstrap`, btergm's scheme), Leifeld, Cranmer and Desmarais (2018) |
 | [Siena.jl](https://github.com/statistical-network-analysis-with-Julia/Siena.jl) | `RSiena` (Snijders et al.) | Snijders (2001); Snijders, van de Bunt and Steglich (2010) |
 | [REM.jl](https://github.com/statistical-network-analysis-with-Julia/REM.jl) | — (case-control sampling follows eventnet) | Butts (2008c); Lerner and Lomi (2020) |
-| [Relevent.jl](https://github.com/statistical-network-analysis-with-Julia/Relevent.jl) (the engine underneath Revel.jl) | `relevent` (Butts) | Butts (2008c) |
 | [Revel.jl](https://github.com/statistical-network-analysis-with-Julia/Revel.jl) | `relevent` (Butts); `remstats` (Arena et al.) | Butts (2008c); Meijerink-Bosman et al. (2023) |
 | [DynamicNetworks.jl](https://github.com/statistical-network-analysis-with-Julia/DynamicNetworks.jl) | `networkDynamic` (Butts, Leslie-Cook, Krivitsky and Bender-deMoll) | — |
 | [TSNA.jl](https://github.com/statistical-network-analysis-with-Julia/TSNA.jl) | `tsna` (Bender-deMoll and Morris) | — |

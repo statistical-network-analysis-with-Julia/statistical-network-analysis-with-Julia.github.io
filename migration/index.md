@@ -21,7 +21,8 @@ Three conventions carry most of the translation:
    dot-separated names become snake_case (`network.extract` →
    `network_extract`, `component.dist` → `component_dist`).
 3. **Model accessors are the shared StatsAPI generics.** `coef`,
-   `stderror`, and `vcov` share function identities across packages. Likelihood,
+   `coefnames` (R's `names(coef(fit))`), `stderror`, `vcov` and `coeftable`
+   share function identities across packages. Likelihood,
    AIC and BIC are available only where defined for the estimator; Siena's
    Method of Moments has none. See the [generated accessor table](/capabilities/).
    `using ERGM, Siena, REM` together preserves the shared bindings.
@@ -138,7 +139,7 @@ so Graphs.jl generics dispatch correctly on it.
 | `component.dist(net)` | `component_dist(net)` (`membership`, `csize`, `cdist`) — but see [differences](#what_still_differs_from_r) |
 | `kcores(net)` (the core number of every vertex) | `kcores(net)`; the members of the k-core are `findall(>=(k), kcores(net))` |
 | `cutpoints(net)` | `cutpoints(net)` |
-| `clique.census(net)` (maximal cliques) | `cliques(net)` |
+| `clique.census(net)` (counts of maximal cliques by size) | `cliques(net; min_size=1)` lists the maximal cliques of every size; the default `min_size=3` leaves out isolates and dyads |
 | `sedist / equiv.clust / blockmodel` | `sedist` / `equiv_clust` / `blockmodel` |
 | `rgraph(20, tprob=0.1)` | `rgraph(20; tprob=0.1)` |
 
@@ -180,23 +181,23 @@ fit <- ergm(samplike ~ edges + mutual + nodematch("group", diff=TRUE))
 using ERGM, Random               # ERGM re-exports common network operations
 
 net = load_dataset(:sampson)     # statnet's samplike
-levels = ["Loyal", "Outcasts", "Turks"]
 # Mutual() is dyad-dependent, so the default method=:auto fits the MCMLE, as R does
-fit = ergm(net, [Edges(); Mutual();
-                 [NodeMatch(:group; diff=true, level=l) for l in levels]];
+fit = ergm(net, [Edges(), Mutual(), NodeMatch(:group; diff=true)];
            rng=Xoshiro(7))
 println(fit)
+coefnames(fit)    # R's labels: "edges", "mutual", "nodematch.group.Loyal", …
 ```
 
 Fitted coefficient tables use NetworkCore.jl's shared presentation layer.
 Likelihood-based tables display estimates, standard errors, z values and
 p-values; permutation tables label their reference distribution and resolution.
 
-Note the one real semantic difference in that translation: the term
-system is one-statistic-per-term, so R's `nodematch(diff=TRUE)` — which
-silently expands into one statistic per attribute level — is written as
-an explicit comprehension over levels. `NodeMatch(:group; diff=true)`
-without a `level` throws an error explaining exactly this.
+As in R, `NodeMatch(:group; diff=true)` expands into one statistic per
+attribute level, in sorted order, labelled `nodematch.group.<level>`;
+`levels=` selects levels, as R's `levels=` does, and `level=` builds the
+statistic of a single level. `NodeFactor`, `NodeMix` and `Degree(0:3)`
+expand the same way. ERGM.jl's own [Coming from R](/ERGM.jl/dev/guide/r_concordance/)
+page maps `ergm`'s controls, terms and accessors in more detail.
 
 ### Term translation
 
@@ -210,7 +211,7 @@ without a `level` throws an error explaining exactly this.
 | `nodecov("wealth")` | `NodeCov(:wealth)` |
 | `nodefactor("g")` | `NodeFactor(:g)` — expands to one statistic per level at model construction, first (sorted) level dropped, like R; `base=0` keeps all levels |
 | `nodematch("x")` | `NodeMatch(:x)` |
-| `nodematch("x", diff=TRUE)` | `[NodeMatch(:x; diff=true, level=l) for l in levels]` |
+| `nodematch("x", diff=TRUE)` | `NodeMatch(:x; diff=true)` — expands to one statistic per level, like R; `levels=` selects levels |
 | *(count of mismatched edges)* | `NodeMismatch(:x)` |
 | `absdiff("age")` | `AbsDiff(:age)` |
 | `nodemix("g")` | `NodeMix(:g)` — expands to one statistic per mixing cell, first cell dropped, like R |
@@ -238,11 +239,13 @@ attributes that do exist, instead of silently fitting a zero column.
 | `ergm(..., estimate="MPLE")` | `ergm(net, terms; method=:mple)` |
 | `summary(fit)` | `println(fit)` |
 | `coef(fit)` / `vcov(fit)` | `coef(fit)` / `vcov(fit)` (StatsAPI, plus `stderror`) |
+| `names(coef(fit))` | `coefnames(fit)` (the same labels as the rows of `coeftable(fit)`) |
 | `logLik(fit)`, `AIC(fit)`, `BIC(fit)` | `loglikelihood(fit)`, `aic(fit)`, `bic(fit)` |
 | `gof(fit)` | `gof(fit; n_sim=100)` (degree, ESP, geodesic distance) |
 | `simulate(fit, nsim=10)` | `simulate_ergm(fit; n_sim=10)` |
 | `mcmc.diagnostics(fit)` | `mcmc_diagnostics(fit)` |
 | `control.ergm(MCMC.burnin=..., MCMLE.maxit=...)` | the estimator's keywords: `ergm(net, terms; burnin=..., interval=..., maxiter=..., effective_size=..., rng=...)` for the MCMLE |
+| `control.ergm(drop=FALSE)` | `ergm(net, terms; drop=false)`: refuses a boundary statistic (below) instead of fitting it |
 
 **The default estimator is R's.** `ergm(net, terms)` takes `method=:auto`:
 a formula with no dyad-dependent term is fitted by MPLE, which is then the
@@ -269,14 +272,24 @@ with `converged == false` and a warning; continue it with
 plain tie/no-tie (`proposal=:spdyad` selects R's).
 
 **Boundary statistics and separation.** A statistic at the boundary of its
-attainable range (a `NodeMatch` with no within-group tie) has no finite
-estimate. The MPLE does what R's default `drop=TRUE` does: it warns, fixes
-that coefficient at `-Inf` (or `+Inf`) and fits the rest. The MCMLE, and so
-the default fit of a dyad-dependent formula, refuses such a model and names
-the ways out: write the statistic as `Offset(term, -Inf)` (R's model: the
-coefficient fixed and the rest estimated by MCMLE), drop the term, or pass
-`method=:mple`. A design separated by a combination of statistics follows
-the shared separation policy [described above](#describing_networks_sna_snajl).
+attainable range (a `NodeMatch` level with no within-level tie, a `NodeMix`
+cell of a singleton level, `Triangle` on a network with no two-path) has no
+finite estimate. Both estimators, and so every default fit, do what R's
+default `drop=TRUE` does: they warn with R's sentence ("… are at their
+smallest attainable values. Their coefficients will be fixed at -Inf"), fix
+that coefficient at `-Inf` (or `+Inf`, standard error 0) and estimate the
+rest; the MCMLE holds the statistic at its bound while it samples. No
+`Offset(term, -Inf)` is needed, and the statnet tutorial's Goodreau model
+(`edges + nodematch("Race", diff=TRUE) + …` on faux.mesa.high) is typed as in
+R. `drop=false` is the strict mode: it refuses such a model with an
+`ArgumentError`, where R's `drop=FALSE` would fit it. A statistic that does
+not vary at all, or is a linear combination of the others, is reported as
+`NaN` where R reports `NA`. Two differences remain: a curved model with a
+boundary statistic is refused, and a `GWESP`/`GWDSP`/`GWNSP` statistic of 0
+is fixed at `-Inf`, where R fits a finite, unidentified coefficient. When a
+dropped statistic is dyad-dependent, the MCMLE reports no log-likelihood
+(`NaN`). A design separated by a combination of statistics follows the
+shared separation policy [described above](#describing_networks_sna_snajl).
 
 **User terms under MCMC.** The samplers delete a tie's edge attributes when
 they toggle it, so a user-defined term that reads an edge attribute from the
@@ -289,28 +302,46 @@ matrix to `EdgeCov`. The MPLE is unaffected.
 | R call | Julia call |
 |:---|:---|
 | `ergm(net ~ sum, response="w", reference=~Poisson)` | `ergm_count(net, [SumTerm()]; reference=PoissonReference())` |
+| valued `nodematch("g", form="sum")`, `nodefactor`, `absdiff`, `nodecov`, `nodeocov`, `nodeicov`, `edgecov` | `CountNodeMatchTerm(:g)`, `CountNodeFactorTerm(:g, "b")`, `CountAbsDiffTerm(:x)`, `CountNodeCovTerm(:x)`, `CountNodeOCovTerm(:x)`, `CountNodeICovTerm(:x)`, `CountEdgeCovTerm(W; name="w")` — `form=:sum` (the default) or `:nonzero`, with R's labels (`nodematch.sum.g`); `nodefactor` and `nodematch(diff=TRUE)` are one term per level |
 | `ergm.ego(egodata ~ edges + nodematch("x"))` | `ergm_ego(egodata, [EgoEdges(), EgoNodeMatch(:x)])` |
 | `ergm.ego` `nodefactor`, `nodecov`, `absdiff`, `degree` | `EgoNodeFactor(:x)`, `EgoNodeCov(:x)`, `EgoAbsDiff(:x)`, `EgoDegree(d)` |
+| `ergm.ego` `gwesp(0.5, fixed=TRUE)`, `esp(k)`, `mm("x")`, `concurrent` | `EgoGWESP(0.5)`, `EgoESP(k)`, `EgoMM(:x)` (default form), `EgoConcurrent()`; the curved `gwesp` is refused |
 | `ergm.multi` multilayer models | `ergm_multi(mnet, [LayerEdges(1), MultiplexMutual(1, 2), ...])` |
 | `ergm.rank` | `ergm_rank(rnet, [RankDeference(), ...])` |
 | `ergm.userterms` (C skeleton + rebuild) | `@ergm_term` macro, then `validate_term` / `test_term` — plain Julia, no recompilation |
 
 - **`ergm_count` and `ergm_multi` take `method=:auto`** with ERGM.jl's rule:
-  the MPLE for a dyad-independent formula, MCMLE otherwise. A count model
+  the MPLE for a dyad-independent formula, MCMLE otherwise. Both apply R's
+  `drop=TRUE` to a statistic at its bound under either estimator (`drop=false`
+  refuses); after a drop, `ergm_count`'s MCMLE reports no log-likelihood
+  (`NaN`), where R reports one. A count model
   whose fitted coefficients make the distribution improper (for example a
   positive `mutual.product` under a Poisson reference) is flagged
   (`fit.improper`), and simulation, `gof` and the bootstrap refuse it unless
   you fix `max_val`.
 - **`ergm_multi` labels coefficients as `ergm.multi` does**: `L(A)~edges`,
-  `L(A&B)~edges`, `L((A,B))~x`, `offset(...)`.
+  `L(A&B)~edges`, `L((A,B))~x`, `offset(...)`. Its boundary handling is R
+  `ergm`'s, not `ergm.multi`'s: a layer statistic at its bound (a triangle
+  term on a layer with no two-path, a conjunction layer with no tie) is fixed
+  at `∓Inf` and the rest estimated, where `ergm.multi` 0.3.0 reports `NA` or
+  a finite value at which its estimation stopped. The matching R model is the
+  statistic written as `offset(L(…))` at `-Inf`.
 - **`ergm_rank` fits the rank MCMC MLE by default**, as `ergm.rank` does;
   `method=:mple` is a swap pseudo-likelihood that `ergm.rank` does not have.
-- **`ergm_ego`'s default pseudo-population** has as many members as there are
-  egos when the population size is unknown, as `ergm.ego`'s
+  A count observed at 0 (nonconformity, the unweighted inconsistency) has no
+  finite MLE. The swap-MPLE applies R's drop; the MCMLE refuses such a model
+  and points to `method=:mple`, because the rankings that share the extreme
+  value are not connected by single swaps, so the sampler cannot be held
+  there (`ergm.rank`'s own sampler stops moving).
+- **`ergm_ego` labels coefficients as `ergm.ego` does** (`edges`, `degree0`,
+  `nodefactor.Race.Hisp`, `gwdeg.fixed.0.5`, `gwesp.fixed.0`, …), and a target
+  at its bound (`degree0` on a sample without isolates) is fixed at `∓Inf`, as
+  in `ergm.ego`. Its default pseudo-population has as many members as there
+  are egos when the population size is unknown, as `ergm.ego`'s
   `ppopsize = "auto"` does.
 - Separated count, multilayer and rank fits follow the shared separation policy.
 
-Variants share StatsAPI function names. The [generated table](/capabilities/) records which calls return a quantity, an explicit NaN, or are unavailable.
+Variants share StatsAPI function names, `coefnames` included. The [generated table](/capabilities/) records which calls return a quantity, an explicit NaN, or are unavailable.
 
 ## Temporal ERGMs: `tergm` → TERGM.jl
 
@@ -318,7 +349,7 @@ Variants share StatsAPI function names. The [generated table](/capabilities/) re
 |:---|:---|
 | `tergm(nw_list ~ Form(~edges+mutual) + Persist(~edges))` | `stergm(networks, [Edges(), Mutual()], [Edges()])` — the panel, then the formation terms, then the persistence terms |
 | `stergm(nw_list, formation=~edges+mutual, dissolution=~edges)` (deprecated in R) | the same call; the dissolution model is parameterized as *persistence*, like `Persist()` |
-| `estimate="CMLE"` (tergm's default) | the default `method=:auto`: the CMLE (`method=:cmle`, Monte-Carlo conditional MLE) when a term is dyad-dependent, the CMPLE when none is — there the two are the same estimator and no MCMC is run |
+| `estimate="CMLE"` (R's `tergm()` has no default and requires `estimate=`) | TERGM.jl's default `method=:auto`: the CMLE (`method=:cmle`, Monte-Carlo conditional MLE) when a term is dyad-dependent, the CMPLE when none is — there the two are the same estimator and no MCMC is run |
 | `estimate="CMPLE"` | `method=:cmple` |
 | `summary(fit)` of a CMPLE fit (naive Wald table) | `stergm(...; method=:cmple, se=:hessian)`; the CMPLE's default withholds z and p for a dyad-dependent formula |
 | `estimate="EGMME"` | not implemented: `method=:egmme` throws an `ArgumentError` |
@@ -340,7 +371,11 @@ including the tergm tutorial's `edges + mutual + cyclicalties +
 transitiveties` model. The CMPLE matches `tergm`'s CMPLE to 1e-6; for a
 dyad-dependent formula it is a pseudo-likelihood whose naive standard errors
 are too small, so use the CMLE or the parametric bootstrap for inference.
-The block bootstrap is too optimistic on short panels. See the
+The block bootstrap is too optimistic on short panels. A statistic at the
+boundary of its attainable range is fixed at `-Inf` by the CMPLE, as R
+`ergm`'s `drop=TRUE` would (R `tergm` does not drop, and returns a large
+finite value with a huge standard error); the CMLE refuses such a side,
+since no finite MLE exists. See the
 [worked STERGM example](/examples/modelling-network-change/).
 
 ## SAOMs: `RSiena` → Siena.jl
@@ -351,6 +386,7 @@ The workflow is a deliberate mirror of RSiena's:
 |:---|:---|
 | `sienaDataCreate(...)` | `data = siena_data()` + `add_nodeset!` / `add_dependent!` / `add_covariate!` |
 | `sienaDependent(array)` | `DependentNetwork(:name, waves)` — waves are matrices **or `Network` objects** |
+| `sienaDependent(array, type="bipartite", nodeSet=c("A", "B"))` | `DependentNetwork(:name, waves; type=:twomode, nodeset1=:A, nodeset2=:B)`; waves may also be two-mode `Network`s (`network(n; bipartite=n₁)`, `BipartiteNetwork`), which convert to a two-mode variable with ties from the mode-1 actors to the mode-2 nodes |
 | `sienaDependent(mat, type="behavior")` | `DependentBehavior(:name, waves)` |
 | `sienaDependent(..., allowOnly=FALSE)` | `DependentNetwork(:name, waves; allow_only=false)` (also `DependentBehavior`) |
 | `coCovar(v)` / `varCovar(m)` | `ConstantCovariate(:name, v)` / `VaryingCovariate(:name, m)` |
@@ -361,7 +397,8 @@ The workflow is a deliberate mirror of RSiena's:
 | `includeEffects(eff, egoX, interaction1="smoke1")` | `include_effects!(effects, :friendship, [:egoX]; interaction1=:smoke1)` (or `:egosmoke1`) |
 | `includeInteraction(eff, egoX, recip, interaction1=c("smoke1", ""))` | `include_interaction!(effects, :friendship, :egosmoke1, :recip)` |
 | `sienaAlgorithmCreate(seed=42)` | `siena_algorithm(rng=MersenneTwister(42))` |
-| `siena07(alg, data=dat, effects=eff)` | `fit_siena(data, effects; algorithm=alg)` (`siena07` is an alias) |
+| `siena07(alg, data=dat, effects=eff)` | `fit_siena(data, effects; algorithm=alg)`; `siena07` is an alias, and RSiena's orders `siena07(alg, data, effects)` and `siena07(alg; data=dat, effects=eff)` also work |
+| `coef(fit)`, `fit$se`, `names` of the effects | `coef(result)`, `stderror(result)`, `coefnames(result)`, `coeftable(result)` |
 | `sienaAlgorithmCreate(cond=FALSE)` | `siena_algorithm(conditional=false)`; conditional estimation is the default for one dependent variable, as RSiena's `cond = NA` |
 | `siena07(..., useCluster=TRUE)` | `siena_algorithm(threaded=true)` (the default; `threaded=false` runs serially) |
 | `sienaTimeTest(fit)` | `siena_time_test(fit)` |
@@ -387,7 +424,9 @@ capped Newton refinement and an independent final validation batch. A fit
 that misses RSiena's convergence standard (every |t-ratio| < 0.1,
 `tconv.max` < 0.25) is returned with a warning and flagged by `show` and
 `approximations`, as RSiena returns it; `allow_unconverged=false` raises
-`SienaConvergenceError` instead.
+`SienaConvergenceError` instead. Under conditional estimation the rates and
+their standard errors come from the phase-3 stopping times, as in RSiena, and
+agree with RSiena's, including in up-only and down-only periods.
 
 The NetworkCore bridge is an ordinary hard dependency. This example uses the
 bundled s50 friendship panel and smoking covariate from the reference model:
@@ -422,8 +461,7 @@ statistics, and a case-control-sampled estimator for long event streams.
 Revel.jl adds the effects, covariates and interactions of `relevent`,
 `remstats` and the wider literature, fits `rem.dyad`'s two exact full-risk-set
 likelihoods (ordinal and interval timing), and supplies goodness-of-fit checks.
-Revel's exact fitters run on Relevent.jl, the engine underneath it; start
-from Revel.jl.
+Start from Revel.jl.
 
 | R | Julia |
 |:---|:---|
@@ -484,13 +522,16 @@ those packages' documentation. Under
 `memory = "decay"` remstats evaluates the decay at the previous event, Revel at
 the event being explained.
 
-Relevent.jl's R-named constructors (`FESnd`, `RRecSnd`, `CovSnd`, …) can be
-mixed into the same `fit_revel` model; REM.jl's statistics mix with Revel's
-inside `fit_rem`. Every route — the ordinal and timing fitters and the
+relevent's effects are Revel calls — `CovSnd` is `SendEffect(x)`, `FESnd` is
+`SendEffect((1:n) .== k)`, `RRecSnd` is `RecencyRank(:receive)`, `NODSnd` is
+`OutdegreeSender(scaling=:prop, empty=1/(n-1))`; `effect_catalogue()` and
+Revel's concordance guide list them all, and two golden fixtures pin them and
+both `rem.dyad` likelihoods against relevent 1.2.1. REM.jl's statistics mix
+with Revel's inside `fit_rem`. Every route — the ordinal and timing fitters and the
 sampled `fit_rem` — decides separation with the shared verdict: a separated
 fit warns, returns `converged == false`, names the separated statistics and
 withholds z values, p-values and intervals, and Revel's diagnostics refuse
-it. (Relevent.jl used to throw on a proved separation.)
+it.
 
 REM's sampled likelihood uses a declared actor universe. Its Hessian reflects
 the information lost through control sampling under correct specification;
@@ -503,7 +544,7 @@ keyword.
 
 | R | Julia |
 |:---|:---|
-| `networkDynamic()` | `DynamicNetwork(10; observation_start=0.0, observation_end=100.0)` |
+| `networkDynamic()` | `DynamicNetwork(10; observation_start=0.0, observation_end=100.0)` (give both ends or neither, as `net.obs.period` has both) |
 | `networkDynamic(network.list=list(w1, w2, w3))` | `DynamicNetwork([w1, w2, w3])` — one step per panel, vertices matched by position |
 | `nd %n% "net.obs.period"` | `get_observation_period(dnet)`; `nothing` when none was set, as R's `NULL` |
 | `activate.vertices(nd, onset, terminus, v=1)` | `activate!(dnet, onset, terminus; vertex=1)` |
@@ -512,13 +553,13 @@ keyword.
 | `network.extract(nd, at=2)` | `network_extract(dnet, 2.0)` (returns a `Network`) |
 | `network.collapse(nd, onset, terminus)` | `network_collapse(dnet; onset=onset, terminus=terminus)` |
 | `as.networkDynamic(net)` | `as_dynamic_network(net)` |
-| `get.edge.activity(nd)` | `get_edge_activity(dnet)` |
+| `get.edge.activity(nd, e=…)`, `get.vertex.activity(nd, v=…)` | `get_edge_activity(dnet, i, j)`, `get_vertex_activity(dnet, v)` — one element per call; an element with no spell record is reported as `(-Inf, Inf)`, as in R |
 | `tSnaStats(nd, "gden")` | `t_sna_stats(dnet, times; measures=[:density])` |
 | `tPath(nd, v=1, start=0)` (earliest arrival from one vertex) | `earliest_arrival(dnet, 1, 0.0)`; `temporal_path(dnet, 1, 5, 0.0)` for the path to one target |
 | `forward.reachable(nd, v=1)` | `forward_reachable_set(dnet, 1, 0.0)` |
 | `tReach(nd)` (size of every vertex's forward-reachable set) | `vec(sum(reachability_matrix(dnet, 0.0); dims=2))` (no sampling; the diagonal counts the vertex itself) |
-| `tEdgeFormation(nd)` (a series: ties formed at each time step) | `t_edge_formation(dnet, onset, terminus)` counts one interval; `t_turnover` gives tsna's default series on integer spells (also `t_edge_dissolution`, `t_edge_persistence`) |
-| `render.animation(nd)` | `render_animation(dnet; n_frames=50)` then `export_movie` / `export_gif` |
+| `tEdgeFormation(nd)` (a series: ties formed at each time step) | `t_edge_formation(dnet, onset, terminus)` counts one interval; `t_turnover(dnet, 1)` gives tsna's default series on integer spells without an observation window (also `t_edge_dissolution`, `t_edge_persistence`) |
+| `render.animation(nd)` | `render_animation(dnet; n_frames=50)` then `export_movie` / `export_gif`; by default 100 frames, or one frame per time step on an integer or calendar time axis (ndtv's `interval = 1`) |
 | `render.d3movie(nd)` | `export_html(layout, "movie.html")` (self-contained HTML) |
 | `filmstrip(nd)` | `filmstrip(dnet, times)` |
 | `timeline(nd)` | `timeline_plot(dnet)` |
@@ -558,27 +599,30 @@ layout; Kamada–Kawai is not implemented.
 ## What still differs from R
 
 Each package's README has a "Not implemented" section, which is the full
-list; the calls listed there are refused with an explanatory `ArgumentError`
-rather than fitted differently. The main items:
+list. A feature listed there either has no function or term to call, or is
+refused with an explanatory `ArgumentError`; it is never fitted differently.
+The main items:
 
 - **Model syntax:** typed terms instead of an R formula, and keywords instead
   of `control.*()` lists.
 - **ERGM.jl** ([full list](https://github.com/statistical-network-analysis-with-Julia/ERGM.jl#not-implemented)):
   two-mode (bipartite) networks and terms, `constraints=`, and several term
   families (`nodeicov`/`nodeocov`, `ttriple`/`ctriple`, `esp`/`dsp`, `balance`,
-  `cycle`, …); curved estimation only for `gwesp` and `gwdegree`; no MCMLE
-  `drop` of a boundary statistic (use `Offset(term, -Inf)`); R's `SPDyad`
-  sampler only in `mcmle`; R's stratified proposals and adaptive burn-in.
+  `cycle`, …); curved estimation only for `gwesp` and `gwdegree`; R's
+  `drop=FALSE` fit of a boundary statistic (`drop=false` refuses it), and a
+  curved model with one; R's `SPDyad` sampler only in `mcmle`; R's
+  stratified proposals and adaptive burn-in.
   Missing ties are fitted by `mcmle(...; missing=:mle)` and the available-case
   MPLE, but simulation and `gof` cannot impute them.
 - **ERGMCount.jl** ([full list](https://github.com/statistical-network-analysis-with-Julia/ERGMCount.jl#not-implemented)):
   `ergm.count`'s own MCMC proposals and missing-data MLE; the `StdNormal` and
-  continuous `Unif` references and the `nodecovar` family; curved terms,
+  continuous `Unif` references; the `nodecovar` family, the valued
+  `nodemix`, `absdiff(pow≠1)` and `nodematch(keep=, levels=)`; curved terms,
   `constraints=`, offsets and two-mode networks.
 - **ERGMEgo.jl** ([full list](https://github.com/statistical-network-analysis-with-Julia/ERGMEgo.jl#not-implemented)):
-  richer survey designs, several `ergm.ego` terms (`gwesp`, `mm`,
-  `concurrent`, …), `simulate(fit)`, directed and two-mode ego data, and a
-  likelihood (the estimator is method-of-moments).
+  richer survey designs, the curved `gwesp` and `mm`'s non-default forms,
+  `simulate(fit)`, directed and two-mode ego data,
+  and a likelihood (the estimator is method-of-moments).
 - **ERGMMulti.jl** ([full list](https://github.com/statistical-network-analysis-with-Julia/ERGMMulti.jl#not-implemented)):
   models over several networks (`ergm.multi`'s `Networks()`), layer logic
   beyond same-dyad conjunction, and a geodesic-distance GOF panel; its MCMLE
@@ -586,7 +630,8 @@ rather than fitted differently. The main items:
 - **ERGMRank.jl** ([full list](https://github.com/statistical-network-analysis-with-Julia/ERGMRank.jl#not-implemented)):
   some `rank.nonconformity` variants, attribute-name term arguments,
   ESS-adaptive sampling, partial or tied rankings, offsets and
-  `constraints=`.
+  `constraints=`; the MCMLE refuses a statistic at its bound (the swap-MPLE
+  drops it).
 - **ERGMUserterms.jl** ([full list](https://github.com/statistical-network-analysis-with-Julia/ERGMUserterms.jl#not-implemented-vs-r-ergmuserterms)):
   the harness checks a term on the networks it is given and samples dyads
   above 5000; terms that read edge attributes live are refused under MCMC.
@@ -638,12 +683,16 @@ different names (e.g. the legacy either-direction directed GWESP is
 `GWESP(0.5; type=:union)`, printed as `gwesp.union.fixed.0.5`, so it can
 never be confused with statnet's `gwesp.fixed.0.5`).
 
-These realignments are version-0.2 behavior changes: if you have code
-written against the 0.1 packages (rather than against R), see the
-[consolidated 0.2.0 release notes](/post/2026-07-12-changelogs-0.2.0/) —
-every package repository now carries a `CHANGELOG.md` listing its breaking
-changes with one-line migration hints (e.g.
+These realignments are version-0.2 behavior changes. If you have code
+written against the 0.1 development versions (rather than against R), start
+from the [table of renamed packages and removed names](#renamed_packages_and_removed_names)
+above, then read each package's `CHANGELOG.md`: its `[0.2.0] - Unreleased`
+section is the current list of breaking changes, each with a one-line
+migration hint (for example
 [ERGM.jl's](https://github.com/statistical-network-analysis-with-Julia/ERGM.jl/blob/main/CHANGELOG.md)).
+The July [consolidated release notes](/post/2026-07-12-changelogs-0.2.0/)
+describe the state at that date, and several of the names they mention have
+since changed again.
 
 ## A complete worked example
 

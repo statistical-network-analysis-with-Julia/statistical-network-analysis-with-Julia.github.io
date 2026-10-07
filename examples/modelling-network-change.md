@@ -33,7 +33,8 @@ this component; there are no `dissolution_*` accessors.
 Both formulas are dyad-independent, so the default `method=:auto` fits the
 conditional MPLE, which here *is* the conditional MLE, without MCMC. Add a
 dyad-dependent term such as `Mutual()` and `:auto` fits the conditional MLE
-by MCMC (`method=:cmle`), as tergm's default `estimate = "CMLE"` does. The
+by MCMC (`method=:cmle`), which is tergm's `estimate = "CMLE"` (R's
+`tergm()` has no default and requires `estimate=`). The
 conditional MPLE of such a formula (`method=:cmple`) is a pseudo-likelihood:
 it reports no z values or p-values unless you ask for the parametric
 bootstrap (`se=:bootstrap`). EGMME is not implemented and requesting it

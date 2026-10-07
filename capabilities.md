@@ -47,6 +47,7 @@ of it has been checked against R.</p>
 | ERGM | `ergm`, default `method=:auto` (MPLE), **dyad-independent** formula (`edges`) | `ergm` | `pseudolikelihood` | **yes** | `hessian` | `none` | n/a |
 | ERGM | `ergm(...; method=:mple)`, **dyad-dependent** formula (`edges + gwesp`) | `ergm` | `pseudolikelihood` | no | `hessian` | `none` | n/a |
 | ERGM | `ergm`, default `method=:auto` (MCMLE), dyad-dependent formula | `ergm` | `mc_likelihood` | no | `fisher` | `none` | n/a |
+| ERGM | `ergm`, default `method=:auto` (MCMLE), a statistic at its bound (`edges + triangle` on a matching): R's `drop=TRUE` | `ergm` | `mc_likelihood` | no | `fisher` | `none` | n/a |
 | TERGM | `stergm`, default `method=:auto` (CMPLE), **dyad-independent** formula | `stergm` | `conditional_pseudolikelihood` | **yes** | `hessian` | `rejected` | n/a |
 | TERGM | `stergm(...; method=:cmple)`, **dyad-dependent** formula (`edges + mutual`) | `stergm` | `conditional_pseudolikelihood` | no | `hessian` | `rejected` | n/a |
 | TERGM | `stergm(...; method=:cmle)` (the default here), dyad-dependent formula (`edges + mutual`) | `stergm` | `mc_likelihood` | no | `fisher` | `rejected` | n/a |
@@ -65,7 +66,7 @@ of it has been checked against R.</p>
 | Revel | `fit_rhem`, hyperevents, sampled non-events | `relational_event` | `partial_likelihood` | no | `hessian` | `none` | `none` |
 | Siena | `siena07`, SAOM by method of moments | `saom` | `moment` | no | `sandwich` | `rejected` | n/a |
 
-Two rows are worth a second look, because they are exactly what a hand-written table
+Three rows are worth a second look, because they are exactly what a hand-written table
 would have got wrong:
 
 - **`ERGMCount`'s dyad-independent fit is still not exact.** Dyad independence is not
@@ -76,6 +77,14 @@ would have got wrong:
   ERGM by Monte Carlo likelihood; its simulation and convergence caveats remain
   relevant. The swap-MPLE (`method=:mple`) multiplies overlapping comparisons and is
   not an exact likelihood.
+- **`ERGM`'s boundary row.** On a network with no two-path, `triangle` sits at its
+  smallest attainable value and has no finite estimate. As R's `ergm()` does under its
+  default `drop=TRUE`, the fit fixes that coefficient at `-Inf`, holds the statistic at
+  its bound while it samples and estimates the rest; `drop=false` refuses the model
+  instead. ERGMCount, ERGMEgo and ERGMMulti do the same, and TERGM's CMPLE and
+  ERGMRank's swap-MPLE drop too. ERGMRank's MCMLE and TERGM's CMLE refuse such a
+  model. Because the dropped statistic is dyad-dependent, the fit reports no
+  log-likelihood (`NaN` in the accessor table below).
 
 You can ask the same question of your own fit:
 
@@ -118,6 +127,12 @@ and reproduced here verbatim.
 
 - MCMLE: the likelihood is approximated by an MCMC sample, so the estimates carry Monte-Carlo error (included in the standard errors; see mcmc_se)
 - the reported log-likelihood (and AIC/BIC) is a path-sampling bridge estimate from a dyad-independent reference model
+
+#### ERGM — `ergm`, default `method=:auto` (MCMLE), a statistic at its bound (`edges + triangle` on a matching): R's `drop=TRUE`
+
+- MCMLE: the likelihood is approximated by an MCMC sample, so the estimates carry Monte-Carlo error (included in the standard errors; see mcmc_se)
+- log-likelihood not estimated (a dyad-dependent statistic fixed at ±Inf at the boundary of its attainable range constrains the sample space, and such a constraint has no dyad-independent reference to bridge from): AIC/BIC are NaN
+- coefficient(s) triangle fixed at -Inf (observed statistic at its smallest attainable value): no finite estimate exists; the other coefficients are estimated with these statistics held at their bound (the sampler never moves them off it), as R ergm does (drop=TRUE)
 
 #### TERGM — `stergm(...; method=:cmple)`, **dyad-dependent** formula (`edges + mutual`)
 
@@ -213,6 +228,7 @@ code will run at.
 | SNA | `sna_fuzz` | `igraph` 2.3.3, `sna` 2.8 | 4.6.1 | 60 seeded random networks (n = 3-10, directed and undirected, self-loops), structural-equivalence and Bonacich edge cases, a two-mode regression |
 | SNA | `sna_inference` | `sna` 2.8 | 4.6.1 | 24 seeded random networks with random classes (brokerage, equiv.clust, blockmodel) |
 | SNA | `sna_reference` | `ergm` 4.12.0, `sna` 2.8 | 4.6.1 | ergm florentine and sampson |
+| ERGM | `boundary_ergm` | `ergm` 4.12.0 | 4.6.1 |  |
 | ERGM | `curved_ergm` | `ergm` 4.12.0 | 4.6.1 |  |
 | ERGM | `ergm_terms` | `ergm` 4.12.0 | 4.6.1 |  |
 | ERGM | `flomarriage_ergm` | `ergm` 4.12.0 | 4.6.1 | ergm::flomarriage (Padgett): 16 Florentine families, 20 undirected marriage ties, wealth covariate |
@@ -222,6 +238,8 @@ code will run at.
 | TERGM | `cmle_stergm` | `ergm` 4.12.0, `tergm` 4.2.2 | 4.6.1 | (a) main: the 25-actor, 8-wave directed panel of panel_stergm.toml, regenerated from the same seed (edge counts asserted) |
 | TERGM | `panel_stergm` | `btergm` 1.11.1, `ergm` 4.12.0, `tergm` 4.2.2 | 4.6.1 | simulated: 25 actors, 8 directed waves, alternating two-group `grp` attribute |
 | TERGM | `simulate_stergm` | `ergm` 4.12.0, `tergm` 4.2.2 | 4.6.1 | simulated: one 20-actor directed starting network, Bernoulli(0.12), frozen below as an edge list |
+| ERGMCount | `count_covariates` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 |  |
+| ERGMCount | `count_geometric_drop` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 |  |
 | ERGMCount | `count_mcmle` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 |  |
 | ERGMCount | `count_terms` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 |  |
 | ERGMCount | `zach_poisson` | `ergm_count` 4.1.3, `ergm` 4.12.0 | 4.6.1 | ergm.count::zach (Zachary 1977): 34 karate-club members, undirected, `contexts` edge counts 0-7 |
@@ -229,6 +247,7 @@ code will run at.
 | ERGMEgo | `ego_terms` | `ergm_ego` 1.1.4, `ergm` 4.12.0 | 4.6.1 | ergm::faux.mesa.high: 205 students, 203 undirected friendship ties |
 | ERGMEgo | `fauxmesa_ego_census` | `ergm_ego` 1.1.4, `ergm` 4.12.0 | 4.6.1 | ergm::faux.mesa.high: 205 students, 203 undirected friendship ties, Grade 7-12 |
 | ERGMEgo | `fauxmesa_ego_weighted` | `ergm_ego` 1.1.4, `ergm` 4.12.0 | 4.6.1 | ergm::faux.mesa.high: 205 students, 203 undirected friendship ties, Grade 7-12 |
+| ERGMMulti | `boundary_multi` | `ergm_multi` 0.3.0, `ergm` 4.12.0 | 4.6.1 |  |
 | ERGMMulti | `multilayer_labels` | `ergm_multi` 0.3.0, `ergm` 4.12.0 | 4.6.1 | deterministic: three directed 8-actor layers friend/advice/cowork and two undirected 8-actor layers a/b, ties arithmetic in the vertex indices |
 | ERGMMulti | `multilayer_mcmle` | `ergm_multi` 0.3.0, `ergm` 4.12.0 | 4.6.1 |  |
 | ERGMMulti | `pooled_layer_terms` | `ergm_multi` 0.3.0, `ergm` 4.12.0 | 4.6.1 | the SAME directed 20-actor and undirected 12-actor layer pairs as twolayer_layer_terms.toml (identical generating code and seed), plus the deterministic vertex attributes g3 = rep(a,b,c) and x = round(sin(1:n), 3) on both layers |
@@ -242,7 +261,10 @@ code will run at.
 | REM | `rem_eventnet` | `survival` 3.8.6 | 4.6.1 | the rem_clogit.R sequence (10 actors, 80 events |
 | REM | `rem_relevent_wtc` | `relevent` 1.2.1 | 4.6.1 | WTC police radio calls (Butts, Petrescu-Prahova & Cross 2007): NetworkCore.jl/data/wtc_police_calls_{events,actors}.tsv, read by R and by NetworkCore.load_dataset(:wtc_police_calls) |
 | REM | `rem_ties` | `survival` 3.8.6 | 4.6.1 | simulated relational event sequence (8 actors, 90 events) observed on a coarse clock (resolution 0.03), which is what makes the ties |
+| Revel | `relevent_catalogue` | `relevent` 1.2.1 | 4.6.1 | 14 fixed directed events, 5 actors |
+| Revel | `relevent_rem_dyad` | `relevent` 1.2.1 | 4.6.1 | simulated dyadic event sequence (8 actors, 100 events) |
 | Revel | `revel_remstats` | `remify` 4.1.0, `remstats` 4.1.0 | 4.6.1 | 36 fixed directed events on a 0.25 time grid, 6 actors |
+| Siena | `s50_allowonly_cond` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50 friendship |
 | Siena | `s50_coevolution` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50: friendship (3 waves) and alcohol use (dependent behaviour) |
 | Siena | `s50_defaults.toml` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50 friendship (ties > 1 set to 0), alcohol, smoke1 |
 | Siena | `s50_dynamics` | `rsiena` 1.6.6 | 4.6.1 | RSiena::s50 (friendship, alcohol, smoke1), symmetrised s50, deterministic two-mode panel and dyadic covariates |
@@ -260,33 +282,35 @@ fixture's assertions and tolerances before treating a listed reference as equiva
 
 Each cell below comes from calling the accessor on the same fitted object used above.
 `yes` means the call returned; `NaN` means a scalar criterion is explicitly unavailable;
-`—` means the call is unsupported. For moment estimators and pseudo-likelihoods,
+`—` means the call is unsupported. `coefnames` returns R's coefficient labels, the same
+as the rows of `coeftable`. For moment estimators and pseudo-likelihoods,
 a returned AIC/BIC is not evidence that ordinary likelihood comparisons are justified.
 
-| package | fit | `coef` | `stderror` | `vcov` | `confint` | `loglikelihood` | `nobs` | `dof` | `aic` | `bic` | `coeftable` |
-|:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| SNA | `netlm`, dyadic OLS, classical inference | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| SNA | `netlogit`, dyadic logit, classical inference | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| ERGM | `ergm`, default `method=:auto` (MPLE), **dyad-independent** formula (`edges`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| ERGM | `ergm(...; method=:mple)`, **dyad-dependent** formula (`edges + gwesp`) | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
-| ERGM | `ergm`, default `method=:auto` (MCMLE), dyad-dependent formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| TERGM | `stergm`, default `method=:auto` (CMPLE), **dyad-independent** formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| TERGM | `stergm(...; method=:cmple)`, **dyad-dependent** formula (`edges + mutual`) | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
-| TERGM | `stergm(...; method=:cmle)` (the default here), dyad-dependent formula (`edges + mutual`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| ERGMCount | `fit_ergm_count`, default `method=:auto` (MPLE), **dyad-independent** (`sum + nonzero`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| ERGMCount | `fit_ergm_count(...; method=:mple)`, **dyad-dependent** (`sum + mutual`) | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
-| ERGMMulti | `ergm_multi`, default `method=:auto` (MPLE), **dyad-independent** (per-layer edges) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| ERGMMulti | `ergm_multi(...; method=:mple)`, **dyad-dependent** (interlayer dependence) | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
-| ERGMEgo | `fit_ergm_ego`, MCMC method of moments | yes | yes | yes | yes | — | yes | yes | — | — | yes |
-| ERGMRank | `fit_ergm_rank`, swap-MPLE, default SEs | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
-| ERGMRank | `fit_ergm_rank`, swap-MPLE, `se=:bootstrap` | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| ERGMRank | `fit_ergm_rank`, MCMC-MLE | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| REM | `fit_rem`, case-control conditional logit | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Revel | `fit_revel`, ordinal model, full risk set | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Revel | `fit_revel`, receiver choice (`riskset=:sender`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Revel | `fit_revel`, `model=:timing`, exact-time hazard model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Revel | `fit_rhem`, hyperevents, sampled non-events | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
-| Siena | `siena07`, SAOM by method of moments | yes | yes | yes | yes | — | — | — | — | — | yes |
+| package | fit | `coef` | `coefnames` | `stderror` | `vcov` | `confint` | `loglikelihood` | `nobs` | `dof` | `aic` | `bic` | `coeftable` |
+|:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| SNA | `netlm`, dyadic OLS, classical inference | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| SNA | `netlogit`, dyadic logit, classical inference | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGM | `ergm`, default `method=:auto` (MPLE), **dyad-independent** formula (`edges`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGM | `ergm(...; method=:mple)`, **dyad-dependent** formula (`edges + gwesp`) | yes | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
+| ERGM | `ergm`, default `method=:auto` (MCMLE), dyad-dependent formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGM | `ergm`, default `method=:auto` (MCMLE), a statistic at its bound (`edges + triangle` on a matching): R's `drop=TRUE` | yes | yes | yes | yes | yes | NaN | yes | yes | NaN | NaN | yes |
+| TERGM | `stergm`, default `method=:auto` (CMPLE), **dyad-independent** formula | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| TERGM | `stergm(...; method=:cmple)`, **dyad-dependent** formula (`edges + mutual`) | yes | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
+| TERGM | `stergm(...; method=:cmle)` (the default here), dyad-dependent formula (`edges + mutual`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMCount | `fit_ergm_count`, default `method=:auto` (MPLE), **dyad-independent** (`sum + nonzero`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMCount | `fit_ergm_count(...; method=:mple)`, **dyad-dependent** (`sum + mutual`) | yes | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
+| ERGMMulti | `ergm_multi`, default `method=:auto` (MPLE), **dyad-independent** (per-layer edges) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMMulti | `ergm_multi(...; method=:mple)`, **dyad-dependent** (interlayer dependence) | yes | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
+| ERGMEgo | `fit_ergm_ego`, MCMC method of moments | yes | yes | yes | yes | yes | — | yes | yes | — | — | yes |
+| ERGMRank | `fit_ergm_rank`, swap-MPLE, default SEs | yes | yes | yes | yes | — | yes | yes | yes | yes | yes | yes |
+| ERGMRank | `fit_ergm_rank`, swap-MPLE, `se=:bootstrap` | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| ERGMRank | `fit_ergm_rank`, MCMC-MLE | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| REM | `fit_rem`, case-control conditional logit | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_revel`, ordinal model, full risk set | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_revel`, receiver choice (`riskset=:sender`) | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_revel`, `model=:timing`, exact-time hazard model | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Revel | `fit_rhem`, hyperevents, sampled non-events | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+| Siena | `siena07`, SAOM by method of moments | yes | yes | yes | yes | yes | — | — | — | — | — | yes |
 
 ## Missing-data support
 

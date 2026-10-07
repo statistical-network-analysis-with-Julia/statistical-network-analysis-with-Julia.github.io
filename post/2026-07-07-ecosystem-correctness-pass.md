@@ -4,6 +4,10 @@
 @def rss_title = "Ecosystem-wide correctness pass and R validation"
 @def rss_pubdate = Date(2026, 7, 7)
 
+# Ecosystem-wide correctness pass and R validation
+
+{{post_date}}
+
 A coordinated correctness pass has landed across every package in the
 ecosystem. Highlights:
 

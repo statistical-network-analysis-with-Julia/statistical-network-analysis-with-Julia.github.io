@@ -25,7 +25,9 @@ julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.
 julia --project=.snippet-env
 ```
 
-The last command opens Julia in the prepared environment. The first setup
+The last command opens Julia in the prepared environment. The script names it
+`.snippet-env` because the documentation checks run in it too; it is an
+ordinary Julia project environment, and you can use it for your own work. The first setup
 needs network access. Already have the sibling repositories? Run the preparation
 command from their parent directory; it preserves existing checkouts. Keep the
 repository directory names intact because local dependencies use these paths.

@@ -30,7 +30,7 @@
 # every sibling its `[sources]` table names (hard, weak and test-only
 # dependencies alike, since a package's tests must resolve once registered).
 # Today that puts NetworkCore first, then DynamicNetworks, SNA, ERGM and Siena,
-# REM, Relevent and Revel, NDTV and TSNA, and the ERGM satellite packages.
+# REM and Revel, NDTV and TSNA, and the ERGM satellite packages.
 #
 # In --register mode the script installs LocalRegistry into a temporary
 # environment, creates the registry if it does not exist yet, and calls

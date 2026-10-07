@@ -87,6 +87,18 @@ function ergm_net(n=10)
     end
     return net
 end
+# A statistic at the boundary of its attainable range: a perfect matching has no
+# two-path, so `triangle` is at its minimum 0. The default MCMLE applies R's
+# `drop=TRUE` (the coefficient fixed at -Inf, the statistic held at its bound by
+# the sampler, the rest estimated) and reports no log-likelihood.
+function matching_net(n=10)
+    net = network(n; directed=false)
+    for i in 1:2:n
+        add_edge!(net, i, i + 1)
+    end
+    return net
+end
+
 small_ergm(; dependent::Bool) =
     ergm(ergm_net(), dependent ? [Edges(), GWESP(0.5)] : [Edges()]; method=:mple)
 
@@ -218,6 +230,8 @@ const PROBES = [
     ("ERGM", "`ergm`, default `method=:auto` (MPLE), **dyad-independent** formula (`edges`)", () -> ergm(ergm_net(), [Edges()])),
     ("ERGM", "`ergm(...; method=:mple)`, **dyad-dependent** formula (`edges + gwesp`)", () -> small_ergm(dependent=true)),
     ("ERGM", "`ergm`, default `method=:auto` (MCMLE), dyad-dependent formula", () -> ergm(ergm_net(), [Edges(), GWESP(0.5)];
+                                                            n_samples=400, maxiter=40, rng=Xoshiro(10))),
+    ("ERGM", "`ergm`, default `method=:auto` (MCMLE), a statistic at its bound (`edges + triangle` on a matching): R's `drop=TRUE`", () -> ergm(matching_net(), [Edges(), Triangle()];
                                                             n_samples=400, maxiter=40, rng=Xoshiro(10))),
     ("TERGM", "`stergm`, default `method=:auto` (CMPLE), **dyad-independent** formula", () -> stergm(tergm_panels(), [Edges()], [Edges()])),
     ("TERGM", "`stergm(...; method=:cmple)`, **dyad-dependent** formula (`edges + mutual`)", () -> stergm(tergm_s50(), TERGM_DEPENDENT...; method=:cmple)),
@@ -386,7 +400,7 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     println(io, """
 
-    Two rows are worth a second look, because they are exactly what a hand-written table
+    Three rows are worth a second look, because they are exactly what a hand-written table
     would have got wrong:
 
     - **`ERGMCount`'s dyad-independent fit is still not exact.** Dyad independence is not
@@ -397,6 +411,14 @@ function render(io::IO, rows::Vector{ProbeRow})
       ERGM by Monte Carlo likelihood; its simulation and convergence caveats remain
       relevant. The swap-MPLE (`method=:mple`) multiplies overlapping comparisons and is
       not an exact likelihood.
+    - **`ERGM`'s boundary row.** On a network with no two-path, `triangle` sits at its
+      smallest attainable value and has no finite estimate. As R's `ergm()` does under its
+      default `drop=TRUE`, the fit fixes that coefficient at `-Inf`, holds the statistic at
+      its bound while it samples and estimates the rest; `drop=false` refuses the model
+      instead. ERGMCount, ERGMEgo and ERGMMulti do the same, and TERGM's CMPLE and
+      ERGMRank's swap-MPLE drop too. ERGMRank's MCMLE and TERGM's CMLE refuse such a
+      model. Because the dropped statistic is dyad-dependent, the fit reports no
+      log-likelihood (`NaN` in the accessor table below).
 
     You can ask the same question of your own fit:
 
@@ -476,10 +498,11 @@ function render(io::IO, rows::Vector{ProbeRow})
 
     Each cell below comes from calling the accessor on the same fitted object used above.
     `yes` means the call returned; `NaN` means a scalar criterion is explicitly unavailable;
-    `—` means the call is unsupported. For moment estimators and pseudo-likelihoods,
+    `—` means the call is unsupported. `coefnames` returns R's coefficient labels, the same
+    as the rows of `coeftable`. For moment estimators and pseudo-likelihoods,
     a returned AIC/BIC is not evidence that ordinary likelihood comparisons are justified.
     """)
-    accessors = [:coef, :stderror, :vcov, :confint, :loglikelihood, :nobs, :dof, :aic, :bic, :coeftable]
+    accessors = [:coef, :coefnames, :stderror, :vcov, :confint, :loglikelihood, :nobs, :dof, :aic, :bic, :coeftable]
     println(io, "| package | fit | ", join(["`$f`" for f in accessors], " | "), " |")
     println(io, "|:---|:---|", join(fill(":---:", length(accessors)), "|"), "|")
     for r in rows

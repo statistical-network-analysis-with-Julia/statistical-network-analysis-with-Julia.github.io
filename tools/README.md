@@ -1,6 +1,6 @@
 # Ecosystem development and validation
 
-These tools expect the 16 independent Julia package checkouts beside this site
+These tools expect the 15 independent Julia package checkouts beside this site
 repository. `SNWJ_ROOT` selects their parent directory; by default it is the
 site's parent. Use Julia 1.12 or newer. The [workspace recipe](workspace/README.md)
 provides the package environment and instructions for a fresh checkout.
@@ -178,7 +178,7 @@ With prepared sibling checkouts and Python 3.11+, run from the site directory:
 python3 tools/preview_docs.py --build
 ```
 
-This builds Franklin and all 16 strict Documenter sites, then serves
+This builds Franklin and all 15 strict Documenter sites, then serves
 <http://localhost:8001/>. `/Package.jl/dev/` routes to that package's local
 `docs/build/`; `/stable/` is an alias of the same local build. Source repositories
 and directory listings are not served. Package and umbrella links share one

@@ -41,6 +41,12 @@ function main(args)
         return
     end
     Pkg.activate(joinpath(root, ".snippet-env"))
+    # A package retired from the workspace (Relevent.jl, merged into Revel.jl)
+    # may still have a checkout beside the others; drop it from an existing
+    # environment, or it would be loaded beside the package that replaced it.
+    retired = sort!([name for name in keys(Pkg.project().dependencies)
+                     if !haskey(paths, name) && isdir(joinpath(root, "$name.jl"))])
+    isempty(retired) || Pkg.rm(retired)
     # Resolve all unregistered siblings together; alphabetical one-by-one develop fails
     # when a package refers to a sibling not yet known to the resolver.
     Pkg.develop([Pkg.PackageSpec(path=paths[name]) for name in sort!(collect(keys(paths)))])

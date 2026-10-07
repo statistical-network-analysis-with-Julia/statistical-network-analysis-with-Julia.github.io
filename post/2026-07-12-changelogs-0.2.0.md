@@ -4,7 +4,11 @@
 @def rss_title = "0.2.0 across the ecosystem: consolidated release notes"
 @def rss_pubdate = Date(2026, 7, 12)
 
-*Editor's note (October 2026): Networks.jl and NetworkDynamic.jl have since been renamed NetworkCore.jl and DynamicNetworks.jl; the links below point to the renamed repositories.*
+# 0.2.0 across the ecosystem: consolidated release notes
+
+{{post_date}}
+
+*Editor's note (October 2026): this post describes the packages as they were in July 2026, and parts of it are out of date. Networks.jl and NetworkDynamic.jl have since been renamed NetworkCore.jl and DynamicNetworks.jl (the links below point to the renamed repositories); `stergm_gof` has been removed in favour of `gof`; `Networks.GOFResult` is `NetworkCore.GOFResult`; the TSNA camelCase aliases and the NDTV `KKLayout` have been removed; and SNA.jl's measures use sna's names (`degreecent`, `grecip`, `geodist`, …), while the Graphs.jl functions keep Graphs.jl's definitions. For current information, read the [migration guide](/migration/) and its [table of renamed and removed names](/migration/#renamed_packages_and_removed_names), and the `[0.2.0] - Unreleased` section of each package's `CHANGELOG.md`.*
 
 The three review-driven sprints — the
 [correctness pass](/post/2026-07-07-ecosystem-correctness-pass/) and the

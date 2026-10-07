@@ -1,8 +1,9 @@
 # Statistical analysis of networks in Julia — website
 
-The umbrella website connects the ecosystem's 16 Julia packages, their documentation
-and worked network analyses. The package directory lists 15: Relevent.jl, the
-event-model engine underneath Revel.jl, is reached through Revel.jl. Built with Franklin.jl; individual package sites use Documenter.
+The umbrella website connects the ecosystem's 15 Julia packages, their documentation
+and worked network analyses. (Relevent.jl, the event-model engine that Revel.jl
+used to depend on, was merged into Revel.jl and is retired.) Built with
+Franklin.jl; individual package sites use Documenter.
 
 **Published site:** <https://statistical-network-analysis-with-julia.github.io/>
 

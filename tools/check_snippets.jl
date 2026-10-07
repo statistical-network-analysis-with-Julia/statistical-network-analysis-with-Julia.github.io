@@ -10,8 +10,9 @@
 # otherwise it defaults to the parent directory of this repo.
 #
 # Which files are checked:
-#   * every package repo's top-level README.md,
-#   * every package repo's docs/src/**/*.md,
+#   * the top-level README.md of every package of tools/workspace/Project.toml
+#     (a retired package's checkout beside them, such as Relevent.jl, is not),
+#   * those packages' docs/src/**/*.md,
 #   * the site's own pages (*.md outside underscore-prefixed dirs).
 # Any positional arguments are substring filters on the file path, e.g.
 #     julia tools/check_snippets.jl ERGM.jl/docs getting_started
@@ -37,6 +38,7 @@
 # mutate any environment.
 
 using REPL # for REPL.softscope
+using TOML
 
 # ---------------------------------------------------------------------------
 # Locate the files to check
@@ -45,7 +47,11 @@ using REPL # for REPL.softscope
 const SITE_DIR = realpath(joinpath(@__DIR__, ".."))
 const ROOT = get(ENV, "SNWJ_ROOT", dirname(SITE_DIR))
 
-function collect_files(root::AbstractString)
+"""The ecosystem's packages: those the shared workspace sources."""
+workspace_packages() =
+    Set(keys(TOML.parsefile(joinpath(@__DIR__, "workspace", "Project.toml"))["sources"]))
+
+function collect_files(root::AbstractString; packages=workspace_packages())
     files = String[]
     for entry in sort(readdir(root))
         repo = joinpath(root, entry)
@@ -59,7 +65,8 @@ function collect_files(root::AbstractString)
                     endswith(n, ".md") && push!(files, joinpath(dir, n))
                 end
             end
-        elseif isfile(joinpath(repo, "Project.toml"))
+        elseif isfile(joinpath(repo, "Project.toml")) && endswith(entry, ".jl") &&
+               chop(entry; tail=3) in packages
             # A package repo: README.md plus docs/src/**.
             readme = joinpath(repo, "README.md")
             isfile(readme) && push!(files, readme)
