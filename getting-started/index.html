@@ -55,7 +55,7 @@ cd network-analysis
 git clone https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io
 julia statistical-network-analysis-with-Julia.github.io/tools/prepare_workspace.jl &quot;&#36;PWD&quot; --clone
 julia --project&#61;.snippet-env</code></pre>
-<p>The last command opens Julia in the prepared environment. The first setup needs network access. Already have the sibling repositories? Run the preparation command from their parent directory; it preserves existing checkouts. Keep the repository directory names intact because local dependencies use these paths.</p>
+<p>The last command opens Julia in the prepared environment. The script names it <code>.snippet-env</code> because the documentation checks run in it too; it is an ordinary Julia project environment, and you can use it for your own work. The first setup needs network access. Already have the sibling repositories? Run the preparation command from their parent directory; it preserves existing checkouts. Keep the repository directory names intact because local dependencies use these paths.</p>
 <p>This recipe installs revisions currently available on GitHub. Local fixes that have not been pushed are available only in the workspace containing them. See the <a href="https://github.com/statistical-network-analysis-with-Julia/statistical-network-analysis-with-Julia.github.io/tree/main/tools/workspace">workspace recipe</a> for environment details.</p>
 <h2 id="step_2_describe_a_real_network"><a href="#step_2_describe_a_real_network" class="header-anchor">Step 2: describe a real network</a></h2>
 <p>Paste this into Julia. The Florentine marriage dataset records ties among 16 Renaissance families.</p>
